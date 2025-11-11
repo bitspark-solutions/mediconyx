@@ -1,0 +1,419 @@
+# ===========================================
+# Mediconyx - Hospital Management System
+# .gitignore for .NET 10 API + Next.js 16 UI
+# ===========================================
+
+# ===========================================
+# .NET / ASP.NET Core / C#
+# ===========================================
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options directory
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.userprefs
+*.csproj.user
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+*.snk
+
+# Build artifacts
+*.dll
+*.exe
+*.pdb
+*.cache
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.nupkg
+*.snupkg
+*.symbols.nupkg
+*.vsix
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# Entity Framework Migrations (keep migrations, ignore compiled)
+# Migrations are source code, so we keep them
+# But ignore any compiled migration DLLs
+
+# ===========================================
+# Next.js / Node.js / React
+# ===========================================
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+*.lcov
+.nyc_output
+
+# Next.js
+/.next/
+/out/
+.next/
+out/
+
+# Production
+/build
+dist/
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Local env files
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.production
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Turbo
+.turbo
+
+# ===========================================
+# Database
+# ===========================================
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL dumps
+*.sql
+!database/init.sql
+
+# Database backups
+*.backup
+*.bak
+
+# ===========================================
+# Docker
+# ===========================================
+
+# Docker volumes
+docker-data/
+postgres_data/
+redis_data/
+
+# ===========================================
+# Logs
+# ===========================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Application logs
+mediconyx-api/logs/
+*.log
+
+# ===========================================
+# IDE / Editor
+# ===========================================
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Cursor IDE
+.cursor/
+
+# ===========================================
+# OS Files
+# ===========================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# Environment & Secrets
+# ===========================================
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Secrets
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secrets
+
+# Configuration with secrets (keep templates)
+mediconyx-api/appsettings.Development.json
+mediconyx-api/appsettings.Production.json
+!mediconyx-api/appsettings.json
+!mediconyx-api/appsettings.*.example.json
+
+# ===========================================
+# Temporary Files
+# ===========================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+# ===========================================
+# Build & Deployment
+# ===========================================
+
+# Build outputs
+build/
+dist/
+out/
+*.zip
+*.tar.gz
+
+# Deployment
+.vercel
+.netlify
+.railway
+
+# ===========================================
+# Testing
+# ===========================================
+
+# Test results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+.nyc_output/
+
+# ===========================================
+# Blockchain / Smart Contracts (Future)
+# ===========================================
+
+# Ethereum / Hardhat
+cache/
+artifacts/
+typechain/
+typechain-types/
+
+# Hyperledger Fabric
+fabric-samples/
+
+# ===========================================
+# Project Specific
+# ===========================================
+
+# Planning documents (keep .plan folder structure)
+# .plan/ is tracked, but we might want to ignore certain generated files
+.plan/**/*.tmp
+.plan/**/*.cache
+
+# API Documentation
+swagger.json
+openapi.json
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# ===========================================
+# Keep These (Important Files)
+# ===========================================
+
+# Keep example config files
+!appsettings.json
+!appsettings.*.example.json
+!.env.example
+!.env.template
+
+# Keep migrations
+!**/Migrations/*.cs
+
+# Keep package files
+!package.json
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml
+
+# Keep project files
+!*.csproj
+!*.sln
+!*.cs
+!*.ts
+!*.tsx
+!*.js
+!*.jsx
+!*.json
+!*.md
+

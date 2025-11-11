@@ -1,0 +1,6 @@
+@mediconyx_api_HostAddress = http://localhost:5178
+
+GET {{mediconyx_api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

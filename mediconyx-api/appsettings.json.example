@@ -1,0 +1,21 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=mediconyx;Username=postgres;Password=YOUR_PASSWORD_HERE"
+  },
+  "JwtSettings": {
+    "Secret": "YOUR_SUPER_SECRET_KEY_FOR_JWT_TOKEN_GENERATION_MUST_BE_AT_LEAST_32_CHARACTERS_LONG",
+    "Issuer": "Mediconyx",
+    "Audience": "MediconyxAPI",
+    "ExpiryMinutes": "60"
+  },
+  "FrontendUrl": "http://localhost:3000",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.EntityFrameworkCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
