@@ -142,6 +142,64 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("staff/login")]
+    public async Task<ActionResult<AuthResponse>> StaffLogin(LoginRequest request)
+    {
+        var user = await _context.Users
+            .Include(u => u.Tenant)
+            .FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant());
+
+        if (user == null || !_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            _logger.LogWarning("Failed staff login attempt for email: {Email}", request.Email);
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        if (user.Role == UserRole.Patient)
+        {
+            return Unauthorized(new { message = "Staff login not permitted for patient accounts." });
+        }
+
+        if (!user.IsActive)
+        {
+            return Unauthorized(new { message = "User account is inactive." });
+        }
+
+        if (!user.Tenant.IsActive)
+        {
+            return Unauthorized(new { message = "Tenant account is inactive." });
+        }
+
+        user.LastLoginAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var (accessToken, refreshToken) = _jwtService.GenerateTokenPair(user);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Staff user logged in: {Email} in Tenant {TenantId}", user.Email, user.TenantId);
+
+        var response = new AuthResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(60),
+            User = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Role = user.Role.ToString(),
+                TenantId = user.TenantId
+            }
+        };
+
+        return Ok(response);
+    }
+
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> RefreshToken(RefreshTokenRequest request)
     {
@@ -186,4 +244,3 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 }
-
