@@ -9,14 +9,35 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [authCheckComplete, setAuthCheckComplete] = useState(false)
+  const [hasHydrated, setHasHydrated] = useState(false)
   const router = useRouter()
   const { login, isAuthenticated, user } = useAuthStore()
   
+  // Check hydration status
+  useEffect(() => {
+    // Only access persist on client side
+    if (typeof window !== 'undefined' && useAuthStore.persist) {
+      setHasHydrated(useAuthStore.persist.hasHydrated())
+      
+      // Subscribe to hydration changes
+      const unsubscribe = useAuthStore.persist.onHydrate(() => {
+        setHasHydrated(false)
+      })
+      
+      const unsubscribeFinish = useAuthStore.persist.onFinishHydration(() => {
+        setHasHydrated(true)
+      })
+      
+      return () => {
+        unsubscribe()
+        unsubscribeFinish()
+      }
+    }
+  }, [])
+  
   // Redirect if already logged in
   useEffect(() => {
-    // Check auth status immediately
-    if (isAuthenticated && user) {
+    if (hasHydrated && isAuthenticated && user) {
       const roleRouteMap: Record<string, string> = {
         'Master': '/portal/master',
         'Admin': '/portal/admin',
@@ -27,14 +48,11 @@ export default function LoginPage() {
         'Patient': '/portal/patient',
       }
       router.push(roleRouteMap[user.role] || '/portal/patient')
-    } else {
-      // Mark auth check as complete if not authenticated
-      setAuthCheckComplete(true)
     }
-  }, [isAuthenticated, user, router])
+  }, [hasHydrated, isAuthenticated, user, router])
   
-  // Don't render anything until auth check is complete
-  if (!authCheckComplete) {
+  // Don't render login form until store is hydrated
+  if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -43,6 +61,11 @@ export default function LoginPage() {
         </div>
       </div>
     )
+  }
+  
+  // Don't render login form if user is authenticated
+  if (isAuthenticated && user) {
+    return null
   }
   
   const onSubmit = async (e: React.FormEvent) => {
