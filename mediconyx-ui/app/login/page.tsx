@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "../../store/useAuthStore"
 
@@ -9,8 +9,41 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [authCheckComplete, setAuthCheckComplete] = useState(false)
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
+  const { login, isAuthenticated, user } = useAuthStore()
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    // Check auth status immediately
+    if (isAuthenticated && user) {
+      const roleRouteMap: Record<string, string> = {
+        'Master': '/portal/master',
+        'Admin': '/portal/admin',
+        'Doctor': '/portal/doctor',
+        'Nurse': '/portal/nurse',
+        'Receptionist': '/portal/receptionist',
+        'Accountant': '/portal/accountant',
+        'Patient': '/portal/patient',
+      }
+      router.push(roleRouteMap[user.role] || '/portal/patient')
+    } else {
+      // Mark auth check as complete if not authenticated
+      setAuthCheckComplete(true)
+    }
+  }, [isAuthenticated, user, router])
+  
+  // Don't render anything until auth check is complete
+  if (!authCheckComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
   
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
