@@ -1,0 +1,8 @@
+export { default as Sidebar } from './Sidebar'
+export { default as TopBar } from './TopBar'
+export { default as StatsCards } from './StatsCards'
+export { default as AppointmentRequests } from './AppointmentRequests'
+export { default as TopDepartments } from './TopDepartments'
+export { default as RecentPatientsTable } from './RecentPatientsTable'
+export { default as LatestAppointmentsTable } from './LatestAppointmentsTable'
+export { default as DashboardFooter } from './DashboardFooter'

@@ -6,7 +6,8 @@
 # ===========================================
 # .NET / ASP.NET Core / C#
 # ===========================================
-
+.qoder/
+.qoderignore
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

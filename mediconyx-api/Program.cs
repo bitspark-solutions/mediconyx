@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using mediconyx_api.Data;
 using mediconyx_api.Services;
+using mediconyx_api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +85,39 @@ if (app.Environment.IsDevelopment())
         try
         {
             await dbContext.Database.MigrateAsync();
+            var passwordService = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+            var masterSection = builder.Configuration.GetSection("MasterUser");
+            var masterEmail = masterSection["Email"];
+            var masterPassword = masterSection["Password"];
+            var masterFirstName = masterSection["FirstName"] ?? "Master";
+            var masterLastName = masterSection["LastName"] ?? "User";
+            if (!string.IsNullOrWhiteSpace(masterEmail) && !string.IsNullOrWhiteSpace(masterPassword))
+            {
+                var platformTenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Name == "Platform");
+                if (platformTenant == null)
+                {
+                    platformTenant = new Tenant { Name = "Platform", IsActive = true, CreatedAt = DateTime.UtcNow };
+                    dbContext.Tenants.Add(platformTenant);
+                    await dbContext.SaveChangesAsync();
+                }
+                var existingMaster = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == masterEmail.ToLower());
+                if (existingMaster == null)
+                {
+                    var user = new User
+                    {
+                        Email = masterEmail.ToLowerInvariant(),
+                        PasswordHash = passwordService.HashPassword(masterPassword),
+                        FirstName = masterFirstName,
+                        LastName = masterLastName,
+                        Role = UserRole.Master,
+                        TenantId = platformTenant.Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    dbContext.Users.Add(user);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
         }
         catch (Exception ex)
         {

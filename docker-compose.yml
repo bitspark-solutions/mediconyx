@@ -40,6 +40,10 @@ services:
       JwtSettings__Audience: MediconyxAPI
       JwtSettings__ExpiryMinutes: "60"
       FrontendUrl: http://localhost:9673
+      MasterUser__Email: ${MASTER_EMAIL}
+      MasterUser__Password: ${MASTER_PASSWORD}
+      MasterUser__FirstName: ${MASTER_FIRST_NAME}
+      MasterUser__LastName: ${MASTER_LAST_NAME}
     ports:
       - "9765:8080"
     depends_on:

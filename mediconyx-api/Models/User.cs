@@ -27,6 +27,7 @@ public class User
 
 public enum UserRole
 {
+    Master = 0,
     Admin = 1,
     Doctor = 2,
     Nurse = 3,
@@ -34,4 +35,3 @@ public enum UserRole
     Accountant = 5,
     Patient = 6
 }
-
