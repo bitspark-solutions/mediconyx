@@ -44,11 +44,18 @@ services:
       MasterUser__Password: ${MASTER_PASSWORD}
       MasterUser__FirstName: ${MASTER_FIRST_NAME}
       MasterUser__LastName: ${MASTER_LAST_NAME}
+      REDIS_CONNECTION: redis:6379
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
     ports:
       - "9765:8080"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+      mailhog:
+        condition: service_started
 
   ui:
     build:
@@ -66,6 +73,30 @@ services:
     depends_on:
       api:
         condition: service_started
+
+  redis:
+    image: redis:7-alpine
+    container_name: mediconyx-redis
+    networks:
+      - mediconyx
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mediconyx-mailhog
+    networks:
+      - mediconyx
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
 networks:
   mediconyx:

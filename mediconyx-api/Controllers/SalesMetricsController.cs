@@ -1,0 +1,85 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using mediconyx_api.Data;
+using mediconyx_api.Models;
+
+namespace mediconyx_api.Controllers;
+
+[ApiController]
+[Route("api/sales/metrics")]
+[Authorize(Roles = "Sales,Master")]
+public class SalesMetricsController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+
+    public SalesMetricsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet("kpis")]
+    public async Task<ActionResult<object>> Kpis()
+    {
+        var totalOnboarded = await _context.SalesRequests.CountAsync(r => r.Status == SalesRequestStatus.Active);
+        var inProgress = await _context.SalesRequests.CountAsync(r => r.Status == SalesRequestStatus.InProgress);
+        var active = await _context.SalesRequests.CountAsync(r => r.Status == SalesRequestStatus.Active);
+        var pending = await _context.SalesRequests.CountAsync(r => r.Status == SalesRequestStatus.Pending);
+        var deactivated = await _context.SalesRequests.CountAsync(r => r.Status == SalesRequestStatus.Deactivated);
+        return Ok(new { totalOnboarded, inProgress, active, pending, deactivated });
+    }
+
+    [HttpGet("trends")]
+    public async Task<ActionResult<object>> Trends([FromQuery] string bucket = "month", [FromQuery] int months = 6)
+    {
+        var from = DateTime.UtcNow.AddMonths(-months);
+        var data = await _context.SalesRequests
+            .Where(r => r.CreatedAt >= from)
+            .GroupBy(r => new { r.CreatedAt.Year, r.CreatedAt.Month })
+            .Select(g => new { period = $"{g.Key.Year}-{g.Key.Month:D2}", count = g.Count() })
+            .OrderBy(x => x.period)
+            .ToListAsync();
+        var result = data.Select((x, i) => new
+        {
+            x.period,
+            x.count,
+            deltaPercent = i == 0 ? 0 : (double)(x.count - data[i - 1].count) / Math.Max(1, data[i - 1].count) * 100.0
+        });
+        return Ok(result);
+    }
+
+    [HttpGet("revenue")]
+    public async Task<ActionResult<object>> Revenue([FromQuery] string bucket = "month", [FromQuery] int months = 6)
+    {
+        var from = DateTime.UtcNow.AddMonths(-months);
+        var quotedRaw = await _context.SalesRequests
+            .Where(r => r.CreatedAt >= from && r.QuotedPrice != null)
+            .GroupBy(r => new { Year = r.CreatedAt.Year, Month = r.CreatedAt.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, quotedRevenue = g.Sum(x => x.QuotedPrice ?? 0) })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        var realizedRaw = await _context.SalesRequests
+            .Where(r => r.PaidAt != null)
+            .GroupBy(r => new { Year = r.PaidAt!.Value.Year, Month = r.PaidAt!.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, realizedRevenue = g.Sum(x => x.QuotedPrice ?? 0) })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync();
+
+        var periods = quotedRaw.Select(x => (x.Year, x.Month))
+            .Union(realizedRaw.Select(x => (x.Year, x.Month)))
+            .Distinct()
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToList();
+
+        var merged = periods.Select(p => new
+        {
+            period = $"{p.Year}-{p.Month:D2}",
+            quotedRevenue = quotedRaw.FirstOrDefault(x => x.Year == p.Year && x.Month == p.Month)?.quotedRevenue ?? 0,
+            realizedRevenue = realizedRaw.FirstOrDefault(x => x.Year == p.Year && x.Month == p.Month)?.realizedRevenue ?? 0,
+            arpu = 0
+        });
+
+        return Ok(merged);
+    }
+}

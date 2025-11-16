@@ -15,8 +15,12 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login')
-    } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
-      router.push('/unauthorized')
+    } else if (user && allowedRoles) {
+      const role = (user.role || '').toLowerCase()
+      const allowed = allowedRoles.map(r => r.toLowerCase())
+      if (!allowed.includes(role)) {
+        router.push('/unauthorized')
+      }
     }
   }, [isAuthenticated, user, allowedRoles, router])
 
@@ -31,8 +35,12 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     )
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && user) {
+    const role = (user.role || '').toLowerCase()
+    const allowed = allowedRoles.map(r => r.toLowerCase())
+    if (!allowed.includes(role)) {
     return null
+    }
   }
 
   return <>{children}</>

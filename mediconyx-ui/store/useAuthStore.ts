@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { persist } from 'zustand/middleware'
 
 interface User {
   id: number
@@ -32,7 +32,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
-        const response = await fetch('http://localhost:9765/api/auth/login', {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9765'
+        const response = await fetch(`${apiBase}/api/auth/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
@@ -44,13 +45,26 @@ export const useAuthStore = create<AuthState>()(
         }
 
         const data = await response.json()
+        const role = String(data?.user?.role || '').trim()
         
         set({
-          user: data.user,
+          user: { ...data.user, role },
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
           isAuthenticated: true,
         })
+
+        try {
+          const meRes = await fetch(`${apiBase}/api/UserManagement/me`, {
+            headers: { Authorization: `Bearer ${data.accessToken}` },
+            credentials: 'include',
+          })
+          if (meRes.ok) {
+            const me = await meRes.json()
+            const meRole = String(me.role || role || '').toLowerCase()
+            set({ user: { ...me, role: meRole } })
+          }
+        } catch {}
       },
 
       logout: () => {

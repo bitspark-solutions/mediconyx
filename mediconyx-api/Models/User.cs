@@ -33,5 +33,6 @@ public enum UserRole
     Nurse = 3,
     Receptionist = 4,
     Accountant = 5,
-    Patient = 6
+    Patient = 6,
+    Sales = 7
 }

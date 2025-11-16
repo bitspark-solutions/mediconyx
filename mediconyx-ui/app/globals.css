@@ -1,1 +1,40 @@
 @import "tailwindcss";
+
+:root[data-theme="dark"] {
+  --bg: #0f1535;
+  --surface: #111a3f;
+  --surface-hover: #141a47;
+  --border-hairline: rgba(255,255,255,0.06);
+  --text-primary: #E6EEFA;
+  --text-secondary: #A7B3CC;
+  --text-muted: #7D8AA8;
+  --accent-indigo: #4F46E5;
+  --accent-cyan: #06B6D4;
+  --accent-success: #22C55E;
+  --accent-warning: #F59E0B;
+  --accent-danger: #EF4444;
+}
+
+html[data-theme="dark"],
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+}
+
+.surface {
+  background-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--border-hairline);
+}
+
+.surface-hover:hover {
+  background-color: var(--surface-hover);
+}
+
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+.border-hairline { box-shadow: 0 0 0 1px var(--border-hairline); }
+
+.accent-gradient {
+  background-image: linear-gradient(to bottom right, var(--accent-indigo), var(--accent-cyan));
+}

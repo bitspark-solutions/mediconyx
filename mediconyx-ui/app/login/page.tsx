@@ -39,15 +39,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (hasHydrated && isAuthenticated && user) {
       const roleRouteMap: Record<string, string> = {
-        'Master': '/portal/master',
-        'Admin': '/portal/admin',
-        'Doctor': '/portal/doctor',
-        'Nurse': '/portal/nurse',
-        'Receptionist': '/portal/receptionist',
-        'Accountant': '/portal/accountant',
-        'Patient': '/portal/patient',
+        master: '/portal/master',
+        admin: '/portal/admin',
+        doctor: '/portal/doctor',
+        nurse: '/portal/nurse',
+        receptionist: '/portal/receptionist',
+        accountant: '/portal/accountant',
+        patient: '/portal/patient',
+        sales: '/portal/sales',
       }
-      router.push(roleRouteMap[user.role] || '/portal/patient')
+      router.push(roleRouteMap[(user.role || '').toLowerCase()] || '/portal/patient')
     }
   }, [hasHydrated, isAuthenticated, user, router])
   
@@ -81,16 +82,17 @@ export default function LoginPage() {
       
       // Redirect based on role
       const roleRouteMap: Record<string, string> = {
-        'Master': '/portal/master',
-        'Admin': '/portal/admin',
-        'Doctor': '/portal/doctor',
-        'Nurse': '/portal/nurse',
-        'Receptionist': '/portal/receptionist',
-        'Accountant': '/portal/accountant',
-        'Patient': '/portal/patient',
+        master: '/portal/master',
+        admin: '/portal/admin',
+        doctor: '/portal/doctor',
+        nurse: '/portal/nurse',
+        receptionist: '/portal/receptionist',
+        accountant: '/portal/accountant',
+        patient: '/portal/patient',
+        sales: '/portal/sales',
       }
 
-      router.push(roleRouteMap[user?.role || ''] || '/portal/patient')
+      router.push(roleRouteMap[(user?.role || '').toLowerCase()] || '/portal/patient')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Invalid credentials')
     } finally {
