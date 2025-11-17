@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using mediconyx_api.Data;
 using mediconyx_api.Services;
 using mediconyx_api.Models;
+using mediconyx_api.Middleware;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +62,17 @@ builder.Services.AddCors(options =>
 // Application services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IFileValidationService, FileValidationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Captcha service with HttpClient
+builder.Services.AddHttpClient<ICaptchaService, RecaptchaService>();
+
+// Rate limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 var app = builder.Build();
 
@@ -71,7 +84,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseCors("AllowFrontend");
+app.UseIpRateLimiting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

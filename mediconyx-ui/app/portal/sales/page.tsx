@@ -3,6 +3,8 @@ import ProtectedRoute from "../../../components/ProtectedRoute";
 import KpiCard from "../../../components/sales/KpiCard";
 import RevenueBarChart from "../../../components/sales/RevenueBarChart";
 import StatusDonutChart from "../../../components/sales/StatusDonutChart";
+import PipelineTable from "../../../components/sales/PipelineTable";
+import RequestDetail from "../../../components/sales/RequestDetail";
 import { useEffect, useState } from "react";
 import SalesSidebar from "../../../components/sales/SalesSidebar";
 import SalesTopbar from "../../../components/sales/SalesTopbar";
@@ -23,6 +25,7 @@ function DashboardContent() {
   const [kpis, setKpis] = useState<any>(null);
   const [revenue, setRevenue] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
@@ -68,57 +71,18 @@ function DashboardContent() {
         }} />
       </div>
 
-        <div className="mt-8 rounded-xl surface p-6">
-        <h2 className="mb-3 text-lg font-semibold text-white">Pipeline</h2>
-        <PipelineTable />
+      <div className="mt-8 rounded-xl surface p-6">
+        <h2 className="mb-4 text-lg font-semibold text-white">Sales Pipeline</h2>
+        <PipelineTable onRowClick={(id) => setSelectedRequestId(id)} />
       </div>
       </main>
-    </div>
-  );
-}
-
-function PipelineTable() {
-  const [rows, setRows] = useState<any[]>([]);
-  const { accessToken } = useAuthStore();
-
-  useEffect(() => {
-    const load = async () => {
-      const res = await apiClient.get(`/api/sales/requests?page=1&pageSize=10`);
-      if (res.ok) setRows((await res.json()).items || []);
-      else setRows([]);
-    };
-    if (accessToken) load();
-  }, [accessToken]);
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="px-3 py-2">Hospital</th>
-            <th className="px-3 py-2">Status</th>
-            <th className="px-3 py-2">Quoted</th>
-            <th className="px-3 py-2">Currency</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id} className="border-b surface-hover">
-              <td className="px-3 py-2">{r.hospitalName}</td>
-              <td className="px-3 py-2 capitalize">{String(r.status).toLowerCase()}</td>
-              <td className="px-3 py-2">{r.quotedPrice ?? "-"}</td>
-              <td className="px-3 py-2">{r.currency ?? "-"}</td>
-            </tr>
-          ))}
-          {!rows.length && (
-            <tr>
-              <td className="px-3 py-2 text-gray-500" colSpan={4}>
-                No requests
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      
+      {selectedRequestId && (
+        <RequestDetail
+          requestId={selectedRequestId}
+          onClose={() => setSelectedRequestId(null)}
+        />
+      )}
     </div>
   );
 }

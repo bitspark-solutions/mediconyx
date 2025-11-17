@@ -78,13 +78,13 @@
   - [ ] Render grouped data per time bucket, delta indicators
   - [ ] Period toggle (W/M/Y)
 
-[ ] TASK-009: Pipeline table & filters
+[x] TASK-009: Pipeline table & filters
 - Description: Implement table with filters (status, region, owner, search, pagination).
 - Dependencies: TASK-002
 - Effort: 1d
 - Priority: High
-  - [ ] Create `components/sales/PipelineTable.tsx`
-  - [ ] Wire filters to API
+  - [x] Create `components/sales/PipelineTable.tsx`
+  - [x] Wire filters to API
   - [x] Add pagination and empty states
 
 [ ] TASK-010: Request detail view
@@ -152,14 +152,14 @@
   - [ ] Notification templates
   - [ ] Trigger on create/status change
 
-[ ] TASK-013: Rate limiting, captcha, file security
+[x] TASK-013: Rate limiting, captcha, file security
 - Description: Add rate limits to public endpoint, server-side captcha verification, file type/size checks, antivirus hook.
 - Dependencies: TASK-002
 - Effort: 0.75d
 - Priority: High
-  - [ ] Apply rate limiting policies
-  - [ ] Verify captcha tokens server-side
-  - [ ] Validate uploads and call antivirus hook
+  - [x] Apply rate limiting policies
+  - [x] Verify captcha tokens server-side
+  - [x] Validate uploads and call antivirus hook
 
 [ ] TASK-014: Analytics performance & caching
 - Description: Improve metrics/trends via indexes/materialized views and optional Redis caching.

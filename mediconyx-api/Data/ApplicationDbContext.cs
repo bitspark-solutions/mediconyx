@@ -70,6 +70,12 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.CreatedAt);
+            // Composite indexes for performance
+            entity.HasIndex(e => new { e.Status, e.CreatedAt });
+            entity.HasIndex(e => e.PaidAt).HasFilter("\"PaidAt\" IS NOT NULL");
+            entity.HasIndex(e => new { e.OwnerSalesUserId, e.Status });
+            entity.HasIndex(e => new { e.Region, e.Status });
+            entity.HasIndex(e => e.Email);
             entity.Property(e => e.HospitalName).IsRequired().HasMaxLength(300);
             entity.Property(e => e.ContactPerson).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
@@ -88,6 +94,7 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.SalesRequestId);
+            entity.HasIndex(e => e.Sha256);
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
             entity.Property(e => e.StoragePath).IsRequired().HasMaxLength(500);
             entity.Property(e => e.MimeType).IsRequired().HasMaxLength(100);
@@ -101,7 +108,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<SalesRequestNote>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.SalesRequestId);
+            entity.HasIndex(e => new { e.SalesRequestId, e.CreatedAt });
             entity.Property(e => e.Note).IsRequired().HasMaxLength(2000);
             entity.HasOne(e => e.SalesRequest)
                 .WithMany(r => r.NotesList)
@@ -116,7 +123,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => new { e.EntityName, e.EntityId });
+            entity.HasIndex(e => new { e.EntityName, e.EntityId, e.CreatedAt });
             entity.Property(e => e.EntityName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.EntityId).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Action).IsRequired().HasMaxLength(100);
@@ -125,7 +132,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<OnboardingTimelineEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.SalesRequestId);
+            entity.HasIndex(e => new { e.SalesRequestId, e.HappenedAt });
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
             entity.HasOne(e => e.SalesRequest)

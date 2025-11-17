@@ -64,7 +64,7 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("ActorUserId");
 
-                    b.HasIndex("EntityName", "EntityId");
+                    b.HasIndex("EntityName", "EntityId", "CreatedAt");
 
                     b.ToTable("AuditLogs");
                 });
@@ -95,7 +95,7 @@ namespace mediconyx_api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SalesRequestId");
+                    b.HasIndex("SalesRequestId", "HappenedAt");
 
                     b.ToTable("OnboardingTimelineEvents");
                 });
@@ -189,9 +189,18 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("CreatedAt");
 
-                    b.HasIndex("OwnerSalesUserId");
+                    b.HasIndex("Email");
+
+                    b.HasIndex("PaidAt")
+                        .HasFilter("\"PaidAt\" IS NOT NULL");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("OwnerSalesUserId", "Status");
+
+                    b.HasIndex("Region", "Status");
+
+                    b.HasIndex("Status", "CreatedAt");
 
                     b.ToTable("SalesRequests");
                 });
@@ -237,6 +246,8 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("SalesRequestId");
 
+                    b.HasIndex("Sha256");
+
                     b.ToTable("SalesRequestAttachments");
                 });
 
@@ -266,7 +277,7 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("AuthorUserId");
 
-                    b.HasIndex("SalesRequestId");
+                    b.HasIndex("SalesRequestId", "CreatedAt");
 
                     b.ToTable("SalesRequestNotes");
                 });

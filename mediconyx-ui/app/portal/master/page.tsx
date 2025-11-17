@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import ProtectedRoute from '../../../components/ProtectedRoute'
+import SalesUsersPanel from '../../../components/sales/SalesUsersPanel'
 import {
   Sidebar,
   TopBar,
@@ -70,6 +71,10 @@ export default function MasterPortal() {
 
           <main className="flex-1 overflow-y-auto p-6 bg-gray-900">
             <StatsCards stats={stats} />
+
+            <div className="mb-6">
+              <SalesUsersPanel />
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="lg:col-span-2">

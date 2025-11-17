@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
+using mediconyx_api.Services;
 using System.Security.Cryptography;
 
 namespace mediconyx_api.Controllers;
@@ -14,34 +16,69 @@ public class SalesRequestsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<SalesRequestsController> _logger;
+    private readonly ICaptchaService _captchaService;
+    private readonly IFileValidationService _fileValidationService;
+    private readonly IMemoryCache _cache;
+    private readonly IEmailService _emailService;
 
-    public SalesRequestsController(ApplicationDbContext context, ILogger<SalesRequestsController> logger)
+    public SalesRequestsController(
+        ApplicationDbContext context, 
+        ILogger<SalesRequestsController> logger,
+        ICaptchaService captchaService,
+        IFileValidationService fileValidationService,
+        IMemoryCache cache,
+        IEmailService emailService)
     {
         _context = context;
         _logger = logger;
+        _captchaService = captchaService;
+        _fileValidationService = fileValidationService;
+        _cache = cache;
+        _emailService = emailService;
     }
 
     [HttpPost("public")]
     [AllowAnonymous]
     public async Task<ActionResult<object>> CreatePublic(PublicSalesRequestCreate request)
     {
+        // Validate captcha token
         if (string.IsNullOrWhiteSpace(request.CaptchaToken))
         {
             return BadRequest(new { message = "Captcha is required." });
         }
 
+        var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var captchaValid = await _captchaService.VerifyTokenAsync(request.CaptchaToken, remoteIp);
+        
+        if (!captchaValid)
+        {
+            _logger.LogWarning("Invalid captcha attempt from IP: {IP}", remoteIp);
+            return BadRequest(new { message = "Invalid captcha. Please try again." });
+        }
+
+        // Input validation and sanitization
+        if (string.IsNullOrWhiteSpace(request.HospitalName) || request.HospitalName.Length > 300)
+        {
+            return BadRequest(new { message = "Invalid hospital name." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email) || !IsValidEmail(request.Email))
+        {
+            return BadRequest(new { message = "Invalid email address." });
+        }
+
         var sr = new SalesRequest
         {
-            HospitalName = request.HospitalName,
-            ContactPerson = request.ContactPerson,
-            Email = request.Email.ToLowerInvariant(),
-            Phone = request.Phone,
-            Region = request.Region,
-            Notes = request.Notes,
+            HospitalName = SanitizeInput(request.HospitalName),
+            ContactPerson = SanitizeInput(request.ContactPerson),
+            Email = request.Email.ToLowerInvariant().Trim(),
+            Phone = SanitizeInput(request.Phone),
+            Region = SanitizeInput(request.Region),
+            Notes = SanitizeInput(request.Notes),
             Status = SalesRequestStatus.Pending,
-            SourceIp = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            SourceIp = remoteIp,
             UserAgent = Request.Headers.UserAgent.ToString(),
-            SubscriptionPlan = request.SubscriptionPlan,
+            SubscriptionPlan = SanitizeInput(request.SubscriptionPlan),
             BillingCycle = request.BillingCycle,
             Currency = request.Currency,
             QuotedPrice = request.QuotedPrice,
@@ -52,7 +89,11 @@ public class SalesRequestsController : ControllerBase
         _context.SalesRequests.Add(sr);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Public sales request created {Id}", sr.Id);
+        // Send email notification (fire and forget)
+        _ = _emailService.SendNewRequestNotificationAsync(sr.Id, sr.HospitalName, sr.Email);
+
+        InvalidateMetricsCache();
+        _logger.LogInformation("Public sales request created {Id} from IP {IP}", sr.Id, remoteIp);
         return Created($"/api/sales/requests/{sr.Id}", new { id = sr.Id, status = sr.Status.ToString().ToLower() });
     }
 
@@ -129,6 +170,7 @@ public class SalesRequestsController : ControllerBase
         };
         _context.SalesRequests.Add(sr);
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return CreatedAtAction(nameof(Detail), new { id = sr.Id }, sr);
     }
 
@@ -144,6 +186,7 @@ public class SalesRequestsController : ControllerBase
         r.ClaimedAt = DateTime.UtcNow;
         r.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return NoContent();
     }
 
@@ -156,6 +199,7 @@ public class SalesRequestsController : ControllerBase
         r.OwnerSalesUserId = null;
         r.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return NoContent();
     }
 
@@ -170,6 +214,10 @@ public class SalesRequestsController : ControllerBase
         if (update.Status == SalesRequestStatus.Active) r.ActivatedAt = DateTime.UtcNow;
         if (update.Status == SalesRequestStatus.Deactivated) r.DeactivatedAt = DateTime.UtcNow;
         r.UpdatedAt = DateTime.UtcNow;
+        
+        // Send email notification
+        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, old.ToString(), r.Status.ToString());
+        
         _context.AuditLogs.Add(new AuditLog
         {
             EntityName = nameof(SalesRequest),
@@ -205,6 +253,7 @@ public class SalesRequestsController : ControllerBase
         r.Seats = update.Seats ?? r.Seats;
         r.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return NoContent();
     }
 
@@ -218,6 +267,7 @@ public class SalesRequestsController : ControllerBase
         r.PaidAt = update.PaymentStatus == PaymentStatus.Paid ? DateTime.UtcNow : r.PaidAt;
         r.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return NoContent();
     }
 
@@ -237,6 +287,7 @@ public class SalesRequestsController : ControllerBase
             CreatedAt = DateTime.UtcNow
         });
         await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
         return NoContent();
     }
 
@@ -249,38 +300,20 @@ public class SalesRequestsController : ControllerBase
         var r = await _context.SalesRequests.FindAsync(id);
         if (r == null) return NotFound(new { message = "Sales request not found" });
 
-        // Validate file
-        if (file == null || file.Length == 0)
-            return BadRequest(new { message = "No file provided" });
-
-        // Validate file size (10MB)
-        const long maxSize = 10 * 1024 * 1024;
-        if (file.Length > maxSize)
-            return BadRequest(new { message = $"File size exceeds {maxSize / 1024 / 1024}MB limit" });
-
-        // Validate file type
-        var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg" };
-        var allowedMimeTypes = new[]
+        // Validate file using security service
+        var (isValid, errorMessage) = await _fileValidationService.ValidateUploadAsync(file);
+        if (!isValid)
         {
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "image/png",
-            "image/jpeg"
-        };
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!allowedExtensions.Contains(extension))
-            return BadRequest(new { message = $"Invalid file type. Allowed: {string.Join(", ", allowedExtensions)}" });
-
-        if (!allowedMimeTypes.Contains(file.ContentType))
-            return BadRequest(new { message = "Invalid file content type" });
+            _logger.LogWarning("File upload validation failed for request {RequestId}: {Error}", id, errorMessage);
+            return BadRequest(new { message = errorMessage });
+        }
 
         // Sanitize filename
         var originalFileName = Path.GetFileName(file.FileName);
-        var sanitizedFileName = string.Join("_", originalFileName.Split(Path.GetInvalidFileNameChars()));
+        var sanitizedFileName = SanitizeFileName(originalFileName);
         
         // Generate unique filename
+        var extension = Path.GetExtension(sanitizedFileName).ToLowerInvariant();
         var uniqueFileName = $"{Guid.NewGuid()}{extension}";
 
         // Create upload directory
@@ -299,6 +332,26 @@ public class SalesRequestsController : ControllerBase
             using var sha256 = SHA256.Create();
             var hashBytes = await sha256.ComputeHashAsync(stream);
             sha256Hash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        }
+
+        // Check for duplicate files (same hash)
+        var existingFile = await _context.SalesRequestAttachments
+            .FirstOrDefaultAsync(a => a.SalesRequestId == id && a.Sha256 == sha256Hash);
+        
+        if (existingFile != null)
+        {
+            // Delete the newly uploaded duplicate
+            System.IO.File.Delete(filePath);
+            _logger.LogInformation("Duplicate file detected for request {RequestId}, returning existing attachment", id);
+            return Ok(new
+            {
+                id = existingFile.Id,
+                fileName = existingFile.FileName,
+                mimeType = existingFile.MimeType,
+                sizeBytes = existingFile.SizeBytes,
+                uploadedAt = existingFile.UploadedAt,
+                isDuplicate = true
+            });
         }
 
         // Create database record
@@ -342,5 +395,57 @@ public class SalesRequestsController : ControllerBase
     {
         var userIdClaim = User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         return int.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+
+    private static string SanitizeInput(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        // Remove potentially dangerous characters
+        return input.Trim()
+            .Replace("<", "")
+            .Replace(">", "")
+            .Replace("&", "&amp;")
+            .Replace("\"", "&quot;")
+            .Replace("'", "&#39;");
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        // Remove path traversal attempts and invalid characters
+        var sanitized = Path.GetFileName(fileName);
+        var invalidChars = Path.GetInvalidFileNameChars();
+        return string.Join("_", sanitized.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void InvalidateMetricsCache()
+    {
+        _cache.Remove("sales_kpis");
+        // Remove all trend and revenue cache entries
+        var keys = new[] { "month", "week", "year" };
+        var months = new[] { 3, 6, 12 };
+        foreach (var key in keys)
+        {
+            foreach (var m in months)
+            {
+                _cache.Remove($"sales_trends_{key}_{m}");
+                _cache.Remove($"sales_revenue_{key}_{m}");
+            }
+        }
+        _logger.LogDebug("Metrics cache invalidated");
     }
 }
