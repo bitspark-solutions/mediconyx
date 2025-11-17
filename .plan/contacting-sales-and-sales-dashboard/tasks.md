@@ -9,7 +9,7 @@
   - [x] Configure relationships, indexes, constraints
   - [x] Create initial migration and update database
 
-[ ] TASK-002: Build SalesRequestsController (public + authenticated)
+[x] TASK-002: Build SalesRequestsController (public + authenticated)
 - Description: Implement endpoints for public submission, list/filter, detail, create internal, claim/unassign, status transitions, attachments upload, notes.
 - Dependencies: TASK-001
 - Effort: 2d
@@ -20,7 +20,7 @@
   - [x] POST /api/sales/requests (internal create)
   - [x] POST /api/sales/requests/{id}/claim | /unassign
   - [x] PATCH /api/sales/requests/{id}/status
-  - [ ] POST /api/sales/requests/{id}/attachments (multipart)
+  - [x] POST /api/sales/requests/{id}/attachments (multipart)
   - [x] POST /api/sales/requests/{id}/notes
 
 [ ] TASK-003: Build SalesMetricsController

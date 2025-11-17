@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
+using System.Security.Cryptography;
 
 namespace mediconyx_api.Controllers;
 
@@ -237,6 +238,104 @@ public class SalesRequestsController : ControllerBase
         });
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPost("{id:int}/attachments")]
+    [Authorize(Roles = "Sales,Master")]
+    [RequestSizeLimit(10 * 1024 * 1024)] // 10MB limit
+    public async Task<ActionResult<object>> UploadAttachment(int id, IFormFile file)
+    {
+        // Validate request exists
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound(new { message = "Sales request not found" });
+
+        // Validate file
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided" });
+
+        // Validate file size (10MB)
+        const long maxSize = 10 * 1024 * 1024;
+        if (file.Length > maxSize)
+            return BadRequest(new { message = $"File size exceeds {maxSize / 1024 / 1024}MB limit" });
+
+        // Validate file type
+        var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg" };
+        var allowedMimeTypes = new[]
+        {
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/png",
+            "image/jpeg"
+        };
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return BadRequest(new { message = $"Invalid file type. Allowed: {string.Join(", ", allowedExtensions)}" });
+
+        if (!allowedMimeTypes.Contains(file.ContentType))
+            return BadRequest(new { message = "Invalid file content type" });
+
+        // Sanitize filename
+        var originalFileName = Path.GetFileName(file.FileName);
+        var sanitizedFileName = string.Join("_", originalFileName.Split(Path.GetInvalidFileNameChars()));
+        
+        // Generate unique filename
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+
+        // Create upload directory
+        var uploadDir = Path.Combine("wwwroot", "uploads", "sales-requests", id.ToString());
+        Directory.CreateDirectory(uploadDir);
+
+        // Full path
+        var filePath = Path.Combine(uploadDir, uniqueFileName);
+
+        // Calculate SHA256 hash while saving
+        string sha256Hash;
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+            stream.Position = 0;
+            using var sha256 = SHA256.Create();
+            var hashBytes = await sha256.ComputeHashAsync(stream);
+            sha256Hash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        }
+
+        // Create database record
+        var attachment = new SalesRequestAttachment
+        {
+            SalesRequestId = id,
+            FileName = sanitizedFileName,
+            StoragePath = filePath,
+            MimeType = file.ContentType,
+            SizeBytes = file.Length,
+            Sha256 = sha256Hash,
+            UploadedAt = DateTime.UtcNow
+        };
+
+        _context.SalesRequestAttachments.Add(attachment);
+        
+        // Add timeline event
+        _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+        {
+            SalesRequestId = id,
+            Type = "attachment",
+            Description = $"Attachment uploaded: {sanitizedFileName}",
+            HappenedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Attachment uploaded for sales request {RequestId}: {FileName}", id, sanitizedFileName);
+
+        return Created($"/api/sales/requests/{id}/attachments/{attachment.Id}", new
+        {
+            id = attachment.Id,
+            fileName = attachment.FileName,
+            mimeType = attachment.MimeType,
+            sizeBytes = attachment.SizeBytes,
+            uploadedAt = attachment.UploadedAt
+        });
     }
 
     private int? GetCurrentUserId()
