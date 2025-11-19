@@ -17,6 +17,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesRequestNote> SalesRequestNotes { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<OnboardingTimelineEvent> OnboardingTimelineEvents { get; set; }
+    
+    // New entities for hospital onboarding
+    public DbSet<HospitalProfile> HospitalProfiles { get; set; }
+    public DbSet<TechnicalRequirements> TechnicalRequirements { get; set; }
+    public DbSet<ModuleSelection> ModuleSelections { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +81,8 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.OwnerSalesUserId, e.Status });
             entity.HasIndex(e => new { e.Region, e.Status });
             entity.HasIndex(e => e.Email);
+            entity.HasIndex(e => e.TenantId).HasFilter("\"TenantId\" IS NOT NULL");
+            
             entity.Property(e => e.HospitalName).IsRequired().HasMaxLength(300);
             entity.Property(e => e.ContactPerson).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
@@ -84,10 +91,18 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.SubscriptionPlan).HasMaxLength(100);
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.QuotedPrice).HasColumnType("numeric(18,2)");
+            entity.Property(e => e.DiscountApplied).HasColumnType("numeric(5,2)");
+            entity.Property(e => e.SpecialTerms).HasMaxLength(2000);
+            
             entity.HasOne(e => e.OwnerSalesUser)
                 .WithMany()
                 .HasForeignKey(e => e.OwnerSalesUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+            
+            entity.HasOne(e => e.Tenant)
+                .WithMany()
+                .HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SalesRequestAttachment>(entity =>
@@ -138,6 +153,44 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.SalesRequest)
                 .WithMany(r => r.Timeline)
                 .HasForeignKey(e => e.SalesRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // HospitalProfile configuration
+        modelBuilder.Entity<HospitalProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SalesRequestId).IsUnique();
+            entity.HasIndex(e => e.LicenseNumber);
+            entity.HasIndex(e => e.TaxId);
+            
+            entity.HasOne(e => e.SalesRequest)
+                .WithOne(r => r.HospitalProfile)
+                .HasForeignKey<HospitalProfile>(e => e.SalesRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // TechnicalRequirements configuration
+        modelBuilder.Entity<TechnicalRequirements>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SalesRequestId).IsUnique();
+            
+            entity.HasOne(e => e.SalesRequest)
+                .WithOne(r => r.TechnicalRequirements)
+                .HasForeignKey<TechnicalRequirements>(e => e.SalesRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        
+        // ModuleSelection configuration
+        modelBuilder.Entity<ModuleSelection>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.SalesRequestId).IsUnique();
+            
+            entity.HasOne(e => e.SalesRequest)
+                .WithOne(r => r.ModuleSelection)
+                .HasForeignKey<ModuleSelection>(e => e.SalesRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

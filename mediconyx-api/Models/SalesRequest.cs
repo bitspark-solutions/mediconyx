@@ -24,8 +24,28 @@ public class SalesRequest
     public int? Seats { get; set; }
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Pending;
     public DateTime? PaidAt { get; set; }
+    
+    // Extended subscription fields
+    public DateTime? ContractStartDate { get; set; }
+    public int? ContractDuration { get; set; } // in months
+    public bool AutoRenewal { get; set; } = false;
+    public int? UserLicenses { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
+    public PaymentTerms? PaymentTerms { get; set; }
+    public decimal? DiscountApplied { get; set; } // percentage 0-100
+    public string? SpecialTerms { get; set; }
+    
+    // Tenant link
+    public int? TenantId { get; set; }
+    public Tenant? Tenant { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
+    
+    // Navigation properties
+    public HospitalProfile? HospitalProfile { get; set; }
+    public TechnicalRequirements? TechnicalRequirements { get; set; }
+    public ModuleSelection? ModuleSelection { get; set; }
     public ICollection<SalesRequestAttachment> Attachments { get; set; } = new List<SalesRequestAttachment>();
     public ICollection<SalesRequestNote> NotesList { get; set; } = new List<SalesRequestNote>();
     public ICollection<OnboardingTimelineEvent> Timeline { get; set; } = new List<OnboardingTimelineEvent>();
@@ -34,9 +54,14 @@ public class SalesRequest
 public enum SalesRequestStatus
 {
     Pending = 0,
-    InProgress = 1,
-    Active = 2,
-    Deactivated = 3
+    Qualified = 1,
+    InProgress = 2,
+    AwaitingPayment = 3,
+    Provisioning = 4,
+    Active = 5,
+    Rejected = 6,
+    Suspended = 7,
+    Deactivated = 8
 }
 
 public enum BillingCycle
@@ -51,4 +76,20 @@ public enum PaymentStatus
     Paid = 1,
     Failed = 2,
     Refunded = 3
+}
+
+public enum PaymentMethod
+{
+    BankTransfer = 0,
+    CreditCard = 1,
+    Invoice = 2,
+    bKash = 3,
+    Nagad = 4
+}
+
+public enum PaymentTerms
+{
+    Immediate = 0,
+    Net30 = 1,
+    Net60 = 2
 }

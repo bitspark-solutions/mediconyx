@@ -64,6 +64,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IFileValidationService, FileValidationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
 // Captcha service with HttpClient
 builder.Services.AddHttpClient<ICaptchaService, RecaptchaService>();

@@ -271,6 +271,183 @@ public class SalesRequestsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{id:int}/qualify")]
+    [Authorize(Roles = "Sales,Master")]
+    public async Task<ActionResult<SalesRequest>> Qualify(int id)
+    {
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound(new { message = "Sales request not found." });
+        
+        if (r.Status != SalesRequestStatus.Pending)
+        {
+            return BadRequest(new { message = "Only pending requests can be qualified." });
+        }
+
+        r.Status = SalesRequestStatus.Qualified;
+        r.UpdatedAt = DateTime.UtcNow;
+
+        var userId = GetCurrentUserId();
+        var userName = User.Identity?.Name ?? "Unknown";
+
+        _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+        {
+            SalesRequestId = r.Id,
+            Type = "StatusChanged",
+            Description = $"Request qualified by {userName}",
+            HappenedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
+
+        // Send qualification email (fire and forget)
+        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, "Pending", "Qualified");
+
+        _logger.LogInformation("SalesRequest {Id} qualified by user {UserId}", id, userId);
+
+        return Ok(r);
+    }
+
+    [HttpPatch("{id:int}/reject")]
+    [Authorize(Roles = "Sales,Admin,Master")]
+    public async Task<ActionResult<SalesRequest>> Reject(int id, [FromBody] StatusActionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return BadRequest(new { message = "Reason is required for rejection." });
+        }
+
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound(new { message = "Sales request not found." });
+
+        if (r.Status == SalesRequestStatus.Rejected)
+        {
+            return BadRequest(new { message = "Request is already rejected." });
+        }
+
+        var oldStatus = r.Status;
+        r.Status = SalesRequestStatus.Rejected;
+        r.DeactivatedAt = DateTime.UtcNow;
+        r.UpdatedAt = DateTime.UtcNow;
+
+        var userName = User.Identity?.Name ?? "Unknown";
+
+        _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+        {
+            SalesRequestId = r.Id,
+            Type = "Rejected",
+            Description = $"Request rejected by {userName}: {request.Reason}",
+            HappenedAt = DateTime.UtcNow
+        });
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            EntityName = nameof(SalesRequest),
+            EntityId = r.Id.ToString(),
+            Action = "reject",
+            ActorUserId = GetCurrentUserId(),
+            OldValues = oldStatus.ToString(),
+            NewValues = SalesRequestStatus.Rejected.ToString(),
+            Reason = request.Reason,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
+
+        // Send rejection email (fire and forget)
+        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, oldStatus.ToString(), "Rejected");
+
+        _logger.LogInformation("SalesRequest {Id} rejected: {Reason}", id, request.Reason);
+
+        return Ok(r);
+    }
+
+    [HttpPatch("{id:int}/suspend")]
+    [Authorize(Roles = "Admin,Master")]
+    public async Task<ActionResult<SalesRequest>> Suspend(int id, [FromBody] StatusActionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return BadRequest(new { message = "Reason is required for suspension." });
+        }
+
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound(new { message = "Sales request not found." });
+
+        if (r.Status != SalesRequestStatus.Active)
+        {
+            return BadRequest(new { message = "Only active requests can be suspended." });
+        }
+
+        r.Status = SalesRequestStatus.Suspended;
+        r.DeactivatedAt = DateTime.UtcNow;
+        r.UpdatedAt = DateTime.UtcNow;
+
+        var userName = User.Identity?.Name ?? "Unknown";
+
+        _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+        {
+            SalesRequestId = r.Id,
+            Type = "StatusChanged",
+            Description = $"Request suspended by {userName}: {request.Reason}",
+            HappenedAt = DateTime.UtcNow
+        });
+
+        _context.AuditLogs.Add(new AuditLog
+        {
+            EntityName = nameof(SalesRequest),
+            EntityId = r.Id.ToString(),
+            Action = "suspend",
+            ActorUserId = GetCurrentUserId(),
+            OldValues = SalesRequestStatus.Active.ToString(),
+            NewValues = SalesRequestStatus.Suspended.ToString(),
+            Reason = request.Reason,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
+
+        _logger.LogInformation("SalesRequest {Id} suspended: {Reason}", id, request.Reason);
+
+        return Ok(r);
+    }
+
+    [HttpPatch("{id:int}/reactivate")]
+    [Authorize(Roles = "Admin,Master")]
+    public async Task<ActionResult<SalesRequest>> Reactivate(int id)
+    {
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound(new { message = "Sales request not found." });
+
+        if (r.Status != SalesRequestStatus.Suspended)
+        {
+            return BadRequest(new { message = "Only suspended requests can be reactivated." });
+        }
+
+        r.Status = SalesRequestStatus.Active;
+        r.DeactivatedAt = null;
+        r.UpdatedAt = DateTime.UtcNow;
+
+        var userName = User.Identity?.Name ?? "Unknown";
+
+        _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+        {
+            SalesRequestId = r.Id,
+            Type = "StatusChanged",
+            Description = $"Request reactivated by {userName}",
+            HappenedAt = DateTime.UtcNow
+        });
+
+        await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
+
+        _logger.LogInformation("SalesRequest {Id} reactivated", id);
+
+        return Ok(r);
+    }
+
     [HttpPost("{id:int}/notes")]
     [Authorize(Roles = "Sales,Master")]
     public async Task<IActionResult> AddNote(int id, [FromBody] string note)

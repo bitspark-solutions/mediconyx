@@ -168,7 +168,7 @@ All services successfully deployed and running:
 - **Database (PostgreSQL)**: Port 9543, healthy
 - **API (.NET)**: Port 9765, running with migrations applied
 - **UI (Next.js)**: Port 9673, production build deployed
-- **Redis**: Port 6379, ready for distributed caching
+- **Redis**: Port 9867, ready for distributed caching
 - **MailHog**: Ports 1025 (SMTP), 8025 (Web UI)
 
 ### Build Verification ✅

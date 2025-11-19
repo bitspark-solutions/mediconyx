@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../lib/apiClient";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface SalesUser {
   id: number;
@@ -23,10 +24,17 @@ export default function SalesUsersPanel() {
   });
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    // Only load if user is Master role
+    if (user?.role?.toLowerCase() === 'master') {
+      loadUsers();
+    } else {
+      setLoading(false);
+      setError("Unauthorized: This feature is only available to Master users");
+    }
+  }, [user]);
 
   const loadUsers = async () => {
     try {
@@ -43,6 +51,11 @@ export default function SalesUsersPanel() {
   };
 
   const handleCreate = async () => {
+    if (user?.role?.toLowerCase() !== 'master') {
+      setError("Unauthorized: Only Master users can create sales users");
+      return;
+    }
+
     if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password) {
       setError("All fields are required");
       return;
@@ -52,10 +65,10 @@ export default function SalesUsersPanel() {
     setError("");
 
     try {
-      const res = await apiClient.post("/api/admin/sales-users", JSON.stringify({
+      const res = await apiClient.post("/api/admin/sales-users", {
         ...createForm,
         role: "Sales",
-      }));
+      });
 
       if (res.ok) {
         setShowCreateModal(false);
@@ -73,10 +86,15 @@ export default function SalesUsersPanel() {
   };
 
   const handleToggleActive = async (userId: number, currentStatus: boolean) => {
+    if (user?.role?.toLowerCase() !== 'master') {
+      setError("Unauthorized: Only Master users can manage sales users");
+      return;
+    }
+
     try {
-      const res = await apiClient.patch(`/api/admin/sales-users/${userId}`, JSON.stringify({
+      const res = await apiClient.patch(`/api/admin/sales-users/${userId}`, {
         isActive: !currentStatus,
-      }));
+      });
 
       if (res.ok) {
         await loadUsers();

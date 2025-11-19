@@ -81,7 +81,7 @@ services:
       - mediconyx
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "9867:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

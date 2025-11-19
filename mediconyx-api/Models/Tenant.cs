@@ -9,9 +9,28 @@ public class Tenant
     public string? ContactPhone { get; set; }
     public bool IsActive { get; set; } = true;
     
+    // Subdomain for tenant isolation
+    public string? Subdomain { get; set; }
+    
     // Subscription/Plan info (for SaaS)
     public string? SubscriptionPlan { get; set; }
+    public DateTime? SubscriptionStartDate { get; set; }
     public DateTime? SubscriptionExpiresAt { get; set; }
+    public int? UserLicenses { get; set; }
+    
+    // Module configuration (JSON or individual flags)
+    public bool ModuleOpdEnabled { get; set; } = false;
+    public bool ModuleIpdEnabled { get; set; } = false;
+    public bool ModuleEmergencyEnabled { get; set; } = false;
+    public bool ModulePharmacyEnabled { get; set; } = false;
+    public bool ModuleLaboratoryEnabled { get; set; } = false;
+    public bool ModuleRadiologyEnabled { get; set; } = false;
+    public bool ModuleBillingEnabled { get; set; } = false;
+    public bool ModuleInventoryEnabled { get; set; } = false;
+    public bool ModuleHrPayrollEnabled { get; set; } = false;
+    public bool ModuleAppointmentEnabled { get; set; } = false;
+    public bool ModuleTelemedicineEnabled { get; set; } = false;
+    public bool ModuleAnalyticsEnabled { get; set; } = false;
     
     // Audit fields
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

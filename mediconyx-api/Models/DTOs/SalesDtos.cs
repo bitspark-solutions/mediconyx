@@ -47,3 +47,14 @@ public class PaymentStatusUpdate
 {
     public PaymentStatus PaymentStatus { get; set; }
 }
+
+public class StatusActionRequest
+{
+    public string Reason { get; set; } = string.Empty;
+}
+
+public class RejectProfileRequest
+{
+    public string Reason { get; set; } = string.Empty;
+    public List<string> RequiredChanges { get; set; } = new();
+}
