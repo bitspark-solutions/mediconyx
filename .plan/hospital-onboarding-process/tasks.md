@@ -2,31 +2,31 @@
 
 ## Phase 1: Database Schema & Models (Backend Foundation)
 
-### [ ] TASK-001: Extend SalesRequest Status Enum
+### [x] TASK-001: Extend SalesRequest Status Enum
 **Priority**: High  
 **Effort**: 30min  
 **Dependencies**: None
 
-- [ ] Add new status values to SalesRequestStatus enum: Qualified, AwaitingPayment, Provisioning, Rejected, Suspended
-- [ ] Update existing status handling in controllers to support new values
-- [ ] Add migration for enum extension
-- [ ] Update API documentation
+- [x] Add new status values to SalesRequestStatus enum: Qualified, AwaitingPayment, Provisioning, Rejected, Suspended
+- [x] Update existing status handling in controllers to support new values
+- [x] Add migration for enum extension
+- [x] Update API documentation
 
 **Files to modify**:
 - `mediconyx-api/Models/SalesRequest.cs`
 
 ---
 
-### [ ] TASK-002: Create HospitalProfile Entity
+### [x] TASK-002: Create HospitalProfile Entity
 **Priority**: High  
 **Effort**: 2h  
 **Dependencies**: TASK-001
 
-- [ ] Create HospitalProfile model with all required fields (legal name, license, tax ID, etc.)
-- [ ] Add HospitalType enum (Public, Private, Specialized, Clinic)
-- [ ] Configure 1:1 relationship with SalesRequest
-- [ ] Add validation attributes (StringLength, Required, RegularExpression)
-- [ ] Add to DbContext
+- [x] Create HospitalProfile model with all required fields (legal name, license, tax ID, etc.)
+- [x] Add HospitalType enum (Public, Private, Specialized, Clinic)
+- [x] Configure 1:1 relationship with SalesRequest
+- [x] Add validation attributes (StringLength, Required, RegularExpression)
+- [x] Add to DbContext
 
 **Files to create**:
 - `mediconyx-api/Models/HospitalProfile.cs`
@@ -36,15 +36,15 @@
 
 ---
 
-### [ ] TASK-003: Create TechnicalRequirements Entity
+### [x] TASK-003: Create TechnicalRequirements Entity
 **Priority**: High  
 **Effort**: 1.5h  
 **Dependencies**: TASK-001
 
-- [ ] Create TechnicalRequirements model with user counts, departments, etc.
-- [ ] Configure 1:1 relationship with SalesRequest
-- [ ] Add validation attributes
-- [ ] Add to DbContext
+- [x] Create TechnicalRequirements model with user counts, departments, etc.
+- [x] Configure 1:1 relationship with SalesRequest
+- [x] Add validation attributes
+- [x] Add to DbContext
 
 **Files to create**:
 - `mediconyx-api/Models/TechnicalRequirements.cs`
@@ -54,15 +54,15 @@
 
 ---
 
-### [ ] TASK-004: Create ModuleSelection Entity
+### [x] TASK-004: Create ModuleSelection Entity
 **Priority**: High  
 **Effort**: 1h  
 **Dependencies**: TASK-001
 
-- [ ] Create ModuleSelection model with boolean flags for each module
-- [ ] Add ModuleType enum (OPD, IPD, Emergency, Pharmacy, etc.)
-- [ ] Configure 1:1 relationship with SalesRequest
-- [ ] Add to DbContext
+- [x] Create ModuleSelection model with boolean flags for each module
+- [x] Add ModuleType enum (OPD, IPD, Emergency, Pharmacy, etc.)
+- [x] Configure 1:1 relationship with SalesRequest
+- [x] Add to DbContext
 
 **Files to create**:
 - `mediconyx-api/Models/ModuleSelection.cs`
@@ -72,46 +72,46 @@
 
 ---
 
-### [ ] TASK-005: Extend SalesRequest Entity for Subscription
+### [x] TASK-005: Extend SalesRequest Entity for Subscription
 **Priority**: High  
 **Effort**: 1h  
 **Dependencies**: TASK-001
 
-- [ ] Add subscription fields: ContractStartDate, ContractDuration, AutoRenewal, UserLicenses
-- [ ] Add payment fields: PaymentMethod enum, PaymentTerms enum, DiscountApplied
-- [ ] Add SpecialTerms text field
-- [ ] Add TenantId nullable foreign key
-- [ ] Update existing SalesRequest model
+- [x] Add subscription fields: ContractStartDate, ContractDuration, AutoRenewal, UserLicenses
+- [x] Add payment fields: PaymentMethod enum, PaymentTerms enum, DiscountApplied
+- [x] Add SpecialTerms text field
+- [x] Add TenantId nullable foreign key
+- [x] Update existing SalesRequest model
 
 **Files to modify**:
 - `mediconyx-api/Models/SalesRequest.cs`
 
 ---
 
-### [ ] TASK-006: Create DocumentType Enum and Update Attachments
+### [x] TASK-006: Create DocumentType Enum and Update Attachments
 **Priority**: High  
 **Effort**: 45min  
 **Dependencies**: None
 
-- [ ] Create DocumentType enum (License, TaxCert, BusinessReg, DirectorID, etc.)
-- [ ] Add DocumentType field to SalesRequestAttachment
-- [ ] Add IsMandatory flag
-- [ ] Add MaxFileSizeBytes field
+- [x] Create DocumentType enum (License, TaxCert, BusinessReg, DirectorID, etc.)
+- [x] Add DocumentType field to SalesRequestAttachment
+- [x] Add IsMandatory flag
+- [x] Add MaxFileSizeBytes field
 
 **Files to modify**:
 - `mediconyx-api/Models/SalesRequestAttachment.cs`
 
 ---
 
-### [ ] TASK-007: Create Database Migration
+### [x] TASK-007: Create Database Migration
 **Priority**: High  
 **Effort**: 1h  
 **Dependencies**: TASK-002, TASK-003, TASK-004, TASK-005, TASK-006
 
-- [ ] Generate EF Core migration for all new entities
-- [ ] Review migration SQL for correctness
-- [ ] Add indexes: (Status, CreatedAt), OwnerSalesUserId, TenantId
-- [ ] Test migration up/down
+- [x] Generate EF Core migration for all new entities
+- [x] Review migration SQL for correctness
+- [x] Add indexes: (Status, CreatedAt), OwnerSalesUserId, TenantId
+- [x] Test migration up/down
 
 **Commands**:
 ```bash

@@ -23,7 +23,7 @@
   - [x] POST /api/sales/requests/{id}/attachments (multipart)
   - [x] POST /api/sales/requests/{id}/notes
 
-[ ] TASK-003: Build SalesMetricsController
+[x] TASK-003: Build SalesMetricsController
 - Description: Implement KPIs and trend aggregations endpoints.
 - Dependencies: TASK-001
 - Effort: 1d
@@ -50,33 +50,33 @@
   - [x] Add [Authorize(Roles="Sales")] and [Authorize(Roles="Master")] where required
   - [x] Verify token generation/refresh for Sales
 
-[ ] TASK-006: Contact Sales UI page
+[x] TASK-006: Contact Sales UI page
 - Description: Implement `app/contact-sales/page.tsx` with validation, captcha, file upload, success flow.
 - Dependencies: TASK-002
 - Effort: 0.75d
 - Priority: High
   - [x] Build form with field validation
   - [x] Integrate captcha and submit to public endpoint
-  - [ ] Handle attachments with size/type validations
+  - [x] Handle attachments with size/type validations
   - [x] Show confirmation and error states
 
-[ ] TASK-007: Sales Dashboard KPIs
+[x] TASK-007: Sales Dashboard KPIs
 - Description: Implement KPI tiles bound to `/api/sales/metrics/kpis`.
 - Dependencies: TASK-003
 - Effort: 1d
 - Priority: High
-  - [ ] Create `components/sales/KpiTiles.tsx`
+  - [x] Create `components/sales/KpiTiles.tsx`
   - [x] Fetch metrics and render total onboarded, in-progress, active, pending, deactivated
   - [x] Add loading/error states
 
-[ ] TASK-008: Trend bar chart
+[x] TASK-008: Trend bar chart
 - Description: Implement trend bar chart for requests increase/decrease.
 - Dependencies: TASK-003
 - Effort: 0.5d
 - Priority: Medium
-  - [ ] Create `components/sales/TrendBarChart.tsx`
-  - [ ] Render grouped data per time bucket, delta indicators
-  - [ ] Period toggle (W/M/Y)
+  - [x] Create `components/sales/TrendBarChart.tsx`
+  - [x] Render grouped data per time bucket, delta indicators
+  - [x] Period toggle (W/M/Y)
 
 [x] TASK-009: Pipeline table & filters
 - Description: Implement table with filters (status, region, owner, search, pagination).
@@ -87,17 +87,17 @@
   - [x] Wire filters to API
   - [x] Add pagination and empty states
 
-[ ] TASK-010: Request detail view
+[x] TASK-010: Request detail view
 - Description: Implement `components/sales/RequestDetail.tsx` with timeline, notes, attachments, status transitions.
 - Dependencies: TASK-002
 - Effort: 1d
 - Priority: High
-  - [ ] Detail fetch and display
-  - [ ] Add note creation
-  - [ ] Upload/list attachments
-  - [ ] Status transition with reason codes
+  - [x] Detail fetch and display
+  - [x] Add note creation
+  - [x] Upload/list attachments
+  - [x] Status transition with reason codes
 
-[ ] TASK-018: Pricing & payment fields in model and endpoints
+[x] TASK-018: Pricing & payment fields in model and endpoints
 - Description: Extend SalesRequest with pricing/payment fields and implement PATCH endpoints.
 - Dependencies: TASK-001, TASK-002
 - Effort: 1d
@@ -105,34 +105,34 @@
   - [x] Add fields: subscriptionPlan, billingCycle, currency, quotedPrice, seats, paymentStatus
   - [x] PATCH /api/sales/requests/{id}/pricing
   - [x] PATCH /api/sales/requests/{id}/payment-status
-  - [ ] Audit changes and validate inputs
+  - [x] Audit changes and validate inputs
 
-[ ] TASK-019: Revenue metrics endpoints
+[x] TASK-019: Revenue metrics endpoints
 - Description: Implement `/api/sales/metrics/revenue` aggregations (quoted vs realized, ARPU).
 - Dependencies: TASK-001, TASK-003, TASK-018
 - Effort: 0.75d
 - Priority: High
   - [x] Group by time bucket (month/year)
   - [x] Compute quotedRevenue, realizedRevenue, arpu
-  - [ ] Indexing and optional caching
+  - [x] Indexing and optional caching
 
-[ ] TASK-020: UI pricing widgets
+[x] TASK-020: UI pricing widgets
 - Description: Add pricing section in Request Detail and display payment status.
 - Dependencies: TASK-018
 - Effort: 0.75d
 - Priority: Medium
-  - [ ] Inputs for plan, billing cycle, currency, quoted price, seats
-  - [ ] PaymentStatus control (role-gated)
-  - [ ] Validation and feedback states
+  - [x] Inputs for plan, billing cycle, currency, quoted price, seats
+  - [x] PaymentStatus control (role-gated)
+  - [x] Validation and feedback states
 
-[ ] TASK-021: Revenue charts & KPIs
+[x] TASK-021: Revenue charts & KPIs
 - Description: Add revenue cards and trend chart to Sales Dashboard.
 - Dependencies: TASK-019
 - Effort: 1d
 - Priority: Medium
-  - [ ] KPI tiles: quoted revenue, realized revenue, ARPU
-  - [ ] Trend chart bound to `/metrics/revenue`
-  - [ ] Period toggle (M/Y)
+  - [x] KPI tiles: quoted revenue, realized revenue, ARPU
+  - [x] Trend chart bound to `/metrics/revenue`
+  - [x] Period toggle (M/Y)
 
 [ ] TASK-011: Master dashboard sales user panel
 - Description: Add sales user management panel to `app/portal/master/page.tsx`.
