@@ -3,8 +3,8 @@ import ProtectedRoute from "../../../components/ProtectedRoute";
 import KpiCard from "../../../components/sales/KpiCard";
 import RevenueBarChart from "../../../components/sales/RevenueBarChart";
 import StatusDonutChart from "../../../components/sales/StatusDonutChart";
+import TrendChart from "../../../components/sales/TrendChart";
 import PipelineTable from "../../../components/sales/PipelineTable";
-import RequestDetail from "../../../components/sales/RequestDetail";
 import { useEffect, useState } from "react";
 import SalesSidebar from "../../../components/sales/SalesSidebar";
 import SalesTopbar from "../../../components/sales/SalesTopbar";
@@ -24,8 +24,8 @@ export default function SalesDashboardPage() {
 function DashboardContent() {
   const [kpis, setKpis] = useState<any>(null);
   const [revenue, setRevenue] = useState<any[]>([]);
+  const [trends, setTrends] = useState<any[]>([]);
   const [error, setError] = useState("");
-  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
@@ -33,9 +33,11 @@ function DashboardContent() {
       try {
         const k = await apiClient.get(`/api/sales/metrics/kpis`);
         const r = await apiClient.get(`/api/sales/metrics/revenue?months=6`);
-        if (!k.ok || !r.ok) throw new Error("Failed to load metrics");
+        const t = await apiClient.get(`/api/sales/metrics/trends?bucket=month&months=6`);
+        if (!k.ok || !r.ok || !t.ok) throw new Error("Failed to load metrics");
         setKpis(await k.json());
         setRevenue(await r.json());
+        setTrends(await t.json());
       } catch (e: any) {
         setError(e.message || "Failed to load");
       }
@@ -71,18 +73,15 @@ function DashboardContent() {
         }} />
       </div>
 
+      <div className="mt-8">
+        <TrendChart height="h-[360px]" data={trends} />
+      </div>
+
       <div className="mt-8 rounded-xl surface p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Sales Pipeline</h2>
-        <PipelineTable onRowClick={(id) => setSelectedRequestId(id)} />
+        <PipelineTable />
       </div>
       </main>
-      
-      {selectedRequestId && (
-        <RequestDetail
-          requestId={selectedRequestId}
-          onClose={() => setSelectedRequestId(null)}
-        />
-      )}
     </div>
   );
 }

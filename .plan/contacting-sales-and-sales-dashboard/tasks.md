@@ -143,14 +143,14 @@
   - [ ] Create and activate/deactivate users
   - [ ] CSV export
 
-[ ] TASK-012: Notifications
+[x] TASK-012: Notifications
 - Description: Send email notifications for new requests and key status changes.
 - Dependencies: TASK-002
 - Effort: 0.75d
 - Priority: Medium
-  - [ ] SMTP client configuration
-  - [ ] Notification templates
-  - [ ] Trigger on create/status change
+  - [x] SMTP client configuration
+  - [x] Notification templates
+  - [x] Trigger on create/status change
 
 [x] TASK-013: Rate limiting, captcha, file security
 - Description: Add rate limits to public endpoint, server-side captcha verification, file type/size checks, antivirus hook.

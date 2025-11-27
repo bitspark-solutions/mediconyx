@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../lib/apiClient";
 import { useAuthStore } from "../../store/useAuthStore";
+import RequestDetail from "./RequestDetail";
 
 interface SalesRequest {
   id: number;
@@ -43,6 +44,9 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
+
+  // Detail modal
+  const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -197,8 +201,8 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
               requests.map((request) => (
                 <tr
                   key={request.id}
-                  onClick={() => onRowClick?.(request.id)}
-                  className={`${onRowClick ? "cursor-pointer" : ""} hover:bg-white/5 transition-colors`}
+                  onClick={() => setSelectedRequestId(request.id)}
+                  className="cursor-pointer hover:bg-white/5 transition-colors"
                 >
                   <td className="px-4 py-3 font-medium text-white">
                     {request.hospitalName}
@@ -291,6 +295,14 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedRequestId && (
+        <RequestDetail
+          requestId={selectedRequestId}
+          onClose={() => setSelectedRequestId(null)}
+        />
       )}
     </div>
   );
