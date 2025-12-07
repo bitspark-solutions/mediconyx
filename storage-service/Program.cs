@@ -207,7 +207,7 @@ app.MapDelete("/api/files/{fileId}", async (
     }
 });
 
-logger.LogInformation("Storage service starting...");
+app.Logger.LogInformation("Storage service starting...");
 app.Run();
 
 partial class Program { }

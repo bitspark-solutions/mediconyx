@@ -587,10 +587,49 @@ namespace mediconyx_api.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("ModuleAnalyticsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleAppointmentEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleBillingEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleEmergencyEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleHrPayrollEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleInventoryEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleIpdEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleLaboratoryEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleOpdEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModulePharmacyEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleRadiologyEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleTelemedicineEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Subdomain")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("SubscriptionExpiresAt")
                         .HasColumnType("timestamp with time zone");
@@ -598,8 +637,14 @@ namespace mediconyx_api.Migrations
                     b.Property<string>("SubscriptionPlan")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("SubscriptionStartDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UserLicenses")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -668,6 +713,12 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Role");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("TenantId", "Email");
 

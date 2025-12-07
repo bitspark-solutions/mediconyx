@@ -33,6 +33,9 @@ public class ApplicationDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => new { e.TenantId, e.Email });
+            entity.HasIndex(e => e.Role); // For filtering by role
+            entity.HasIndex(e => e.IsActive); // For filtering active/inactive users
+            entity.HasIndex(e => e.TenantId); // For tenant-based queries
             
             entity.Property(e => e.Email)
                 .IsRequired()

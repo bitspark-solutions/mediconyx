@@ -5,4 +5,5 @@ public interface IEmailService
     Task SendNewRequestNotificationAsync(int requestId, string hospitalName, string email);
     Task SendStatusChangeNotificationAsync(int requestId, string hospitalName, string email, string oldStatus, string newStatus);
     Task SendClaimedNotificationAsync(int requestId, string hospitalName, string email, string claimedByName);
+    Task SendEmailAsync(string to, string subject, string body);
 }
