@@ -6,6 +6,8 @@ import TechnicalRequirementsForm from "./TechnicalRequirementsForm";
 import ModuleSelectionForm from "./ModuleSelectionForm";
 import PricingForm from "./PricingForm";
 import StatusBadge from "./StatusBadge";
+import TransferModal from "./TransferModal";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface RequestDetailProps {
   requestId: number;
@@ -94,8 +96,12 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
   const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const { user } = useAuthStore();
+
+  const isOwner = request && user && request.ownerSalesUserId === user.id;
 
   useEffect(() => {
     loadRequest();
@@ -165,6 +171,12 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
     if (res.ok) await loadRequest();
   };
 
+  const handleUnassign = async () => {
+    if (!confirm("Are you sure you want to unassign yourself?")) return;
+    const res = await apiClient.post(`/api/sales/requests/${requestId}/unassign`, "");
+    if (res.ok) await loadRequest();
+  };
+
   const handleQualify = async () => {
     setActionLoading(true);
     const res = await apiClient.patch(`/api/sales/requests/${requestId}/qualify`, {});
@@ -179,7 +191,11 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
     if (res.ok) await loadRequest();
     else {
       const data = await res.json();
-      setError(data.message || "Failed to approve");
+      if (data.errors && Array.isArray(data.errors)) {
+        setError(data.errors.join(". "));
+      } else {
+        setError(data.message || "Failed to approve");
+      }
     }
     setActionLoading(false);
   };
@@ -290,6 +306,16 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
               <button onClick={handleClaim} className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                 Claim
               </button>
+            )}
+            {isOwner && (
+              <>
+                <button onClick={() => setShowTransferModal(true)} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Transfer
+                </button>
+                <button onClick={handleUnassign} className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                  Unassign
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -486,6 +512,14 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
           </div>
         </div>
       )}
+
+      {/* Transfer Modal */}
+      <TransferModal
+        requestId={requestId}
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        onSuccess={loadRequest}
+      />
     </div>
   );
 }

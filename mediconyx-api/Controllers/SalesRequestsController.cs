@@ -203,6 +203,48 @@ public class SalesRequestsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("users")]
+    [Authorize(Roles = "Sales,Master")]
+    public async Task<ActionResult<IEnumerable<object>>> GetSalesUsers()
+    {
+        var users = await _context.Users
+            .Where(u => u.Role == UserRole.Sales && u.IsActive)
+            .Select(u => new 
+            { 
+                u.Id, 
+                u.FirstName, 
+                u.LastName,
+                u.Email 
+            })
+            .ToListAsync();
+        return Ok(users);
+    }
+
+    [HttpPost("{id:int}/transfer")]
+    [Authorize(Roles = "Sales,Master")]
+    public async Task<IActionResult> Transfer(int id, [FromBody] TransferRequest request)
+    {
+        var r = await _context.SalesRequests.FindAsync(id);
+        if (r == null) return NotFound();
+        
+        var targetUser = await _context.Users.FindAsync(request.TargetUserId);
+        if (targetUser == null || targetUser.Role != UserRole.Sales || !targetUser.IsActive)
+        {
+            return BadRequest(new { message = "Invalid target user." });
+        }
+
+        r.OwnerSalesUserId = request.TargetUserId;
+        r.UpdatedAt = DateTime.UtcNow;
+        
+        // Log the transfer in timeline (optional but good)
+        var currentUser = GetCurrentUserId();
+        // context.Timeline... would be better but keeping it simple for now
+        
+        await _context.SaveChangesAsync();
+        InvalidateMetricsCache();
+        return NoContent();
+    }
+
     [HttpPatch("{id:int}/status")]
     [Authorize(Roles = "Sales,Master")]
     public async Task<IActionResult> UpdateStatus(int id, SalesStatusUpdate update)

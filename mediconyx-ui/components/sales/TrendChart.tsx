@@ -11,9 +11,10 @@ import {
   LinearScale,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
-Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 type Period = "week" | "month" | "year";
 
@@ -55,7 +56,7 @@ export default function TrendChart({
 
   const loadTrendData = async () => {
     if (!accessToken) return;
-    
+
     setLoading(true);
     try {
       const bucketParam = period === "week" ? "week" : period === "year" ? "year" : "month";
@@ -146,7 +147,7 @@ export default function TrendChart({
   }, [chartData]);
 
   return (
-    <div className={`rounded-xl surface p-6 ${height}`}>
+    <div className={`rounded-xl surface p-6 ${height} flex flex-col`}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-semibold text-white">Request Trends</h2>
@@ -156,27 +157,24 @@ export default function TrendChart({
           <button
             onClick={() => setPeriod("week")}
             disabled={loading}
-            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${
-              period === "week" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
+            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${period === "week" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
           >
             Week
           </button>
           <button
             onClick={() => setPeriod("month")}
             disabled={loading}
-            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${
-              period === "month" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
+            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${period === "month" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
           >
             Month
           </button>
           <button
             onClick={() => setPeriod("year")}
             disabled={loading}
-            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${
-              period === "year" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
-            }`}
+            className={`px-3 py-1 rounded text-sm transition-colors disabled:opacity-50 ${period === "year" ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
+              }`}
           >
             Year
           </button>
@@ -191,8 +189,8 @@ export default function TrendChart({
           <div className="text-gray-400">No data available</div>
         </div>
       ) : (
-        <div className="h-full">
-          <canvas id="trend-chart" style={{ width: "100%", height: "100%" }} />
+        <div className="flex-1 relative w-full min-h-0">
+          <canvas id="trend-chart" className="absolute inset-0" />
         </div>
       )}
     </div>

@@ -38,10 +38,10 @@ export default function StatusDonutChart({ counts, height = "h-[360px]" }: { cou
   }, [counts]);
 
   return (
-    <div className={`rounded-xl surface p-6 ${height}`}>
-      <h2 className="mb-3 text-lg font-semibold text-white">Requests Status</h2>
-      <div className="h-full">
-        <canvas id="status-donut" style={{ width: "100%", height: "100%" }} />
+    <div className={`rounded-xl surface p-6 ${height} flex flex-col`}>
+      <h2 className="mb-3 text-lg font-semibold text-white flex-shrink-0">Requests Status</h2>
+      <div className="flex-1 relative w-full min-h-0">
+        <canvas id="status-donut" className="absolute inset-0" />
       </div>
     </div>
   );

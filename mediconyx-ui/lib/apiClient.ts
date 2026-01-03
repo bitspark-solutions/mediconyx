@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/useAuthStore";
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765";
 
 async function refreshToken(): Promise<string | null> {
-  const { refreshToken, setTokens } = useAuthStore.getState();
+  const { refreshToken, setTokens, logout } = useAuthStore.getState();
   if (!refreshToken) return null;
   try {
     const res = await fetch(`${apiBase}/api/auth/refresh`, {
@@ -12,11 +12,16 @@ async function refreshToken(): Promise<string | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Refresh failed - token is invalid/expired, logout user
+      logout();
+      return null;
+    }
     const data = await res.json();
     setTokens(data.accessToken, data.refreshToken || refreshToken);
     return data.accessToken;
   } catch {
+    logout();
     return null;
   }
 }
