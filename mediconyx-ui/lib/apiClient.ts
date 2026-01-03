@@ -37,6 +37,8 @@ async function request(path: string, init: RequestInit = {}, retry = true): Prom
 export const apiClient = {
   get: (path: string) => request(path, { method: "GET" }),
   post: (path: string, body: any) => request(path, { method: "POST", body: JSON.stringify(body) }),
+  put: (path: string, body: any) => request(path, { method: "PUT", body: JSON.stringify(body) }),
   patch: (path: string, body: any) => request(path, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (path: string) => request(path, { method: "DELETE" }),
 };
 

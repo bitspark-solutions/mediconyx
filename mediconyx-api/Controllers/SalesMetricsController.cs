@@ -63,12 +63,18 @@ public class SalesMetricsController : ControllerBase
         }
 
         var from = DateTime.UtcNow.AddMonths(-months);
-        var data = await _context.SalesRequests
+        
+        // Fetch raw data first (Year, Month, Count), then format on client side
+        var rawData = await _context.SalesRequests
             .Where(r => r.CreatedAt >= from)
             .GroupBy(r => new { r.CreatedAt.Year, r.CreatedAt.Month })
-            .Select(g => new { period = $"{g.Key.Year}-{g.Key.Month:D2}", count = g.Count() })
-            .OrderBy(x => x.period)
+            .Select(g => new { g.Key.Year, g.Key.Month, count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
             .ToListAsync();
+        
+        // Format period string on client side (EF cannot translate string.Format)
+        var data = rawData.Select(x => new { period = $"{x.Year}-{x.Month:D2}", x.count }).ToList();
+        
         var result = data.Select((x, i) => new
         {
             x.period,

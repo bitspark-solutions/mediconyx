@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { apiClient } from "../../lib/apiClient";
 import { useAuthStore } from "../../store/useAuthStore";
 import RequestDetail from "./RequestDetail";
@@ -23,10 +23,15 @@ interface PipelineTableProps {
 }
 
 const statusLabels: Record<number, { label: string; color: string }> = {
-  0: { label: "Pending", color: "bg-amber-500/20 text-amber-300" },
-  1: { label: "In Progress", color: "bg-blue-500/20 text-blue-300" },
-  2: { label: "Active", color: "bg-emerald-500/20 text-emerald-300" },
-  3: { label: "Deactivated", color: "bg-slate-500/20 text-slate-300" },
+  0: { label: "Pending", color: "bg-gray-500/20 text-gray-300" },
+  1: { label: "Qualified", color: "bg-blue-500/20 text-blue-300" },
+  2: { label: "In Progress", color: "bg-yellow-500/20 text-yellow-300" },
+  3: { label: "Awaiting Payment", color: "bg-purple-500/20 text-purple-300" },
+  4: { label: "Provisioning", color: "bg-cyan-500/20 text-cyan-300" },
+  5: { label: "Active", color: "bg-emerald-500/20 text-emerald-300" },
+  6: { label: "Rejected", color: "bg-red-500/20 text-red-300" },
+  7: { label: "Suspended", color: "bg-orange-500/20 text-orange-300" },
+  8: { label: "Deactivated", color: "bg-slate-500/20 text-slate-300" },
 };
 
 export default function PipelineTable({ onRowClick }: PipelineTableProps) {
@@ -35,7 +40,8 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
   const [error, setError] = useState("");
   const { accessToken } = useAuthStore();
 
-  // Filters
+  // Filters - use separate input state for debouncing
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<number | "">("");
   const [regionFilter, setRegionFilter] = useState("");
@@ -50,13 +56,24 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
 
   const totalPages = Math.ceil(total / pageSize);
 
+  // Debounce search input - only update actual search after 300ms of no typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== search) {
+        setSearch(searchInput);
+        setPage(1);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, search]);
+
   useEffect(() => {
     loadRequests();
   }, [accessToken, page, search, statusFilter, regionFilter]);
 
   const loadRequests = async () => {
     if (!accessToken) return;
-    
+
     setLoading(true);
     setError("");
 
@@ -71,7 +88,7 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
       if (regionFilter) params.append("region", regionFilter);
 
       const res = await apiClient.get(`/api/sales/requests?${params}`);
-      
+
       if (!res.ok) {
         throw new Error("Failed to load requests");
       }
@@ -88,8 +105,8 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
   };
 
   const handleSearch = (value: string) => {
-    setSearch(value);
-    setPage(1); // Reset to first page on search
+    setSearchInput(value);
+    // Page reset happens in debounce effect
   };
 
   const handleStatusFilter = (value: string) => {
@@ -103,6 +120,7 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
   };
 
   const handleReset = () => {
+    setSearchInput("");
     setSearch("");
     setStatusFilter("");
     setRegionFilter("");
@@ -116,7 +134,7 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
         <input
           type="text"
           placeholder="Search hospital or email..."
-          value={search}
+          value={searchInput}
           onChange={(e) => handleSearch(e.target.value)}
           className="flex-1 min-w-[200px] rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-sm text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
         />
@@ -128,9 +146,14 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
         >
           <option value="">All Statuses</option>
           <option value="0">Pending</option>
-          <option value="1">In Progress</option>
-          <option value="2">Active</option>
-          <option value="3">Deactivated</option>
+          <option value="1">Qualified</option>
+          <option value="2">In Progress</option>
+          <option value="3">Awaiting Payment</option>
+          <option value="4">Provisioning</option>
+          <option value="5">Active</option>
+          <option value="6">Rejected</option>
+          <option value="7">Suspended</option>
+          <option value="8">Deactivated</option>
         </select>
 
         <input
@@ -170,14 +193,32 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
           </thead>
           <tbody className="divide-y divide-white/5">
             {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
-                    Loading...
-                  </div>
-                </td>
-              </tr>
+              // Skeleton rows to maintain consistent height during loading
+              Array.from({ length: 5 }).map((_, idx) => (
+                <tr key={`skeleton-${idx}`} className="animate-pulse">
+                  <td className="px-4 py-3">
+                    <div className="h-4 bg-white/10 rounded w-32"></div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-1">
+                      <div className="h-3 bg-white/10 rounded w-24"></div>
+                      <div className="h-2 bg-white/5 rounded w-32"></div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="h-4 bg-white/10 rounded w-16"></div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="h-6 bg-white/10 rounded-full w-20"></div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="h-4 bg-white/10 rounded w-16 ml-auto"></div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="h-4 bg-white/10 rounded w-20"></div>
+                  </td>
+                </tr>
+              ))
             ) : requests.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center">
@@ -267,17 +308,16 @@ export default function PipelineTable({ onRowClick }: PipelineTableProps) {
                   // Add ellipsis if there's a gap
                   const prevPage = arr[idx - 1];
                   const showEllipsis = prevPage && p - prevPage > 1;
-                  
+
                   return (
                     <div key={p} className="flex items-center gap-1">
                       {showEllipsis && <span className="text-gray-500 px-1">...</span>}
                       <button
                         onClick={() => setPage(p)}
-                        className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                          page === p
-                            ? "bg-purple-500 text-white"
-                            : "bg-white/5 text-gray-300 hover:bg-white/10"
-                        }`}
+                        className={`min-w-[32px] rounded-lg px-2 py-1.5 text-sm transition-colors ${page === p
+                          ? "bg-purple-500 text-white"
+                          : "bg-white/5 text-gray-300 hover:bg-white/10"
+                          }`}
                       >
                         {p}
                       </button>

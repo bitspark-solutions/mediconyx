@@ -1,74 +1,18 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "../../store/useAuthStore"
+import AuthRedirectGuard from "../../components/AuthRedirectGuard"
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [hasHydrated, setHasHydrated] = useState(false)
   const router = useRouter()
-  const { login, isAuthenticated, user } = useAuthStore()
-  
-  // Check hydration status
-  useEffect(() => {
-    // Only access persist on client side
-    if (typeof window !== 'undefined' && useAuthStore.persist) {
-      setHasHydrated(useAuthStore.persist.hasHydrated())
-      
-      // Subscribe to hydration changes
-      const unsubscribe = useAuthStore.persist.onHydrate(() => {
-        setHasHydrated(false)
-      })
-      
-      const unsubscribeFinish = useAuthStore.persist.onFinishHydration(() => {
-        setHasHydrated(true)
-      })
-      
-      return () => {
-        unsubscribe()
-        unsubscribeFinish()
-      }
-    }
-  }, [])
-  
-  // Redirect if already logged in
-  useEffect(() => {
-    if (hasHydrated && isAuthenticated && user) {
-      const roleRouteMap: Record<string, string> = {
-        master: '/portal/master',
-        admin: '/portal/admin',
-        doctor: '/portal/doctor',
-        nurse: '/portal/nurse',
-        receptionist: '/portal/receptionist',
-        accountant: '/portal/accountant',
-        patient: '/portal/patient',
-        sales: '/portal/sales',
-      }
-      router.push(roleRouteMap[(user.role || '').toLowerCase()] || '/portal/patient')
-    }
-  }, [hasHydrated, isAuthenticated, user, router])
-  
-  // Don't render login form until store is hydrated
-  if (!hasHydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-  
-  // Don't render login form if user is authenticated
-  if (isAuthenticated && user) {
-    return null
-  }
-  
+  const { login } = useAuthStore()
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage("")
@@ -76,10 +20,10 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      
+
       // Get the updated user from store
       const user = useAuthStore.getState().user
-      
+
       // Redirect based on role
       const roleRouteMap: Record<string, string> = {
         master: '/portal/master',
@@ -202,5 +146,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Wrapper that prevents access when already authenticated
+export default function LoginPage() {
+  return (
+    <AuthRedirectGuard>
+      <LoginForm />
+    </AuthRedirectGuard>
   )
 }

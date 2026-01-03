@@ -14,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -133,6 +134,49 @@ if (app.Environment.IsDevelopment())
                     };
                     dbContext.Users.Add(user);
                     await dbContext.SaveChangesAsync();
+                }
+                
+                // Seed a Sales user for development testing
+                if (app.Environment.IsDevelopment())
+                {
+                    var salesEmail = "sales@mediconyx.local";
+                    var existingSales = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == salesEmail);
+                    if (existingSales == null)
+                    {
+                        var salesUser = new User
+                        {
+                            Email = salesEmail,
+                            PasswordHash = passwordService.HashPassword("Sales@123"),
+                            FirstName = "Sales",
+                            LastName = "User",
+                            Role = UserRole.Sales,
+                            TenantId = platformTenant.Id,
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        dbContext.Users.Add(salesUser);
+                        await dbContext.SaveChangesAsync();
+                    }
+                    
+                    // Also seed an Admin user for testing
+                    var adminEmail = "admin@mediconyx.local";
+                    var existingAdmin = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+                    if (existingAdmin == null)
+                    {
+                        var adminUser = new User
+                        {
+                            Email = adminEmail,
+                            PasswordHash = passwordService.HashPassword("Admin@123"),
+                            FirstName = "Admin",
+                            LastName = "User",
+                            Role = UserRole.Admin,
+                            TenantId = platformTenant.Id,
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        dbContext.Users.Add(adminUser);
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
         }
