@@ -1,0 +1,25 @@
+DO $$
+DECLARE
+   i integer;
+BEGIN
+   FOR i IN 1..20 LOOP
+      INSERT INTO "SalesRequests" 
+      ("HospitalName", "ContactPerson", "Email", "Phone", "Status", "PaymentStatus", "SubscriptionPlan", "QuotedPrice", "Currency", "CreatedAt", "PaidAt", "UpdatedAt", "Region")
+      VALUES 
+      (
+        'City Hospital ' || i, 
+        'Dr. Test ' || i, 
+        'admin' || i || '@test.com', 
+        '555-010' || i, 
+        3, -- AwaitingPayment
+        1, -- Paid
+        CASE WHEN i % 3 = 0 THEN 'Enterprise' WHEN i % 2 = 0 THEN 'Professional' ELSE 'Starter' END,
+        CASE WHEN i % 3 = 0 THEN 5000 WHEN i % 2 = 0 THEN 2500 ELSE 999 END,
+        'USD', 
+        NOW(), 
+        NOW(),
+        NOW(),
+        'NA'
+      );
+   END LOOP;
+END $$;

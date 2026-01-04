@@ -203,6 +203,30 @@ public class SalesRequestsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("pending-provision")]
+    [Authorize(Roles = "Admin,Master")]
+    public async Task<ActionResult<IEnumerable<object>>> GetPendingProvisioningRequests()
+    {
+        var requests = await _context.SalesRequests
+            .Where(r => r.Status == SalesRequestStatus.AwaitingPayment && r.PaymentStatus == PaymentStatus.Paid)
+            .OrderBy(r => r.PaidAt)
+            .Select(r => new 
+            {
+                r.Id,
+                r.HospitalName,
+                r.ContactPerson,
+                r.Email,
+                r.SubscriptionPlan,
+                r.QuotedPrice,
+                r.Currency,
+                r.PaidAt,
+                r.CreatedAt
+            })
+            .ToListAsync();
+            
+        return Ok(requests);
+    }
+
     [HttpGet("users")]
     [Authorize(Roles = "Sales,Master")]
     public async Task<ActionResult<IEnumerable<object>>> GetSalesUsers()

@@ -62,7 +62,8 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
     const [profile, setProfile] = useState<HospitalProfile>(emptyProfile);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
+    const [globalError, setGlobalError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
     const [success, setSuccess] = useState(false);
 
     useEffect(() => {
@@ -90,7 +91,8 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
-        setError("");
+        setGlobalError("");
+        setFieldErrors({});
         setSuccess(false);
 
         try {
@@ -101,10 +103,15 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 setTimeout(() => setSuccess(false), 3000);
             } else {
                 const data = await res.json();
-                setError(data.message || "Failed to save profile");
+                if (data.errors) {
+                    setFieldErrors(data.errors);
+                    setGlobalError("Please check the highlighted fields.");
+                } else {
+                    setGlobalError(data.message || "Failed to save profile");
+                }
             }
         } catch (err) {
-            setError("Error saving profile");
+            setGlobalError("Error saving profile");
         } finally {
             setSaving(false);
         }
@@ -112,7 +119,33 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
 
     const updateField = (field: keyof HospitalProfile, value: any) => {
         setProfile((prev) => ({ ...prev, [field]: value }));
+        // Clear error for this field when user types
+        if (fieldErrors[field]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
     };
+
+    const FieldError = ({ name }: { name: string }) => {
+        // Backend keys might match the property name but capitalized (e.g. WebsiteUrl vs websiteUrl)
+        // We check both loose matches
+        const errorList = fieldErrors[name] || fieldErrors[name.charAt(0).toUpperCase() + name.slice(1)];
+        if (!errorList || errorList.length === 0) return null;
+        return (
+            <div className="mt-1 text-xs text-red-400">
+                {errorList.join(", ")}
+            </div>
+        );
+    };
+
+    const Label = ({ children, required }: { children: React.ReactNode, required?: boolean }) => (
+        <label className="block text-sm text-gray-400 mb-1">
+            {children} {required && <span className="text-red-500">*</span>}
+        </label>
+    );
 
     if (loading) {
         return (
@@ -124,9 +157,9 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
+            {globalError && (
                 <div className="rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-3 text-sm text-red-200">
-                    {error}
+                    {globalError}
                 </div>
             )}
             {success && (
@@ -140,7 +173,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 <h4 className="text-white font-medium mb-4">Legal Information</h4>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="block text-sm text-gray-400 mb-1">Hospital Legal Name *</label>
+                        <Label required>Hospital Legal Name</Label>
                         <input
                             type="text"
                             required
@@ -150,7 +183,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">License Number *</label>
+                        <Label required>License Number</Label>
                         <input
                             type="text"
                             required
@@ -160,7 +193,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Tax ID *</label>
+                        <Label required>Tax ID</Label>
                         <input
                             type="text"
                             required
@@ -170,7 +203,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Hospital Type *</label>
+                        <Label required>Hospital Type</Label>
                         <select
                             required
                             value={profile.hospitalType}
@@ -183,9 +216,10 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                                 </option>
                             ))}
                         </select>
+                        <FieldError name="hospitalType" />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Bed Capacity *</label>
+                        <Label required>Bed Capacity</Label>
                         <input
                             type="number"
                             required
@@ -204,7 +238,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 <h4 className="text-white font-medium mb-4">Address</h4>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                        <label className="block text-sm text-gray-400 mb-1">Address Line 1 *</label>
+                        <Label required>Address Line 1</Label>
                         <input
                             type="text"
                             required
@@ -214,7 +248,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div className="col-span-2">
-                        <label className="block text-sm text-gray-400 mb-1">Address Line 2</label>
+                        <Label>Address Line 2</Label>
                         <input
                             type="text"
                             value={profile.addressLine2 || ""}
@@ -223,7 +257,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">City *</label>
+                        <Label required>City</Label>
                         <input
                             type="text"
                             required
@@ -233,7 +267,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">State/Province *</label>
+                        <Label required>State/Province</Label>
                         <input
                             type="text"
                             required
@@ -243,7 +277,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Postal Code *</label>
+                        <Label required>Postal Code</Label>
                         <input
                             type="text"
                             required
@@ -253,7 +287,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Country *</label>
+                        <Label required>Country</Label>
                         <input
                             type="text"
                             required
@@ -270,7 +304,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 <h4 className="text-white font-medium mb-4">Primary Contact</h4>
                 <div className="grid grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Name *</label>
+                        <Label required>Name</Label>
                         <input
                             type="text"
                             required
@@ -280,7 +314,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Email *</label>
+                        <Label required>Email</Label>
                         <input
                             type="email"
                             required
@@ -290,7 +324,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Phone *</label>
+                        <Label required>Phone</Label>
                         <input
                             type="tel"
                             required
@@ -307,7 +341,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 <h4 className="text-white font-medium mb-4">Secondary Contact (Optional)</h4>
                 <div className="grid grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Name</label>
+                        <Label>Name</Label>
                         <input
                             type="text"
                             value={profile.secondaryContactName || ""}
@@ -316,7 +350,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Email</label>
+                        <Label>Email</Label>
                         <input
                             type="email"
                             value={profile.secondaryContactEmail || ""}
@@ -325,7 +359,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Phone</label>
+                        <Label>Phone</Label>
                         <input
                             type="tel"
                             value={profile.secondaryContactPhone || ""}
@@ -341,7 +375,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                 <h4 className="text-white font-medium mb-4">Additional Information</h4>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Website URL</label>
+                        <Label>Website URL</Label>
                         <input
                             type="url"
                             value={profile.websiteUrl || ""}
@@ -351,7 +385,7 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Established Year</label>
+                        <Label>Established Year</Label>
                         <input
                             type="number"
                             min={1800}
