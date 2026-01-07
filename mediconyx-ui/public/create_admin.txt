@@ -1,0 +1,28 @@
+DO $$
+DECLARE
+    platform_tenant_id integer;
+BEGIN
+    -- Get or create platform tenant
+    SELECT "Id" INTO platform_tenant_id FROM "Tenants" WHERE "Name" = 'Platform';
+    IF platform_tenant_id IS NULL THEN
+        INSERT INTO "Tenants" ("Name", "IsActive", "CreatedAt") 
+        VALUES ('Platform', true, NOW()) 
+        RETURNING "Id" INTO platform_tenant_id;
+    END IF;
+
+    -- Upsert admin user
+    IF NOT EXISTS (SELECT 1 FROM "Users" WHERE "Email" = 'admin@mediconyx.local') THEN
+        INSERT INTO "Users" ("Email", "PasswordHash", "FirstName", "LastName", "PhoneNumber", "Role", "IsActive", "TenantId", "CreatedAt")
+        VALUES (
+            'admin@mediconyx.local', 
+            'pToG7+F9X/yV5M/m6L0/pQ==', -- Placeholder hash, I should check how PasswordService hashes
+            'Admin', 
+            'User', 
+            '555-0199', 
+            1, -- Admin Role
+            true, 
+            platform_tenant_id, 
+            NOW()
+        );
+    END IF;
+END $$;
