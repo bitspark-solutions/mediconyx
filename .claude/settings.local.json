@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build *)",
+      "Bash(*)",
       "Bash(where.exe dotnet *)",
       "Read(//c/Program Files/dotnet/**)",
       "Read(//c/Program Files \\(x86\\)/dotnet/**)",
@@ -27,7 +28,33 @@
       "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@mediconyx.local\",\"password\":\"Admin@123\"}')",
       "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"master@mediconyx.local\",\"password\":\"Master@123\"}')",
       "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"master@mediconyx.local\",\"password\":\"MasterPass123!\"}')",
-      "Bash(curl -s 'http://localhost:9765/api/patient?pageSize=1' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZmM0YjMxNGItNDIxZi00YTVkLWJmZjUtOGI5M2NhMmY1ZmMxIiwiZXhwIjoxNzc2ODczOTUzLCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.6j3YJBbiBP2GyySaRNXR7gtF6VmmuJludMGlsFW0H1I')"
+      "Bash(curl -s 'http://localhost:9765/api/patient?pageSize=1' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZmM0YjMxNGItNDIxZi00YTVkLWJmZjUtOGI5M2NhMmY1ZmMxIiwiZXhwIjoxNzc2ODczOTUzLCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.6j3YJBbiBP2GyySaRNXR7gtF6VmmuJludMGlsFW0H1I')",
+      "Bash(curl -s 'http://localhost:9765/api/prescription?pageSize=2' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZWY2NDI0MWYtZDc4YS00YmIxLTg2MmYtMTFmM2RkMzUyYTAyIiwiZXhwIjoxNzc2ODc0MTU3LCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.WUrB0IpXSNdrYwio7wj44JG_gWjgaPUeQ6Aj4nyJu7c')",
+      "Bash(curl -s 'http://localhost:9765/api/medicalnote?pageSize=2' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZWY2NDI0MWYtZDc4YS00YmIxLTg2MmYtMTFmM2RkMzUyYTAyIiwiZXhwIjoxNzc2ODc0MTU3LCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.WUrB0IpXSNdrYwio7wj44JG_gWjgaPUeQ6Aj4nyJu7c')",
+      "Bash(curl -s http://localhost:9765/api/ -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZWY2NDI0MWYtZDc4YS00YmIxLTg2MmYtMTFmM2RkMzUyYTAyIiwiZXhwIjoxNzc2ODc0MTU3LCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.WUrB0IpXSNdrYwio7wj44JG_gWjgaPUeQ6Aj4nyJu7c')",
+      "Bash(curl -s http://localhost:9765/swagger/v1/swagger.json)",
+      "Bash(curl -s http://localhost:7890/)",
+      "Bash(*)",
+      "WebSearch",
+      "WebFetch(domain:www.pinecone.io)",
+      "WebFetch(*)",
+      "WebFetch(domain:research.ibm.com)",
+      "WebFetch(domain:www.hhs.gov)",
+      "WebFetch(domain:www.fda.gov)",
+      "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:blog.langchain.dev)",
+      "WebFetch(domain:docs.llamaindex.ai)",
+      "WebFetch(domain:www.langchain.com)",
+      "WebFetch(domain:developers.llamaindex.ai)",
+      "WebFetch(domain:www.datacamp.com)",
+      "WebFetch(domain:microsoft.github.io)",
+      "WebFetch(domain:qdrant.tech)",
+      "WebFetch(domain:health.ec.europa.eu)",
+      "WebFetch(domain:www.ictdiva.gov.bd)",
+      "WebFetch(domain:artificialintelligenceact.eu)",
+      "WebFetch(domain:gdpr.eu)",
+      "WebFetch(domain:commission.europa.eu)",
+      "WebFetch(domain:services.google.com)"
     ]
   }
 }

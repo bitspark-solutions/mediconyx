@@ -33,6 +33,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<VitalSign> VitalSigns { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
 
+    // AI RAG entities
+    public DbSet<FileAttachment> FileAttachments { get; set; }
+    public DbSet<AIConversation> AIConversations { get; set; }
+    public DbSet<AIMessage> AIMessages { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -321,6 +326,40 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).HasConversion<int>();
             entity.Property(e => e.PaymentMethod).HasConversion<int>();
             entity.Property(e => e.PaymentReference).HasMaxLength(200);
+        });
+
+        // FileAttachment configuration
+        modelBuilder.Entity<FileAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => e.StorageFileId);
+            entity.HasIndex(e => new { e.TenantId, e.Category });
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.OriginalFileName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Category).HasConversion<int>();
+            entity.Property(e => e.Description).HasMaxLength(1000);
+        });
+
+        // AIConversation configuration
+        modelBuilder.Entity<AIConversation>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+        });
+
+        // AIMessage configuration
+        modelBuilder.Entity<AIMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ConversationId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Property(e => e.Content).IsRequired().HasMaxLength(10000);
+            entity.Property(e => e.Role).HasConversion<int>();
+            entity.Property(e => e.Confidence).HasColumnType("numeric(3,2)");
         });
     }
 }

@@ -72,6 +72,36 @@ builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService
 // Captcha service with HttpClient
 builder.Services.AddHttpClient<ICaptchaService, RecaptchaService>();
 
+// Storage service with HttpClient
+builder.Services.AddHttpClient<IStorageService, StorageService>();
+builder.Services.Configure<StorageServiceOptions>(
+    builder.Configuration.GetSection("StorageService"));
+
+// LLM/Embedding Provider Configuration
+// Supports: OpenAI, Ollama, Alibaba/DashScope, AWS Bedrock, Azure OpenAI, and any OpenAI-compatible API
+var llmConfig = builder.Configuration.GetSection("LLM");
+var embeddingConfig = builder.Configuration.GetSection("Embedding");
+
+var llmProvider = llmConfig["Provider"] ?? "OpenAI";
+var embeddingProvider = embeddingConfig["Provider"] ?? llmProvider; // Default to same as LLM
+
+// LLM Service (any REST API provider)
+builder.Services.AddHttpClient<ILLMService, GenericLlmService>();
+builder.Services.Configure<GenericLlmOptions>(llmConfig);
+
+// Embedding Service (any REST API provider)
+builder.Services.AddHttpClient<IEmbeddingService, GenericEmbeddingService>();
+builder.Services.Configure<GenericEmbeddingOptions>(embeddingConfig);
+
+Console.WriteLine($"🧠 LLM Provider: {llmProvider} ({llmConfig["BaseUrl"]}/{llmConfig["Model"]})");
+Console.WriteLine($"📊 Embedding Provider: {embeddingProvider} ({embeddingConfig["BaseUrl"]}/{embeddingConfig["Model"]})");
+
+// LLM Provider Factory (for querying current provider info)
+builder.Services.AddScoped<ILLMProviderFactory, LLMProviderFactory>();
+
+// RAG Query service
+builder.Services.AddScoped<IRagQueryService, RagQueryService>();
+
 // Rate limiting
 builder.Services.AddMemoryCache();
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
