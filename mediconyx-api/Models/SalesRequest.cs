@@ -51,45 +51,4 @@ public class SalesRequest
     public ICollection<OnboardingTimelineEvent> Timeline { get; set; } = new List<OnboardingTimelineEvent>();
 }
 
-public enum SalesRequestStatus
-{
-    Pending = 0,
-    Qualified = 1,
-    InProgress = 2,
-    AwaitingPayment = 3,
-    Provisioning = 4,
-    Active = 5,
-    Rejected = 6,
-    Suspended = 7,
-    Deactivated = 8
-}
 
-public enum BillingCycle
-{
-    Monthly = 0,
-    Annual = 1
-}
-
-public enum PaymentStatus
-{
-    Pending = 0,
-    Paid = 1,
-    Failed = 2,
-    Refunded = 3
-}
-
-public enum PaymentMethod
-{
-    BankTransfer = 0,
-    CreditCard = 1,
-    Invoice = 2,
-    bKash = 3,
-    Nagad = 4
-}
-
-public enum PaymentTerms
-{
-    Immediate = 0,
-    Net30 = 1,
-    Net60 = 2
-}

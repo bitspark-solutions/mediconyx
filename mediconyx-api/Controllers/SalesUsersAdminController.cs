@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services;
 
 namespace mediconyx_api.Controllers;
@@ -72,18 +73,4 @@ public class SalesUsersAdminController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
-}
-
-public class CreateSalesUser
-{
-    public string Email { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
-}
-
-public class ToggleActiveRequest
-{
-    public bool IsActive { get; set; }
 }

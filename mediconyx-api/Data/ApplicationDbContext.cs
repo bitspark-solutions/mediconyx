@@ -23,6 +23,16 @@ public class ApplicationDbContext : DbContext
     public DbSet<TechnicalRequirements> TechnicalRequirements { get; set; }
     public DbSet<ModuleSelection> ModuleSelections { get; set; }
 
+    // Core hospital module entities
+    public DbSet<Patient> Patients { get; set; }
+    public DbSet<Department> Departments { get; set; }
+    public DbSet<Appointment> Appointments { get; set; }
+    public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+    public DbSet<MedicalNote> MedicalNotes { get; set; }
+    public DbSet<Prescription> Prescriptions { get; set; }
+    public DbSet<VitalSign> VitalSigns { get; set; }
+    public DbSet<Invoice> Invoices { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -195,6 +205,122 @@ public class ApplicationDbContext : DbContext
                 .WithOne(r => r.ModuleSelection)
                 .HasForeignKey<ModuleSelection>(e => e.SalesRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Patient configuration
+        modelBuilder.Entity<Patient>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientNumber }).IsUnique();
+            entity.HasIndex(e => new { e.TenantId, e.Phone });
+            entity.HasIndex(e => new { e.TenantId, e.NationalId })
+                .HasFilter("\"NationalId\" IS NOT NULL");
+            entity.HasIndex(e => new { e.TenantId, e.IsActive });
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.NationalId).HasMaxLength(50);
+            entity.Property(e => e.PatientNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.BloodGroup).HasMaxLength(5);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.PostalCode).HasMaxLength(20);
+            entity.Property(e => e.EmergencyContactName).HasMaxLength(200);
+            entity.Property(e => e.EmergencyContactPhone).HasMaxLength(50);
+            entity.Property(e => e.EmergencyContactRelation).HasMaxLength(100);
+            entity.Property(e => e.Gender).HasConversion<int>();
+        });
+
+        // Department configuration
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+            entity.HasIndex(e => new { e.TenantId, e.IsActive });
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        // Appointment configuration
+        modelBuilder.Entity<Appointment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.AppointmentDate, e.DoctorId });
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => new { e.TenantId, e.Status });
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.Type).HasConversion<int>();
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.Property(e => e.CancelReason).HasMaxLength(500);
+        });
+
+        // DoctorSchedule configuration
+        modelBuilder.Entity<DoctorSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.DoctorId, e.DayOfWeek });
+            entity.Property(e => e.DayOfWeek).HasConversion<int>();
+        });
+
+        // MedicalNote configuration
+        modelBuilder.Entity<MedicalNote>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => new { e.TenantId, e.AuthorUserId });
+            entity.HasIndex(e => e.AppointmentId).HasFilter("\"AppointmentId\" IS NOT NULL");
+            entity.Property(e => e.NoteType).HasConversion<int>();
+            entity.Property(e => e.Content).IsRequired().HasMaxLength(10000);
+            entity.Property(e => e.Diagnosis).HasMaxLength(500);
+        });
+
+        // Prescription configuration
+        modelBuilder.Entity<Prescription>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => new { e.TenantId, e.DoctorId });
+            entity.HasIndex(e => e.AppointmentId);
+            entity.Property(e => e.Medications).IsRequired().HasMaxLength(5000);
+            entity.Property(e => e.Instructions).HasMaxLength(2000);
+            entity.Property(e => e.Allergies).HasMaxLength(1000);
+        });
+
+        // VitalSign configuration
+        modelBuilder.Entity<VitalSign>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.PatientId, e.RecordedAt });
+            entity.HasIndex(e => e.AppointmentId).HasFilter("\"AppointmentId\" IS NOT NULL");
+            entity.Property(e => e.TemperatureCelsius).HasColumnType("numeric(4,1)");
+            entity.Property(e => e.WeightKg).HasColumnType("numeric(5,1)");
+            entity.Property(e => e.HeightCm).HasColumnType("numeric(5,1)");
+            entity.Property(e => e.BloodGlucose).HasColumnType("numeric(5,1)");
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+        });
+
+        // Invoice configuration
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.InvoiceNumber }).IsUnique();
+            entity.HasIndex(e => new { e.TenantId, e.PatientId });
+            entity.HasIndex(e => new { e.TenantId, e.Status });
+            entity.HasIndex(e => new { e.TenantId, e.CreatedAt });
+            entity.Property(e => e.InvoiceNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.LineItems).IsRequired().HasMaxLength(10000);
+            entity.Property(e => e.SubTotal).HasColumnType("numeric(12,2)");
+            entity.Property(e => e.TaxAmount).HasColumnType("numeric(12,2)");
+            entity.Property(e => e.TaxRate).HasColumnType("numeric(5,2)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("numeric(12,2)");
+            entity.Property(e => e.TotalAmount).HasColumnType("numeric(12,2)");
+            entity.Property(e => e.PaidAmount).HasColumnType("numeric(12,2)");
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.PaymentMethod).HasConversion<int>();
+            entity.Property(e => e.PaymentReference).HasMaxLength(200);
         });
     }
 }

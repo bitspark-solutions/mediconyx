@@ -14,7 +14,7 @@ services:
     ports:
       - "9543:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
       interval: 10s
@@ -43,7 +43,6 @@ services:
       MasterUser__Password: ${MASTER_PASSWORD}
       MasterUser__FirstName: ${MASTER_FIRST_NAME}
       MasterUser__LastName: ${MASTER_LAST_NAME}
-      REDIS_CONNECTION: redis:6379
       SMTP_HOST: mailhog
       SMTP_PORT: "1025"
       StorageService__BaseUrl: http://storage:8080
@@ -52,8 +51,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_started
       mailhog:
         condition: service_started
       storage:
@@ -75,20 +72,6 @@ services:
     depends_on:
       api:
         condition: service_started
-
-  redis:
-    image: redis:7-alpine
-    container_name: mediconyx-redis
-    networks:
-      - mediconyx
-    restart: unless-stopped
-    ports:
-      - "9867:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   mailhog:
     image: mailhog/mailhog:latest

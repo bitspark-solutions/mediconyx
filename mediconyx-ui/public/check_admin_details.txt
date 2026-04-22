@@ -1,0 +1,1 @@
+SELECT "Id", "Email", "PasswordHash", "Role", "IsActive", "TenantId" FROM "Users" WHERE "Email" = 'admin@mediconyx.local';

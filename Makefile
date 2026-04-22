@@ -1,5 +1,5 @@
 COMPOSE = docker compose
-SERVICES = api ui db redis mailhog
+SERVICES = api ui db mailhog
 
 .PHONY: up down purge build rebuild ps logs api-logs ui-logs restart api ui
 

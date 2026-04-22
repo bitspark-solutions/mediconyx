@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(where.exe dotnet *)",
+      "Read(//c/Program Files/dotnet/**)",
+      "Read(//c/Program Files \\(x86\\)/dotnet/**)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose version *)",
+      "Bash(netstat -ano)",
+      "Bash(docker start *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:9765/swagger/index.html)",
+      "Bash(docker stop *)",
+      "Bash(docker rm *)",
+      "Bash(docker volume *)",
+      "Bash(docker run *)",
+      "Bash(docker exec *)",
+      "Bash(curl -s http://localhost:9765/swagger/index.html)",
+      "Bash(docker restart *)",
+      "Bash(curl -s -o /dev/null -w \"UI: %{http_code}\\\\n\" http://localhost:9673)",
+      "Bash(curl -s -o /dev/null -w \"API: %{http_code}\\\\n\" http://localhost:9765/swagger/index.html)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:9673/)",
+      "Bash(curl -s http://localhost:9765/api/patient?pageSize=1)",
+      "Bash(curl -s -w \"%{http_code}\" http://localhost:9765/api/patient?pageSize=1)",
+      "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@mediconyx.local\",\"password\":\"Admin@123\"}')",
+      "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"master@mediconyx.local\",\"password\":\"Master@123\"}')",
+      "Bash(curl -s -X POST http://localhost:9765/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"master@mediconyx.local\",\"password\":\"MasterPass123!\"}')",
+      "Bash(curl -s 'http://localhost:9765/api/patient?pageSize=1' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJtYXN0ZXJAbWVkaWNvbnl4LmxvY2FsIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6Ik1hc3RlciBVc2VyIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiTWFzdGVyIiwiVGVuYW50SWQiOiIxIiwianRpIjoiZmM0YjMxNGItNDIxZi00YTVkLWJmZjUtOGI5M2NhMmY1ZmMxIiwiZXhwIjoxNzc2ODczOTUzLCJpc3MiOiJNZWRpY29ueXgiLCJhdWQiOiJNZWRpY29ueXhBUEkifQ.6j3YJBbiBP2GyySaRNXR7gtF6VmmuJludMGlsFW0H1I')"
+    ]
+  }
+}
