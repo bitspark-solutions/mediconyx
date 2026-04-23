@@ -32,11 +32,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<Prescription> Prescriptions { get; set; }
     public DbSet<VitalSign> VitalSigns { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
+    public DbSet<HospitalService> HospitalServices { get; set; }
 
     // AI RAG entities
     public DbSet<FileAttachment> FileAttachments { get; set; }
     public DbSet<AIConversation> AIConversations { get; set; }
     public DbSet<AIMessage> AIMessages { get; set; }
+
+    // Hospital management entities
+    public DbSet<DoctorProfile> DoctorProfiles { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -307,6 +311,18 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Notes).HasMaxLength(1000);
         });
 
+        // HospitalService configuration
+        modelBuilder.Entity<HospitalService>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.IsActive });
+            entity.HasIndex(e => new { e.TenantId, e.ServiceType });
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ServiceType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.BasePrice).HasColumnType("numeric(10,2)");
+        });
+
         // Invoice configuration
         modelBuilder.Entity<Invoice>(entity =>
         {
@@ -360,6 +376,18 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Content).IsRequired().HasMaxLength(10000);
             entity.Property(e => e.Role).HasConversion<int>();
             entity.Property(e => e.Confidence).HasColumnType("numeric(3,2)");
+        });
+
+        // DoctorProfile configuration
+        modelBuilder.Entity<DoctorProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.IsActive });
+            entity.HasIndex(e => new { e.TenantId, e.Specialization });
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity.Property(e => e.MedicalLicenseNumber).HasMaxLength(100);
+            entity.Property(e => e.Specialization).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ConsultationFee).HasColumnType("numeric(10,2)");
         });
     }
 }

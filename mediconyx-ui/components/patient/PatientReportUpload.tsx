@@ -1,6 +1,7 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { apiClient } from "../../lib/apiClient";
+import { useAuthStore } from "../../store/useAuthStore";
 import {
   Upload,
   File,
@@ -60,23 +61,29 @@ export default function PatientReportUpload() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [category, setCategory] = useState("0");
   const [description, setDescription] = useState("");
-  const [patientId, setPatientId] = useState<number>(1); // Would come from auth
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const { user } = useAuthStore();
 
-  // Load existing attachments
-  useState(() => {
-    loadAttachments();
-  });
+  // Get patient ID from auth store (Patient role has UserId that maps to PatientId in Patient table)
+  const patientId = user?.patientId || user?.id || null;
+
+  // Load existing attachments on mount
+  useEffect(() => {
+    if (patientId) {
+      loadAttachments();
+    }
+  }, [patientId]);
 
   const loadAttachments = async () => {
+    if (!patientId) return;
     try {
       const res = await apiClient.get(`/api/file-attachment/patient/${patientId}?pageSize=50`);
       if (res.ok) {
         const data = await res.json();
-        setAttachments(data.attachments || []);
+        setAttachments(data.items || data.attachments || []);
       }
     } catch (err) {
       console.error("Failed to load attachments:", err);
@@ -145,6 +152,11 @@ export default function PatientReportUpload() {
   };
 
   const uploadFiles = async () => {
+    if (!patientId) {
+      setError("Patient ID not found. Please log in again.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -172,16 +184,17 @@ export default function PatientReportUpload() {
         formData.append("category", category);
         if (description) formData.append("description", description);
 
-        const res = await fetch("http://localhost:9765/api/fileattachment/upload", {
+        // Use raw request for FormData - don't set Content-Type so browser adds boundary
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/file-attachment/upload`, {
           method: "POST",
+          body: formData,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
           },
-          body: formData,
         });
 
         if (!res.ok) {
-          const err = await res.json();
+          const err = await res.json().catch(() => ({ message: "Upload failed" }));
           throw new Error(err.message || "Upload failed");
         }
 
@@ -379,7 +392,7 @@ export default function PatientReportUpload() {
                 </div>
                 <div className="flex items-center gap-1">
                   <a
-                    href={`http://localhost:9765/api/fileattachment/${att.id}/download`}
+                    href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/file-attachment/${att.id}/download`}
                     className="p-2 text-gray-400 hover:text-white bg-gray-800 rounded-lg transition-colors"
                     title="Download"
                   >
