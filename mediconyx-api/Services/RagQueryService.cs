@@ -172,12 +172,12 @@ Format your response with:
 Date of Birth: {patient.DateOfBirth:yyyy-MM-dd}
 Gender: {patient.Gender}
 
-Generate a {'brief' if depth == SummaryDepth.Brief else "comprehensive"} health summary based on the following context:
+Generate a {(depth == SummaryDepth.Brief ? "brief" : "comprehensive")} health summary based on the following context:
 
 {BuildContextString(contextDocuments)}
 
 Provide:
-1. A {'brief' if depth == SummaryDepth.Brief else "detailed"} clinical summary
+1. A {(depth == SummaryDepth.Brief ? "brief" : "detailed")} clinical summary
 2. List of active conditions (if known)
 3. Current medications (if any)
 4. Recent lab results (if any)
@@ -336,7 +336,7 @@ Provide:
 
         // Get medical notes
         var notes = await _context.MedicalNotes
-            .Where(n => n.TenantId == tenantId && n.PatientId == patientId && n.IsActive)
+            .Where(n => n.TenantId == tenantId && n.PatientId == patientId)
             .OrderByDescending(n => n.CreatedAt)
             .Take(20)
             .ToListAsync(ct);

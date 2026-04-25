@@ -34,9 +34,6 @@ namespace mediconyx_api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AppointmentId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("AppointmentDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("AppointmentDate");
@@ -113,8 +110,6 @@ namespace mediconyx_api.Migrations
                         .HasColumnName("UpdatedAt");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AppointmentId");
 
                     b.HasIndex("PatientId");
 
@@ -295,6 +290,10 @@ namespace mediconyx_api.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("TotalAmount");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("CreatedAt");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -565,6 +564,10 @@ namespace mediconyx_api.Migrations
                         .HasColumnName("Id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AppointmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("AppointmentId");
 
                     b.Property<decimal?>("BloodGlucose")
                         .HasColumnType("numeric(5,1)")

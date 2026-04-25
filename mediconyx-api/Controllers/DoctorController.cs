@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
+using mediconyx_api.Services;
 using mediconyx_api.Services.Interfaces;
 
 namespace mediconyx_api.Controllers;
@@ -117,7 +118,7 @@ public class DoctorController : ControllerBase
             PasswordHash = _passwordService.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            Phone = request.Phone,
+            PhoneNumber = request.Phone,
             Role = UserRole.Doctor,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -178,7 +179,7 @@ public class DoctorController : ControllerBase
         // Update user fields
         if (request.FirstName != null) doctor.User.FirstName = request.FirstName;
         if (request.LastName != null) doctor.User.LastName = request.LastName;
-        if (request.Phone != null) doctor.User.Phone = request.Phone;
+        if (request.Phone != null) doctor.User.PhoneNumber = request.Phone;
 
         // Update profile fields
         if (request.MedicalLicenseNumber != null) doctor.MedicalLicenseNumber = request.MedicalLicenseNumber;
@@ -265,7 +266,7 @@ public class DoctorController : ControllerBase
             FirstName = doctor.User?.FirstName ?? "",
             LastName = doctor.User?.LastName ?? "",
             Email = doctor.User?.Email ?? "",
-            Phone = doctor.User?.Phone,
+            Phone = doctor.User?.PhoneNumber,
             MedicalLicenseNumber = doctor.MedicalLicenseNumber,
             Specialization = doctor.Specialization,
             DepartmentId = doctor.DepartmentId,

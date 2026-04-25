@@ -213,7 +213,7 @@ public class FileAttachmentController : ControllerBase
 
         return new FileAttachmentListResponse
         {
-            Attachments = await Task.WhenAll(attachments.Select(MapToDto)),
+            Attachments = (await Task.WhenAll(attachments.Select(MapToDto))).ToList(),
             TotalCount = totalCount,
             PageNumber = pageNumberClamped,
             PageSize = pageSizeClamped,

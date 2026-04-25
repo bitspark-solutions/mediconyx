@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
+using mediconyx_api.Services.Interfaces;
 
 namespace mediconyx_api.Controllers;
 
@@ -139,7 +140,10 @@ public class TenantSettingsController : ControllerBase
         {
             // Upload to storage
             var fileName = $"tenant-{tenantId}/logo.{file.ContentType.Split('/')[1]}";
-            var storageKey = await _storageService.UploadAsync(file.OpenReadStream(), fileName, file.ContentType);
+            var uploadResult = await _storageService.UploadAsync(file.OpenReadStream(), fileName, file.ContentType);
+            if (!uploadResult.Success || string.IsNullOrEmpty(uploadResult.StorageFileId))
+                return StatusCode(500, new { message = "Storage upload failed" });
+            var storageKey = uploadResult.StorageFileId;
 
             // Update tenant with logo URL
             var tenant = await _context.Tenants.FindAsync(tenantId.Value);
@@ -150,7 +154,7 @@ public class TenantSettingsController : ControllerBase
             await _context.SaveChangesAsync();
 
             // Generate download URL
-            var logoUrl = await _storageService.GenerateDownloadUrlAsync(storageKey, TimeSpan.FromHours(24));
+            var logoUrl = await _storageService.GenerateDownloadUrlAsync(storageKey, 1440);
 
             _logger.LogInformation("Tenant {TenantId} logo updated", tenantId);
 
@@ -190,7 +194,7 @@ public class TenantSettingsController : ControllerBase
         if (string.IsNullOrEmpty(tenant.LogoUrl))
             return NotFound(new { message = "No logo uploaded" });
 
-        var logoUrl = await _storageService.GenerateDownloadUrlAsync(tenant.LogoUrl, TimeSpan.FromHours(24));
+        var logoUrl = await _storageService.GenerateDownloadUrlAsync(tenant.LogoUrl, 1440);
 
         return Ok(new LogoUploadResponse
         {

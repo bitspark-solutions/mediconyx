@@ -628,7 +628,28 @@ namespace mediconyx_api.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("BusinessRegistrationNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LogoUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("ModuleAnalyticsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("ModuleAppointmentEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OperatingHours")
+                        .HasColumnType("text");
+
                     b.Property<string>("Subdomain")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TimeZone")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("SubscriptionExpiresAt")
