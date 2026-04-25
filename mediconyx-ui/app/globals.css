@@ -15,6 +15,111 @@
   --accent-danger: #EF4444;
 }
 
+.clinical-shell {
+  --clinical-background: #f8f9ff;
+  --clinical-surface: #ffffff;
+  --clinical-surface-low: #eff4ff;
+  --clinical-surface-container: #e5eeff;
+  --clinical-surface-high: #dce9ff;
+  --clinical-on-surface: #0b1c30;
+  --clinical-on-surface-variant: #444653;
+  --clinical-outline: #c4c5d5;
+  --clinical-primary: #00288e;
+  --clinical-primary-container: #1e40af;
+  --clinical-secondary: #712ae2;
+  --clinical-error-container: #ffdad6;
+  --clinical-on-error-container: #93000a;
+  background-color: var(--clinical-background);
+  color: var(--clinical-on-surface);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.clinical-grid-bg {
+  position: relative;
+  background-color: var(--clinical-background);
+}
+
+.clinical-grid-bg::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.2;
+  background-image:
+    linear-gradient(to right, #cbd5e1 1px, transparent 1px),
+    linear-gradient(to bottom, #cbd5e1 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+.clinical-card {
+  background-color: var(--clinical-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(30, 64, 175, 0.04);
+}
+
+.clinical-card-ai {
+  background-color: var(--clinical-surface);
+  border: 1px solid #d2bbff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(113, 42, 226, 0.05);
+}
+
+.clinical-ai-accent {
+  background-image: linear-gradient(to right, var(--clinical-primary), var(--clinical-secondary));
+}
+
+.clinical-shell .bg-gray-900 {
+  background-color: var(--clinical-surface);
+}
+
+.clinical-shell .bg-gray-800,
+.clinical-shell .bg-gray-800\/50,
+.clinical-shell .bg-gray-800\/80 {
+  background-color: var(--clinical-surface-low);
+}
+
+.clinical-shell .border-gray-800,
+.clinical-shell .border-gray-700 {
+  border-color: #e2e8f0;
+}
+
+.clinical-shell .text-white,
+.clinical-shell .text-gray-100,
+.clinical-shell .text-gray-200,
+.clinical-shell .text-gray-300 {
+  color: var(--clinical-on-surface);
+}
+
+.clinical-shell .text-gray-400,
+.clinical-shell .text-gray-500 {
+  color: var(--clinical-on-surface-variant);
+}
+
+.clinical-shell .text-gray-600 {
+  color: #64748b;
+}
+
+.clinical-shell .placeholder-gray-500::placeholder {
+  color: #94a3b8;
+}
+
+.clinical-shell .hover\:bg-gray-800\/50:hover,
+.clinical-shell .hover\:bg-gray-800:hover,
+.clinical-shell .hover\:bg-gray-700:hover {
+  background-color: var(--clinical-surface-container);
+}
+
+.clinical-shell .divide-gray-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e2e8f0;
+}
+
+.clinical-shell input,
+.clinical-shell select,
+.clinical-shell textarea {
+  color-scheme: light;
+}
+
 html[data-theme="dark"],
 body {
   background-color: var(--bg);

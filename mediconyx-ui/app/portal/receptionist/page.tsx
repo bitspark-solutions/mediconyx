@@ -1,31 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ProtectedRoute from "../../../components/ProtectedRoute";
-import ReceptionistSidebar from "../../../components/receptionist/ReceptionistSidebar";
-import ReceptionistTopbar from "../../../components/receptionist/ReceptionistTopbar";
+import ClinicalPortalLayout from "../../../components/layout/ClinicalPortalLayout";
 import ReceptionistDashboard from "../../../components/receptionist/ReceptionistDashboard";
 import PatientList from "../../../components/receptionist/PatientList";
 import AppointmentBooking from "../../../components/receptionist/AppointmentBooking";
 import AppointmentList from "../../../components/receptionist/AppointmentList";
+import { Calendar, ClipboardList, LayoutDashboard, Settings, Users } from "lucide-react";
 
 export default function ReceptionistPortal() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState("dashboard");
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <ProtectedRoute allowedRoles={["Receptionist"]}>
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  const menuItems = [
+    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { id: "patients", label: "Patients", icon: Users },
+    { id: "appointments", label: "Appointments", icon: Calendar },
+    { id: "queue", label: "Queue", icon: ClipboardList },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
 
   const getPageTitle = () => {
     switch (activeMenu) {
@@ -51,20 +43,22 @@ export default function ReceptionistPortal() {
 
   return (
     <ProtectedRoute allowedRoles={["Receptionist"]}>
-      <main className="min-h-screen bg-black">
-        <ReceptionistSidebar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          activeMenu={activeMenu}
-          setActiveMenu={setActiveMenu}
-        />
-        <ReceptionistTopbar title={getPageTitle()} />
-        <div className={`pt-20 transition-all duration-300 ${sidebarOpen ? "pl-64" : "pl-20"}`}>
-          <div className="p-6 max-w-7xl mx-auto">
-            {renderContent()}
+      <ClinicalPortalLayout
+        portalLabel="Receptionist Portal"
+        activeItem={activeMenu}
+        navItems={menuItems}
+        onNavigate={setActiveMenu}
+        primaryActionLabel="New Admission"
+        searchPlaceholder="Search patients, appointments..."
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">{getPageTitle()}</h2>
+            <p className="mt-1 text-sm text-slate-500">Coordinate patient intake, appointment booking, and front-desk queue operations.</p>
           </div>
         </div>
-      </main>
+        {renderContent()}
+      </ClinicalPortalLayout>
     </ProtectedRoute>
   );
 }

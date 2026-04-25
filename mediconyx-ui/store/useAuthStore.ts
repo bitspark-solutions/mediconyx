@@ -8,6 +8,7 @@ interface User {
   lastName: string
   role: string
   tenantId: number
+  patientId?: number
 }
 
 interface AuthState {
