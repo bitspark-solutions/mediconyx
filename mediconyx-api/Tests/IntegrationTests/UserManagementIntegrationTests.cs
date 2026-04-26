@@ -45,7 +45,7 @@ public class UserManagementIntegrationTests : IDisposable
         _adminUser = new User
         {
             Email = "admin@test.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("AdminPass123!"),
+            PasswordHash = "stub_hash",
             FirstName = "Admin",
             LastName = "User",
             Role = UserRole.Admin,
@@ -66,7 +66,7 @@ public class UserManagementIntegrationTests : IDisposable
         var user = new User
         {
             Email = "test@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!"),
+            PasswordHash = "stub_hash",
             FirstName = "Test",
             LastName = "User",
             Role = UserRole.Doctor,
