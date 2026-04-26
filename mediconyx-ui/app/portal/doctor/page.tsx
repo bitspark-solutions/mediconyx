@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/ProtectedRoute";
 import ClinicalPortalLayout from "../../../components/layout/ClinicalPortalLayout";
+import NewConsultationWorkflow from "../../../components/clinical/NewConsultationWorkflow";
 import { apiClient } from "../../../lib/apiClient";
 import {
   Bot,
   Users,
   Calendar,
+  Stethoscope,
   Activity,
   Pill,
   AlertCircle,
@@ -94,6 +96,7 @@ export default function DoctorPortal() {
 
   const menuItems = [
     { id: "patients", label: "Patients", icon: Users },
+    { id: "consultation", label: "New Consultation", icon: Stethoscope },
     { id: "appointments", label: "Appointments", icon: Calendar },
     { id: "ai-assist", label: "AI Assist", icon: Bot },
   ];
@@ -109,7 +112,8 @@ export default function DoctorPortal() {
         activeItem={activeTab}
         navItems={menuItems}
         onNavigate={setActiveTab}
-        primaryActionLabel="New Clinical Note"
+        primaryActionLabel="New Consultation"
+        onPrimaryAction={() => setActiveTab("consultation")}
         searchPlaceholder="Search patients, records..."
       >
         <div className="mb-6 flex items-center justify-between">
@@ -320,6 +324,8 @@ export default function DoctorPortal() {
               </div>
             </div>
           )}
+
+          {activeTab === "consultation" && <NewConsultationWorkflow role="doctor" />}
 
           {activeTab === "appointments" && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">

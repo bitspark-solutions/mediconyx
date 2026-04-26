@@ -6,7 +6,8 @@ import ReceptionistDashboard from "../../../components/receptionist/Receptionist
 import PatientList from "../../../components/receptionist/PatientList";
 import AppointmentBooking from "../../../components/receptionist/AppointmentBooking";
 import AppointmentList from "../../../components/receptionist/AppointmentList";
-import { Calendar, ClipboardList, LayoutDashboard, Settings, Users } from "lucide-react";
+import NewConsultationWorkflow from "../../../components/clinical/NewConsultationWorkflow";
+import { Calendar, ClipboardList, LayoutDashboard, Settings, Stethoscope, Users } from "lucide-react";
 
 export default function ReceptionistPortal() {
   const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -15,6 +16,7 @@ export default function ReceptionistPortal() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "patients", label: "Patients", icon: Users },
     { id: "appointments", label: "Appointments", icon: Calendar },
+    { id: "consultation", label: "New Consultation", icon: Stethoscope },
     { id: "queue", label: "Queue", icon: ClipboardList },
     { id: "settings", label: "Settings", icon: Settings },
   ];
@@ -24,6 +26,7 @@ export default function ReceptionistPortal() {
       case "dashboard": return "Dashboard";
       case "patients": return "Patient Registry";
       case "appointments": return "Appointment Booking";
+      case "consultation": return "New Patient Consultation";
       case "queue": return "Appointment Queue";
       case "settings": return "Settings";
       default: return "Dashboard";
@@ -35,6 +38,7 @@ export default function ReceptionistPortal() {
       case "dashboard": return <ReceptionistDashboard />;
       case "patients": return <PatientList />;
       case "appointments": return <AppointmentBooking />;
+      case "consultation": return <NewConsultationWorkflow role="receptionist" />;
       case "queue": return <AppointmentList />;
       case "settings": return <SettingsPage />;
       default: return <ReceptionistDashboard />;
@@ -49,6 +53,7 @@ export default function ReceptionistPortal() {
         navItems={menuItems}
         onNavigate={setActiveMenu}
         primaryActionLabel="New Admission"
+        onPrimaryAction={() => setActiveMenu("consultation")}
         searchPlaceholder="Search patients, appointments..."
       >
         <div className="mb-6 flex items-center justify-between">
