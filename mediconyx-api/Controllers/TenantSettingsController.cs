@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
-using mediconyx_api.Services.Interfaces;
+using mediconyx_api.Services.AI;
 
 namespace mediconyx_api.Controllers;
 

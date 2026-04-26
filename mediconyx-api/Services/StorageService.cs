@@ -1,13 +1,7 @@
 using System.Net.Http.Json;
-using mediconyx_api.Services.Interfaces;
 using Microsoft.Extensions.Options;
 
-namespace mediconyx_api.Services;
-
-public class StorageServiceOptions
-{
-    public string BaseUrl { get; set; } = "http://localhost:7890";
-}
+namespace mediconyx_api.Services.AI;
 
 public class StorageService : IStorageService
 {

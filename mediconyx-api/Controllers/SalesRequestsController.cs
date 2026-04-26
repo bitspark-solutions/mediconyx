@@ -5,7 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
-using mediconyx_api.Services;
+using mediconyx_api.Services.Infrastructure;
 using System.Security.Cryptography;
 
 namespace mediconyx_api.Controllers;
@@ -692,3 +692,4 @@ public class SalesRequestsController : ControllerBase
         _logger.LogDebug("Metrics cache invalidated");
     }
 }
+

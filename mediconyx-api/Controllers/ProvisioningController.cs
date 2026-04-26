@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
-using mediconyx_api.Services;
+using mediconyx_api.Services.Infrastructure;
 
 namespace mediconyx_api.Controllers;
 
@@ -213,3 +213,4 @@ public class ProvisioningController : ControllerBase
         }
     }
 }
+

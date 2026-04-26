@@ -1,6 +1,7 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public class RecaptchaService : ICaptchaService
 {
@@ -10,7 +11,7 @@ public class RecaptchaService : ICaptchaService
     private readonly bool _isDevelopment;
 
     public RecaptchaService(
-        HttpClient httpClient, 
+        HttpClient httpClient,
         IConfiguration configuration,
         ILogger<RecaptchaService> logger,
         IWebHostEnvironment environment)
@@ -23,7 +24,6 @@ public class RecaptchaService : ICaptchaService
 
     public async Task<bool> VerifyTokenAsync(string token, string? remoteIp = null)
     {
-        // In development, bypass captcha verification if no secret key is set
         if (_isDevelopment && string.IsNullOrWhiteSpace(_secretKey))
         {
             _logger.LogWarning("Captcha verification bypassed in development mode (no secret key configured)");
@@ -31,9 +31,7 @@ public class RecaptchaService : ICaptchaService
         }
 
         if (string.IsNullOrWhiteSpace(token))
-        {
             return false;
-        }
 
         try
         {
@@ -44,22 +42,18 @@ public class RecaptchaService : ICaptchaService
             };
 
             if (!string.IsNullOrWhiteSpace(remoteIp))
-            {
                 parameters.Add("remoteip", remoteIp);
-            }
 
             var content = new FormUrlEncodedContent(parameters);
             var response = await _httpClient.PostAsync("https://www.google.com/recaptcha/api/siteverify", content);
             var jsonString = await response.Content.ReadAsStringAsync();
-            
             var result = JsonSerializer.Deserialize<RecaptchaResponse>(jsonString);
-            
-            if (result?.Success == true)
-            {
-                return true;
-            }
 
-            _logger.LogWarning("Captcha verification failed: {Errors}", string.Join(", ", result?.ErrorCodes ?? Array.Empty<string>()));
+            if (result?.Success == true)
+                return true;
+
+            _logger.LogWarning("Captcha verification failed: {Errors}",
+                string.Join(", ", result?.ErrorCodes ?? Array.Empty<string>()));
             return false;
         }
         catch (Exception ex)
@@ -69,13 +63,13 @@ public class RecaptchaService : ICaptchaService
         }
     }
 
-    private class RecaptchaResponse
+    private sealed class RecaptchaResponse
     {
         public bool Success { get; set; }
         public DateTime ChallengeTs { get; set; }
         public string? Hostname { get; set; }
-        
-        [System.Text.Json.Serialization.JsonPropertyName("error-codes")]
+
+        [JsonPropertyName("error-codes")]
         public string[]? ErrorCodes { get; set; }
     }
 }

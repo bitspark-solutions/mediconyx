@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using mediconyx_api.Models;
 
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public class JwtService : IJwtService
 {
@@ -57,8 +57,5 @@ public class JwtService : IJwtService
     }
 
     public (string AccessToken, string RefreshToken) GenerateTokenPair(User user)
-    {
-        return (GenerateAccessToken(user), GenerateRefreshToken());
-    }
+        => (GenerateAccessToken(user), GenerateRefreshToken());
 }
-

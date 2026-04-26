@@ -4,8 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using mediconyx_api.Data;
-using mediconyx_api.Services;
-using mediconyx_api.Services.Interfaces;
+using mediconyx_api.Services.AI;
+using mediconyx_api.Services.Auth;
+using mediconyx_api.Services.Appointments;
+using mediconyx_api.Services.Infrastructure;
+using mediconyx_api.Services.Invoices;
+using mediconyx_api.Services.Patients;
+using mediconyx_api.Services.Users;
 using mediconyx_api.Models;
 using mediconyx_api.Middleware;
 using AspNetCoreRateLimit;
@@ -66,15 +71,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Application services
+// Infrastructure services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IFileValidationService, FileValidationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
-
-// Captcha service with HttpClient
 builder.Services.AddHttpClient<ICaptchaService, RecaptchaService>();
+
+// Feature services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 // Storage service with HttpClient
 builder.Services.AddHttpClient<IStorageService, StorageService>();
@@ -92,8 +102,6 @@ var embeddingProvider = embeddingConfig["Provider"] ?? llmProvider; // Default t
 // LLM Service (any REST API provider)
 builder.Services.AddHttpClient<ILLMService, GenericLlmService>();
 builder.Services.Configure<GenericLlmOptions>(llmConfig);
-
-// Embedding Service (any REST API provider)
 builder.Services.AddHttpClient<IEmbeddingService, GenericEmbeddingService>();
 builder.Services.Configure<GenericEmbeddingOptions>(embeddingConfig);
 
@@ -102,8 +110,6 @@ Console.WriteLine($"📊 Embedding Provider: {embeddingProvider} ({embeddingConf
 
 // LLM Provider Factory (for querying current provider info)
 builder.Services.AddScoped<ILLMProviderFactory, LLMProviderFactory>();
-
-// RAG Query service
 builder.Services.AddScoped<IRagQueryService, RagQueryService>();
 
 // Rate limiting

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using mediconyx_api.Services;
+using mediconyx_api.Services.Infrastructure;
 using Xunit;
 using System;
 

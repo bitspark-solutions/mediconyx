@@ -1,10 +1,10 @@
 using BCrypt.Net;
 
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public class PasswordService : IPasswordService
 {
-    private const int WorkFactor = 12; // BCrypt work factor (higher = more secure but slower)
+    private const int WorkFactor = 12;
 
     public string HashPassword(string password)
     {
@@ -22,4 +22,3 @@ public class PasswordService : IPasswordService
         return BCrypt.Net.BCrypt.Verify(password, passwordHash);
     }
 }
-

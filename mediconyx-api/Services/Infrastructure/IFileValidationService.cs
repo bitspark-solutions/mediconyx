@@ -1,4 +1,4 @@
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public interface IFileValidationService
 {

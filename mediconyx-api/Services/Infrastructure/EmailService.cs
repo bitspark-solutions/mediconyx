@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public class EmailService : IEmailService
 {
@@ -26,8 +26,7 @@ public class EmailService : IEmailService
 
         var subject = $"New Sales Request from {hospitalName}";
         var body = $@"
-<html>
-<body>
+<html><body>
 <h2>New Sales Request</h2>
 <p>A new sales request has been submitted:</p>
 <ul>
@@ -36,17 +35,13 @@ public class EmailService : IEmailService
 <li><strong>Request ID:</strong> {requestId}</li>
 </ul>
 <p>View and claim this request in the portal:
-<a href='{_configuration["FrontendUrl"]}/portal/sales'>Sales Dashboard</a>
-</p>
+<a href='{_configuration["FrontendUrl"]}/portal/sales'>Sales Dashboard</a></p>
 <p>Best regards,<br/>Mediconyx System</p>
-</body>
-</html>";
+</body></html>";
 
         var salesTeamEmail = _configuration["Notifications:SalesTeamEmail"];
         if (!string.IsNullOrWhiteSpace(salesTeamEmail))
-        {
             await SendEmailAsync(salesTeamEmail, subject, body);
-        }
     }
 
     public async Task SendStatusChangeNotificationAsync(int requestId, string hospitalName, string email, string oldStatus, string newStatus)
@@ -57,10 +52,8 @@ public class EmailService : IEmailService
             return;
         }
 
-        var subject = $"Your Mediconyx Request - Status Update";
         var body = $@"
-<html>
-<body>
+<html><body>
 <h2>Request Status Updated</h2>
 <p>Dear Customer,</p>
 <p>Your sales request for <strong>{hospitalName}</strong> has been updated:</p>
@@ -71,19 +64,11 @@ public class EmailService : IEmailService
 </ul>";
 
         if (newStatus == "Active")
-        {
-            body += $@"
-<p><strong>Congratulations!</strong> Your account is now active. You can login here:</p>
-<p><a href='{_configuration["FrontendUrl"]}/login'>Login to Mediconyx</a></p>";
-        }
+            body += $"<p><strong>Congratulations!</strong> Your account is now active. <a href='{_configuration["FrontendUrl"]}/login'>Login to Mediconyx</a></p>";
 
-        body += @"
-<p>If you have questions, please contact our sales team.</p>
-<p>Best regards,<br/>Mediconyx Team</p>
-</body>
-</html>";
+        body += "<p>Best regards,<br/>Mediconyx Team</p></body></html>";
 
-        await SendEmailAsync(email, subject, body);
+        await SendEmailAsync(email, "Your Mediconyx Request - Status Update", body);
     }
 
     public async Task SendClaimedNotificationAsync(int requestId, string hospitalName, string email, string claimedByName)
@@ -94,20 +79,16 @@ public class EmailService : IEmailService
             return;
         }
 
-        var subject = $"Your Mediconyx Request - Assigned to Sales Representative";
         var body = $@"
-<html>
-<body>
+<html><body>
 <h2>Request Assigned</h2>
 <p>Dear Customer,</p>
 <p>Your sales request for <strong>{hospitalName}</strong> has been assigned to {claimedByName}.</p>
-<p>They will be in contact with you shortly.</p>
-<p>Request ID: {requestId}</p>
+<p>They will be in contact with you shortly. Request ID: {requestId}</p>
 <p>Best regards,<br/>Mediconyx Team</p>
-</body>
-</html>";
+</body></html>";
 
-        await SendEmailAsync(email, subject, body);
+        await SendEmailAsync(email, "Your Mediconyx Request - Assigned to Sales Representative", body);
     }
 
     public async Task SendEmailAsync(string to, string subject, string body)
@@ -134,25 +115,20 @@ public class EmailService : IEmailService
                 Body = body,
                 IsBodyHtml = true
             };
-
             message.To.Add(to);
 
             using var client = new SmtpClient(smtpHost, smtpPort);
-            
             if (!string.IsNullOrWhiteSpace(smtpUsername) && !string.IsNullOrWhiteSpace(smtpPassword))
-            {
                 client.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
-            }
 
             client.EnableSsl = _configuration.GetValue<bool>("Smtp:EnableSsl", true);
-
             await client.SendMailAsync(message);
+
             _logger.LogInformation("Email sent to {To}: {Subject}", to, subject);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send email to {To}: {Subject}", to, subject);
-            // Don't throw - email failures shouldn't break the request
         }
     }
 }

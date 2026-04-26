@@ -1,8 +1,7 @@
-namespace mediconyx_api.Services;
+namespace mediconyx_api.Services.Infrastructure;
 
 public interface IPasswordService
 {
     string HashPassword(string password);
     bool VerifyPassword(string password, string passwordHash);
 }
-

@@ -1,26 +1,9 @@
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
-using mediconyx_api.Services.Interfaces;
 
-namespace mediconyx_api.Services;
-
-public class GenericEmbeddingOptions
-{
-    public string Provider { get; set; } = "OpenAI";
-    public string BaseUrl { get; set; } = "https://api.openai.com/v1";
-    public string Model { get; set; } = "text-embedding-3-small";
-    public int Dimensions { get; set; } = 1536;
-
-    // Authentication
-    public string? ApiKey { get; set; }
-    public string AuthType { get; set; } = "Bearer";
-
-    // Provider-specific
-    public string EmbeddingsEndpoint { get; set; } = "/embeddings";
-}
+namespace mediconyx_api.Services.AI;
 
 public class GenericEmbeddingService : IEmbeddingService
 {
