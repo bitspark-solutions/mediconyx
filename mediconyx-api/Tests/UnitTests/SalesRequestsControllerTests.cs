@@ -210,7 +210,10 @@ public class SalesRequestsControllerTests : IDisposable
 
         // Assert
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
-        var response = okResult.Value.GetType().GetProperty("items")?.GetValue(okResult.Value) as System.Collections.IEnumerable;
+        okResult.Value.Should().NotBeNull();
+        var itemsProperty = okResult.Value!.GetType().GetProperty("items");
+        itemsProperty.Should().NotBeNull();
+        var response = itemsProperty!.GetValue(okResult.Value) as System.Collections.IEnumerable;
         response.Should().NotBeNull();
     }
 

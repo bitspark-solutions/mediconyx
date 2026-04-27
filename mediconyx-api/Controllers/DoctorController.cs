@@ -118,7 +118,7 @@ public class DoctorController : ControllerBase
             PasswordHash = _passwordService.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            PhoneNumber = request.Phone,
+            PhoneNumber = request.Phone ?? string.Empty,
             Role = UserRole.Doctor,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
