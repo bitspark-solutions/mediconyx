@@ -1,0 +1,17 @@
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: mediconyx-api/Dockerfile.test
+    container_name: mediconyx-test-runner
+    networks:
+      - mediconyx
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+    profiles:
+      - test
+
+networks:
+  mediconyx:
+    name: mediconyx_mediconyx
+    external: true

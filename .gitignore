@@ -418,3 +418,6 @@ openapi.json
 !*.json
 !*.md
 
+# Test logs
+test_log*.txt
+
