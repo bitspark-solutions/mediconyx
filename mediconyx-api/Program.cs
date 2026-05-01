@@ -137,7 +137,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Run migrations on startup (Development only)
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
 {
     using (var scope = app.Services.CreateScope())
     {
@@ -179,7 +179,7 @@ if (app.Environment.IsDevelopment())
                 }
                 
                 // Seed a Sales user for development testing
-                if (app.Environment.IsDevelopment())
+                if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
                 {
                     var salesEmail = "sales@mediconyx.local";
                     var existingSales = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == salesEmail);

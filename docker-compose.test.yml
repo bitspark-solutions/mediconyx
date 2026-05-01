@@ -1,0 +1,157 @@
+# ═══════════════════════════════════════════════════════════════
+# Mediconyx Test Environment
+# Runs alongside the dev stack on separate ports, network, and volumes.
+# API uses ASPNETCORE_ENVIRONMENT=Test → rate limiting disabled.
+# DB uses tmpfs + fsync=off for speed (data is disposable).
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   docker compose -f docker-compose.test.yml down
+#   docker compose -f docker-compose.test.yml down -v   # wipe test data
+#
+# With containerized test runner:
+#   docker compose -f docker-compose.test.yml --profile e2e up --build --abort-on-container-exit --exit-code-from e2e-tests
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── Layer 1: Infrastructure ──────────────────────────────────
+
+  test-db:
+    image: postgres:18-alpine3.22
+    container_name: mediconyx-test-db
+    networks:
+      - mediconyx-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: mediconyx_test
+    ports:
+      - "9544:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    command:
+      - "postgres"
+      - "-c"
+      - "fsync=off"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "full_page_writes=off"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testuser -d mediconyx_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  test-mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mediconyx-test-mailhog
+    networks:
+      - mediconyx-test
+    restart: unless-stopped
+    ports:
+      - "8026:8025"
+      - "1026:1025"
+
+  # ── Layer 2: Application ─────────────────────────────────────
+
+  test-storage:
+    build:
+      context: ./storage-service
+      dockerfile: Dockerfile
+    container_name: mediconyx-test-storage
+    networks:
+      - mediconyx-test
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Storage__BasePath: /app/storage
+      Storage__MaxFileSizeBytes: "10485760"
+    ports:
+      - "7891:8080"
+    volumes:
+      - test_storage_data:/app/storage
+
+  test-api:
+    build:
+      context: .
+      dockerfile: mediconyx-api/Dockerfile
+    container_name: mediconyx-test-api
+    networks:
+      - mediconyx-test
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__DefaultConnection: Host=test-db;Port=5432;Database=mediconyx_test;Username=testuser;Password=testpass
+      JwtSettings__Secret: TestSecretKeyForJWTMustBeAtLeast32CharactersLong!
+      JwtSettings__Issuer: Mediconyx
+      JwtSettings__Audience: MediconyxAPI
+      JwtSettings__ExpiryMinutes: "60"
+      FrontendUrl: http://localhost:9674
+      MasterUser__Email: master@mediconyx.local
+      MasterUser__Password: Master@123
+      MasterUser__FirstName: Master
+      MasterUser__LastName: User
+      SMTP_HOST: test-mailhog
+      SMTP_PORT: "1025"
+      StorageService__BaseUrl: http://test-storage:8080
+    ports:
+      - "9766:8080"
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-mailhog:
+        condition: service_started
+      test-storage:
+        condition: service_started
+
+  test-ui:
+    build:
+      context: ./mediconyx-ui
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:9766
+    container_name: mediconyx-test-ui
+    networks:
+      - mediconyx-test
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:9766
+    ports:
+      - "9674:3000"
+    depends_on:
+      test-api:
+        condition: service_started
+
+  # ── Layer 3: Test Runner (optional, via --profile e2e) ───────
+
+  e2e-tests:
+    build:
+      context: ../mediconyx-e2e
+      dockerfile: Dockerfile.e2e
+    container_name: mediconyx-e2e-runner
+    networks:
+      - mediconyx-test
+    profiles:
+      - e2e
+    environment:
+      BASE_URL: http://test-ui:3000
+      API_BASE_URL: http://test-api:8080
+      TEST_ENV: test
+    depends_on:
+      test-ui:
+        condition: service_started
+      test-api:
+        condition: service_started
+    volumes:
+      - ../mediconyx-e2e/test-results:/app/test-results
+      - ../mediconyx-e2e/playwright-report:/app/playwright-report
+
+networks:
+  mediconyx-test:
+    driver: bridge
+
+volumes:
+  test_storage_data:

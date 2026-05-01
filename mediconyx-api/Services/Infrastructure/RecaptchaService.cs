@@ -19,14 +19,14 @@ public class RecaptchaService : ICaptchaService
         _httpClient = httpClient;
         _secretKey = configuration["Recaptcha:SecretKey"] ?? string.Empty;
         _logger = logger;
-        _isDevelopment = environment.IsDevelopment();
+        _isDevelopment = environment.IsDevelopment() || environment.IsEnvironment("Test");
     }
 
     public async Task<bool> VerifyTokenAsync(string token, string? remoteIp = null)
     {
         if (_isDevelopment && string.IsNullOrWhiteSpace(_secretKey))
         {
-            _logger.LogWarning("Captcha verification bypassed in development mode (no secret key configured)");
+            _logger.LogWarning("Captcha verification bypassed in dev/test mode (no secret key configured)");
             return true;
         }
 
