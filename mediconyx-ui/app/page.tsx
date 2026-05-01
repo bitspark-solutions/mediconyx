@@ -112,6 +112,7 @@ export default function Home() {
               </div>
               <a href="#testimonials" className="text-gray-700 hover:text-blue-600 font-medium transition">Testimonials</a>
               <a href="#news" className="text-gray-700 hover:text-blue-600 font-medium transition">News</a>
+              <Link href="/contact-sales" className="text-gray-700 hover:text-blue-600 font-medium transition">Contact Sales</Link>
 
               {/* Auth-aware navbar buttons */}
               {hasHydrated && isAuthenticated && user ? (
@@ -178,6 +179,7 @@ export default function Home() {
               <a href="#team" className="block px-3 py-2 text-gray-700 hover:bg-blue-50 rounded">Team</a>
               <a href="#testimonials" className="block px-3 py-2 text-gray-700 hover:bg-blue-50 rounded">Testimonials</a>
               <a href="#news" className="block px-3 py-2 text-gray-700 hover:bg-blue-50 rounded">News</a>
+              <Link href="/contact-sales" className="block px-3 py-2 text-gray-700 hover:bg-blue-50 rounded">Contact Sales</Link>
 
               {hasHydrated && isAuthenticated && user ? (
                 <>
@@ -225,9 +227,9 @@ export default function Home() {
             <a href="#about" className="bg-white text-blue-600 px-10 py-4 rounded-md text-lg font-semibold hover:bg-blue-50 transition shadow-lg">
               DISCOVER MORE
             </a>
-            <a href="#services" className="bg-green-600 text-white px-10 py-4 rounded-md text-lg font-semibold hover:bg-green-700 transition shadow-lg">
-              VIEW OUR SERVICES
-            </a>
+            <Link href="/contact-sales" className="bg-green-600 text-white px-10 py-4 rounded-md text-lg font-semibold hover:bg-green-700 transition shadow-lg">
+              ONBOARD YOUR HOSPITAL
+            </Link>
           </div>
         </div>
       </section>
