@@ -113,8 +113,9 @@ export default function ContactSalesPage() {
 
   const input = (name: string, label: string, required = false, props?: any) => (
     <div>
-      <label className={labelClass}>{label}{required && requiredDot}</label>
+      <label htmlFor={name} className={labelClass}>{label}{required && requiredDot}</label>
       <input
+        id={name}
         className={inputClass}
         value={(form as any)[name] as any}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
@@ -216,8 +217,9 @@ export default function ContactSalesPage() {
           </div>
           <div className="space-y-5 px-8 py-6">
             <div>
-              <label className={labelClass}>Notes / Requirements</label>
+              <label htmlFor="notes" className={labelClass}>Notes / Requirements</label>
               <textarea
+                id="notes"
                 className={`${inputClass} resize-none`}
                 rows={4}
                 value={form.notes}
