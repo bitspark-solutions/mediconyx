@@ -43,8 +43,9 @@ services:
       MasterUser__Password: ${MASTER_PASSWORD}
       MasterUser__FirstName: ${MASTER_FIRST_NAME}
       MasterUser__LastName: ${MASTER_LAST_NAME}
-      SMTP_HOST: mailhog
-      SMTP_PORT: "1025"
+      Smtp__Host: mailhog
+      Smtp__Port: "1025"
+      Smtp__EnableSsl: "false"
       StorageService__BaseUrl: http://storage:8080
     ports:
       - "9765:8080"
