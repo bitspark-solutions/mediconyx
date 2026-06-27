@@ -12,6 +12,7 @@ using mediconyx_api.Services.Invoices;
 using mediconyx_api.Services.Patients;
 using mediconyx_api.Services.Users;
 using mediconyx_api.Models;
+using mediconyx_api.Swagger;
 using mediconyx_api.Middleware;
 using AspNetCoreRateLimit;
 
@@ -20,7 +21,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Document endpoints that take IFormFile via [FromForm]
+    // (FileAttachmentController.Upload, etc.) — Swashbuckle cannot model
+    // these out of the box and would 500 /swagger/v1/swagger.json otherwise.
+    options.OperationFilter<FileUploadOperationFilter>();
+    options.SupportNonNullableReferenceTypes();
+});
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection()
     .UseEphemeralDataProtectionProvider();
@@ -127,7 +135,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// HTTPS redirection is only useful on a developer machine where Kestrel
+// speaks HTTPS directly. In containerized deployments (regardless of
+// ASPNETCORE_ENVIRONMENT value — the dev container also runs as
+// "Development") TLS is terminated at the reverse proxy / load balancer
+// and the app speaks plain HTTP. Calling UseHttpsRedirection() here
+// would only log the noisy "Failed to determine the https port for
+// redirect" warning on every request. DOTNET_RUNNING_IN_CONTAINER is
+// automatically set by the .NET base images.
+var runningInContainer = string.Equals(
+    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+
+if (!runningInContainer)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseCors("AllowFrontend");

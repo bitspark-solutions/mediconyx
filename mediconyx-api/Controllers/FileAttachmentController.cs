@@ -32,11 +32,7 @@ public class FileAttachmentController : ControllerBase
     [HttpPost("upload")]
     [Authorize(Roles = "Admin,Doctor,Nurse,Receptionist,Patient")]
     public async Task<ActionResult<FileAttachmentDto>> Upload(
-        [FromForm] int patientId,
-        [FromForm] int? appointmentId,
-        [FromForm] FileAttachmentCategory category,
-        [FromForm] string? description,
-        [FromForm] IFormFile file)
+        [FromForm] UploadFileRequest request)
     {
         var tenantId = GetCurrentTenantId();
         var userId = GetCurrentUserId();
@@ -45,17 +41,17 @@ public class FileAttachmentController : ControllerBase
 
         // Validate patient belongs to tenant
         var patient = await _context.Patients
-            .FirstOrDefaultAsync(p => p.Id == patientId && p.TenantId == tenantId);
+            .FirstOrDefaultAsync(p => p.Id == request.PatientId && p.TenantId == tenantId);
         if (patient == null)
             return BadRequest(new { message = "Patient not found." });
 
         // Validate file
-        if (file == null || file.Length == 0)
+        if (request.File == null || request.File.Length == 0)
             return BadRequest(new { message = "No file uploaded." });
 
         // File size validation (50MB max for lab reports, 500MB for DICOM)
-        var maxSize = category == FileAttachmentCategory.Imaging ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
-        if (file.Length > maxSize)
+        var maxSize = request.Category == FileAttachmentCategory.Imaging ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+        if (request.File.Length > maxSize)
             return BadRequest(new { message = $"File size exceeds maximum allowed ({maxSize / 1024 / 1024}MB)." });
 
         // Content type validation
@@ -68,12 +64,12 @@ public class FileAttachmentController : ControllerBase
             "application/dicom",
             "application/octet-stream"
         };
-        if (!allowedTypes.Any(t => file.ContentType.Contains(t, StringComparison.OrdinalIgnoreCase)))
+        if (!allowedTypes.Any(t => request.File.ContentType.Contains(t, StringComparison.OrdinalIgnoreCase)))
             return BadRequest(new { message = "File type not allowed. Allowed: PDF, JPEG, PNG, GIF, DICOM." });
 
         // Upload to storage service
-        using var stream = file.OpenReadStream();
-        var uploadResult = await _storageService.UploadAsync(stream, file.FileName, file.ContentType);
+        using var stream = request.File.OpenReadStream();
+        var uploadResult = await _storageService.UploadAsync(stream, request.File.FileName, request.File.ContentType);
         if (!uploadResult.Success || string.IsNullOrEmpty(uploadResult.StorageFileId))
             return StatusCode(500, new { message = uploadResult.ErrorMessage ?? "Failed to upload file." });
 
@@ -81,16 +77,16 @@ public class FileAttachmentController : ControllerBase
         var attachment = new FileAttachment
         {
             TenantId = tenantId.Value,
-            PatientId = patientId,
-            AppointmentId = appointmentId,
+            PatientId = request.PatientId,
+            AppointmentId = request.AppointmentId,
             UploadedByUserId = userId.Value,
             StorageFileId = uploadResult.StorageFileId,
-            FileName = file.FileName,
-            OriginalFileName = file.FileName,
-            ContentType = file.ContentType,
-            FileSize = file.Length,
-            Category = category,
-            Description = description,
+            FileName = request.File.FileName,
+            OriginalFileName = request.File.FileName,
+            ContentType = request.File.ContentType,
+            FileSize = request.File.Length,
+            Category = request.Category,
+            Description = request.Description,
             IsActive = true,
             UploadedAt = DateTime.UtcNow
         };
@@ -100,7 +96,7 @@ public class FileAttachmentController : ControllerBase
 
         _logger.LogInformation(
             "File uploaded: {FileId} for Patient {PatientId} by User {UserId}, Size: {Size}",
-            attachment.Id, patientId, userId.Value, file.Length);
+            attachment.Id, request.PatientId, userId.Value, request.File.Length);
 
         return CreatedAtAction(nameof(GetById), new { id = attachment.Id }, await MapToDto(attachment));
     }
