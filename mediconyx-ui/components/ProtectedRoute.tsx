@@ -72,7 +72,18 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     const role = (user.role || '').toLowerCase()
     const allowed = allowedRoles.map(r => r.toLowerCase())
     if (!allowed.includes(role)) {
-      return null
+      // Redirect to /unauthorized happens in the effect above. If that
+      // client-side navigation is ever cancelled (e.g. a racing navigation),
+      // rendering null would leave the user on a permanently blank page —
+      // render an explicit message instead so the UI fails closed, not blank.
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-400">Redirecting to unauthorized page...</p>
+          </div>
+        </div>
+      )
     }
   }
 

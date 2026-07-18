@@ -14,6 +14,8 @@ Here are all seeded user credentials:
 |---|---|---|
 | `admin@citygeneral.local` | Hospital Admin | `Hospital@123` |
 | `reception@citygeneral.local` | Receptionist | `Reception@123` |
+| `nurse@citygeneral.local` | Nurse | `Nurse@123` |
+| `accountant@citygeneral.local` | Accountant | `Accountant@123` |
 | `dr.khan@citygeneral.local` | Doctor | `Doctor@123` |
 | `dr.rahman@citygeneral.local` | Doctor | `Doctor@123` |
 | `dr.hossain@citygeneral.local` | Doctor | `Doctor@123` |
