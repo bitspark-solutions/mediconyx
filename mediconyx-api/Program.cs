@@ -156,7 +156,14 @@ if (!runningInContainer)
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseCors("AllowFrontend");
-app.UseIpRateLimiting();
+// Rate limiting is disabled in the Test environment: the e2e suite fires
+// hundreds of requests per minute from a single IP. appsettings.Test.json
+// cannot clear GeneralRules — JSON config arrays merge by index, not
+// replace — so the base rules from appsettings.json survive there.
+if (!app.Environment.IsEnvironment("Test"))
+{
+    app.UseIpRateLimiting();
+}
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
