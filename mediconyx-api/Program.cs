@@ -534,6 +534,50 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
                         await dbContext.SaveChangesAsync();
                     }
                     // ── END HOSPITAL SEED ──────────────────────────────────────
+
+                    // ── STAFF SEED (idempotent, runs even if tenant already exists) ──
+                    // Nurse + Accountant were added after the initial hospital seed,
+                    // so they live outside the `hospitalTenant == null` block above.
+                    var staffTenant = await dbContext.Tenants.FirstOrDefaultAsync(t => t.Subdomain == "city-general");
+                    if (staffTenant != null)
+                    {
+                        var nurseEmail = "nurse@citygeneral.local";
+                        if (await dbContext.Users.FirstOrDefaultAsync(u => u.Email == nurseEmail) == null)
+                        {
+                            dbContext.Users.Add(new User
+                            {
+                                Email = nurseEmail,
+                                PasswordHash = passwordService.HashPassword("Nurse@123"),
+                                FirstName = "Ayesha",
+                                LastName = "Siddiqua",
+                                PhoneNumber = "+880-1700-000020",
+                                Role = UserRole.Nurse,
+                                TenantId = staffTenant.Id,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                            await dbContext.SaveChangesAsync();
+                        }
+
+                        var accountantEmail = "accountant@citygeneral.local";
+                        if (await dbContext.Users.FirstOrDefaultAsync(u => u.Email == accountantEmail) == null)
+                        {
+                            dbContext.Users.Add(new User
+                            {
+                                Email = accountantEmail,
+                                PasswordHash = passwordService.HashPassword("Accountant@123"),
+                                FirstName = "Mahmud",
+                                LastName = "Karim",
+                                PhoneNumber = "+880-1700-000021",
+                                Role = UserRole.Accountant,
+                                TenantId = staffTenant.Id,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                    // ── END STAFF SEED ─────────────────────────────────────────
                 }
             }
         }

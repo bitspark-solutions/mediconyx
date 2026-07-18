@@ -38,11 +38,28 @@ interface PatientSummary {
   confidence: number;
 }
 
+interface Appointment {
+  id: number;
+  patientId: number;
+  patientName?: string;
+  doctorId: number;
+  doctorName?: string;
+  serviceId?: number;
+  serviceName?: string;
+  appointmentDate: string;
+  durationMinutes: number;
+  type: string;
+  status: string;
+  notes?: string;
+}
+
 export default function DoctorPortal() {
   const [activeTab, setActiveTab] = useState("patients");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patientSummary, setPatientSummary] = useState<PatientSummary | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,15 +67,50 @@ export default function DoctorPortal() {
 
   useEffect(() => {
     loadPatients();
+    loadAppointments();
   }, []);
+
+  const loadAppointments = async () => {
+    setLoadingAppointments(true);
+    try {
+      const res = await apiClient.get("/api/appointment?pageSize=50");
+      if (res.ok) {
+        const data = await res.json();
+        setAppointments(data.appointments || data.items || []);
+      }
+    } catch (err) {
+      console.error("Failed to load appointments:", err);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
+
+  const handleCancelAppointment = async (id: number) => {
+    const reason = window.prompt("Reason for cancellation?");
+    if (!reason) return;
+    try {
+      const res = await apiClient.patch(`/api/appointment/${id}/cancel`, { reason });
+      if (res.ok) {
+        await loadAppointments();
+      } else {
+        alert("Failed to cancel appointment");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to cancel appointment");
+    }
+  };
 
   const loadPatients = async () => {
     setLoadingPatients(true);
+    setError("");
     try {
       const res = await apiClient.get("/api/patient?pageSize=50");
       if (res.ok) {
         const data = await res.json();
-        setPatients(data.items || []);
+        setPatients(data.patients || data.items || []);
+      } else {
+        setError("Failed to load patients");
       }
     } catch (err) {
       console.error("Failed to load patients:", err);
@@ -328,20 +380,126 @@ export default function DoctorPortal() {
           {activeTab === "consultation" && <NewConsultationWorkflow role="doctor" />}
 
           {activeTab === "appointments" && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-              <Calendar className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">Appointments</h3>
-              <p className="text-gray-500">Your schedule and appointments will appear here.</p>
+            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">All Appointments</h3>
+                  <p className="text-sm text-slate-500">{appointments.length} total</p>
+                </div>
+                <button
+                  onClick={loadAppointments}
+                  className="px-3 py-1.5 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+                >
+                  Refresh
+                </button>
+              </div>
+              {loadingAppointments ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                </div>
+              ) : appointments.length === 0 ? (
+                <div className="text-center py-12">
+                  <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">No appointments scheduled</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                      <tr>
+                        <th className="px-4 py-3 text-left">Date & Time</th>
+                        <th className="px-4 py-3 text-left">Patient</th>
+                        <th className="px-4 py-3 text-left">Type</th>
+                        <th className="px-4 py-3 text-left">Status</th>
+                        <th className="px-4 py-3 text-left">Duration</th>
+                        <th className="px-4 py-3 text-left">Notes</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {appointments.map((apt) => {
+                        const dt = new Date(apt.appointmentDate);
+                        const statusColor: Record<string, string> = {
+                          Scheduled: "bg-blue-100 text-blue-700",
+                          Confirmed: "bg-emerald-100 text-emerald-700",
+                          "In Progress": "bg-amber-100 text-amber-700",
+                          Completed: "bg-slate-100 text-slate-700",
+                          Cancelled: "bg-red-100 text-red-700",
+                        };
+                        return (
+                          <tr key={apt.id} className="border-t border-slate-200 hover:bg-slate-50">
+                            <td className="px-4 py-3 text-slate-900">
+                              <div className="font-medium">{dt.toLocaleDateString()}</div>
+                              <div className="text-xs text-slate-500">{dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                            </td>
+                            <td className="px-4 py-3 text-slate-700">#{apt.patientId}</td>
+                            <td className="px-4 py-3 text-slate-700">{apt.type || "—"}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[apt.status] || "bg-slate-100 text-slate-700"}`}>
+                                {apt.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-700">{apt.durationMinutes} min</td>
+                            <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{apt.notes || "—"}</td>
+                            <td className="px-4 py-3 text-right">
+                              {apt.status !== "Cancelled" && apt.status !== "Completed" && (
+                                <button
+                                  onClick={() => handleCancelAppointment(apt.id)}
+                                  className="text-red-600 hover:text-red-800 text-xs font-medium"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === "ai-assist" && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-              <Bot className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">AI Assist</h3>
-              <p className="text-gray-500">
-                Use AI to assist with clinical decisions, drug interactions, and more.
-              </p>
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start gap-3">
+                  <Bot className="w-6 h-6 text-blue-600 mt-1" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">AI Clinical Assistant</h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Select a patient from the Patients tab to get an AI-generated summary of their medical history, active conditions, and current medications. The AI analyzes past notes, prescriptions, vitals, and uploaded reports to give you instant context before a consultation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedPatient ? (
+                <div className="bg-white border border-slate-200 rounded-xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold">
+                      {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-900">{selectedPatient.firstName} {selectedPatient.lastName}</h4>
+                      <p className="text-xs text-slate-500">Quick AI context for your next consultation</p>
+                    </div>
+                  </div>
+                  {patientSummary ? (
+                    <div className="prose prose-sm max-w-none">
+                      <p className="text-slate-700 whitespace-pre-wrap">{patientSummary.summaryText}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">No AI summary available. Configure LLM provider in backend appsettings.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
+                  <Bot className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Select a patient from the Patients tab to start.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
