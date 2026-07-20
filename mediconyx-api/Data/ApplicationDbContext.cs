@@ -56,6 +56,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<AdmissionTransfer> AdmissionTransfers { get; set; }
     public DbSet<DischargeSummary> DischargeSummaries { get; set; }
 
+    // Per-bed-day billing (Tier 3.1)
+    public DbSet<BedCharge> BedCharges { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -547,6 +550,25 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.DischargingDoctor)
                 .WithMany()
                 .HasForeignKey(e => e.DischargingDoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Per-bed-day billing (Tier 3.1)
+        modelBuilder.Entity<BedCharge>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AdmissionId, e.ChargeDate }).IsUnique();
+            entity.HasIndex(e => new { e.TenantId, e.ChargeDate });
+            entity.Property(e => e.DailyRate).HasPrecision(12, 2);
+            entity.Property(e => e.Amount).HasPrecision(12, 2);
+            entity.Property(e => e.Description).HasMaxLength(200);
+            entity.HasOne(e => e.Admission)
+                .WithMany()
+                .HasForeignKey(e => e.AdmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Bed)
+                .WithMany()
+                .HasForeignKey(e => e.BedId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

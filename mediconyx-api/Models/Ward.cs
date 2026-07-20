@@ -37,6 +37,9 @@ public class Ward
     /// <summary>Total bed count (informational; actual bed count is in the Bed table).</summary>
     public int Capacity { get; set; }
 
+    /// <summary>Default per-day charge (BDT) for any bed in this ward. Bed.DailyRate overrides this when set.</summary>
+    public decimal DefaultDailyRate { get; set; } = 0m;
+
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

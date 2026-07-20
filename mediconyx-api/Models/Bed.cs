@@ -21,6 +21,9 @@ public class Bed
 
     public BedStatus Status { get; set; } = BedStatus.Available;
 
+    /// <summary>Per-day charge (BDT) for this specific bed. Null = inherit from ward's DefaultDailyRate.</summary>
+    public decimal? DailyRate { get; set; }
+
     [StringLength(300)]
     public string? Notes { get; set; }
 

@@ -6,11 +6,12 @@ using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Common;
+using mediconyx_api.Services.Inpatient;
 
 namespace mediconyx_api.Controllers;
 
 /// <summary>
-/// In-Patient Department (IPD) — wards, beds, admissions, transfers, discharge.
+/// In-Patient Department (IPD) — wards, beds, admissions, transfers, discharge, billing.
 /// All endpoints are tenant-scoped: data is filtered by TenantId from the JWT claim.
 /// </summary>
 [ApiController]
@@ -20,11 +21,16 @@ public class IPDController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<IPDController> _logger;
+    private readonly IBedBillingService _billing;
 
-    public IPDController(ApplicationDbContext context, ILogger<IPDController> logger)
+    public IPDController(
+        ApplicationDbContext context,
+        ILogger<IPDController> logger,
+        IBedBillingService billing)
     {
         _context = context;
         _logger = logger;
+        _billing = billing;
     }
 
     private int? TenantId => ClaimsHelper.GetTenantId(User);
@@ -50,6 +56,7 @@ public class IPDController : ControllerBase
                 Location = w.Location,
                 Floor = w.Floor,
                 Capacity = w.Capacity,
+                DefaultDailyRate = w.DefaultDailyRate,
                 IsActive = w.IsActive,
                 BedCount = w.Beds.Count(),
                 AvailableBedCount = w.Beds.Count(b => b.Status == BedStatus.Available),
@@ -70,7 +77,8 @@ public class IPDController : ControllerBase
             {
                 Id = w.Id, TenantId = w.TenantId, Name = w.Name, Code = w.Code,
                 WardType = w.WardType, Location = w.Location, Floor = w.Floor,
-                Capacity = w.Capacity, IsActive = w.IsActive,
+                Capacity = w.Capacity, DefaultDailyRate = w.DefaultDailyRate,
+                IsActive = w.IsActive,
                 BedCount = w.Beds.Count(),
                 AvailableBedCount = w.Beds.Count(b => b.Status == BedStatus.Available),
                 OccupiedBedCount = w.Beds.Count(b => b.Status == BedStatus.Occupied)
@@ -101,6 +109,7 @@ public class IPDController : ControllerBase
             Location = req.Location,
             Floor = req.Floor,
             Capacity = req.Capacity,
+            DefaultDailyRate = req.DefaultDailyRate,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -110,7 +119,7 @@ public class IPDController : ControllerBase
         {
             Id = ward.Id, TenantId = ward.TenantId, Name = ward.Name, Code = ward.Code,
             WardType = ward.WardType, Location = ward.Location, Floor = ward.Floor,
-            Capacity = ward.Capacity, IsActive = ward.IsActive
+            Capacity = ward.Capacity, DefaultDailyRate = ward.DefaultDailyRate, IsActive = ward.IsActive
         });
     }
 
@@ -125,6 +134,7 @@ public class IPDController : ControllerBase
         if (req.Location != null) ward.Location = req.Location;
         if (req.Floor.HasValue) ward.Floor = req.Floor.Value;
         if (req.Capacity.HasValue) ward.Capacity = req.Capacity.Value;
+        if (req.DefaultDailyRate.HasValue) ward.DefaultDailyRate = req.DefaultDailyRate.Value;
         if (req.IsActive.HasValue) ward.IsActive = req.IsActive.Value;
         ward.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -132,7 +142,7 @@ public class IPDController : ControllerBase
         {
             Id = ward.Id, TenantId = ward.TenantId, Name = ward.Name, Code = ward.Code,
             WardType = ward.WardType, Location = ward.Location, Floor = ward.Floor,
-            Capacity = ward.Capacity, IsActive = ward.IsActive
+            Capacity = ward.Capacity, DefaultDailyRate = ward.DefaultDailyRate, IsActive = ward.IsActive
         });
     }
 
@@ -180,6 +190,7 @@ public class IPDController : ControllerBase
             WardType = b.Ward.WardType,
             Number = b.Number,
             Status = b.Status.ToString(),
+            DailyRate = b.DailyRate ?? b.Ward.DefaultDailyRate,
             Notes = b.Notes,
             IsActive = b.IsActive,
             CurrentAdmissionId = activeAdmissionByBed.TryGetValue(b.Id, out var adm) ? adm.Id : null,
@@ -210,6 +221,7 @@ public class IPDController : ControllerBase
             WardId = req.WardId,
             Number = req.Number,
             Status = status,
+            DailyRate = req.DailyRate,
             Notes = req.Notes,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -221,6 +233,7 @@ public class IPDController : ControllerBase
             Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
             WardName = ward.Name, WardType = ward.WardType,
             Number = bed.Number, Status = bed.Status.ToString(),
+            DailyRate = bed.DailyRate ?? ward.DefaultDailyRate,
             Notes = bed.Notes, IsActive = bed.IsActive
         });
     }
@@ -242,6 +255,7 @@ public class IPDController : ControllerBase
 
         bed.Status = newStatus;
         bed.Notes = req.Notes ?? bed.Notes;
+        if (req.DailyRate.HasValue) bed.DailyRate = req.DailyRate.Value;
         bed.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return Ok(new BedDto
@@ -249,6 +263,7 @@ public class IPDController : ControllerBase
             Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
             WardName = bed.Ward.Name, WardType = bed.Ward.WardType,
             Number = bed.Number, Status = bed.Status.ToString(),
+            DailyRate = bed.DailyRate ?? bed.Ward.DefaultDailyRate,
             Notes = bed.Notes, IsActive = bed.IsActive
         });
     }
@@ -523,6 +538,72 @@ public class IPDController : ControllerBase
             }).ToList()
         }).ToList();
         return Ok(board);
+    }
+
+    // ═══ BILLING (Tier 3.1) ════════════════════════════════
+
+    /// <summary>
+    /// Generate (or refresh) the per-bed-day bill for an admission. Idempotent: re-running
+    /// after a charge is already recorded for a given day will NOT double-bill. The bill
+    /// window runs from admission date to discharge date (or today if still active).
+    /// </summary>
+    [HttpPost("admissions/{id}/generate-bill")]
+    [HasPermission(PermissionCatalog.INVOICE_CREATE)]
+    public async Task<ActionResult<BillingResult>> GenerateBill(int id)
+    {
+        if (TenantId == null) return Unauthorized();
+        if (UserId == null) return Unauthorized();
+
+        try
+        {
+            var result = await _billing.GenerateForAdmissionAsync(id, TenantId.Value, UserId.Value);
+            _logger.LogInformation("Generated {Count} new bed charges for admission {AdmissionId}; total {Total} BDT",
+                result.NewChargesCreated, id, result.TotalAmount);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    /// <summary>
+    /// View the full per-day bill for an admission, including all generated charges and the total.
+    /// </summary>
+    [HttpGet("admissions/{id}/bill")]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
+    public async Task<ActionResult<AdmissionBillDto>> GetBill(int id)
+    {
+        if (TenantId == null) return Unauthorized();
+        try { return Ok(await _billing.GetBillAsync(id, TenantId.Value)); }
+        catch (KeyNotFoundException) { return NotFound(); }
+    }
+
+    /// <summary>
+    /// Convenience: a per-day calendar of every charged bed for the current tenant.
+    /// Useful for nightly reconciliation reports. Defaults to today.
+    /// </summary>
+    [HttpGet("billing/charges")]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
+    public async Task<ActionResult<List<BedChargeDto>>> GetChargesByDate([FromQuery] DateTime? date = null)
+    {
+        if (TenantId == null) return Unauthorized();
+        var day = (date ?? DateTime.UtcNow).Date;
+        var charges = await _context.BedCharges
+            .Include(c => c.Bed).ThenInclude(b => b.Ward)
+            .Where(c => c.TenantId == TenantId && c.ChargeDate == day)
+            .OrderBy(c => c.Bed!.Ward!.Name).ThenBy(c => c.Bed!.Number)
+            .Select(c => new BedChargeDto
+            {
+                Id = c.Id,
+                ChargeDate = c.ChargeDate,
+                BedId = c.BedId,
+                BedNumber = c.Bed!.Number,
+                WardName = c.Bed!.Ward!.Name,
+                WardType = c.Bed!.Ward!.WardType,
+                DailyRate = c.DailyRate,
+                Amount = c.Amount,
+                Description = c.Description
+            })
+            .ToListAsync();
+        return Ok(charges);
     }
 
     // ═══ Private helpers ═══════════════════════════════════

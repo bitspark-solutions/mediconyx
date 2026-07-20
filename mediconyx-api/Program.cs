@@ -10,6 +10,7 @@ using mediconyx_api.Services.Auth;
 using mediconyx_api.Services.Appointments;
 using mediconyx_api.Services.Infrastructure;
 using mediconyx_api.Services.Invoices;
+using mediconyx_api.Services.Inpatient;
 using mediconyx_api.Services.Patients;
 using mediconyx_api.Services.Users;
 using mediconyx_api.Models;
@@ -94,6 +95,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IBedBillingService, BedBillingService>();
 
 // Storage service with HttpClient
 builder.Services.AddHttpClient<IStorageService, StorageService>();

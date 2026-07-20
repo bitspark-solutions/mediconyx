@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import { apiClient } from "../../../../lib/apiClient";
-import { Bed, User, MapPin, RefreshCw, Plus, X, Activity, ArrowRightLeft, LogOut, Stethoscope } from "lucide-react";
+import { Bed, User, MapPin, RefreshCw, Plus, X, Activity, ArrowRightLeft, LogOut, Stethoscope, Receipt, Sparkles } from "lucide-react";
 
 interface BedBoardWard {
   id: number;
@@ -79,6 +79,7 @@ export default function BedBoardPage() {
   const [admitFor, setAdmitFor] = useState<number | null>(null);
   const [transferFor, setTransferFor] = useState<number | null>(null);
   const [dischargeFor, setDischargeFor] = useState<number | null>(null);
+  const [billFor, setBillFor] = useState<{ admissionId: number; patientName: string } | null>(null);
   const [selectedAdmission, setSelectedAdmission] = useState<any>(null);
   const [error, setError] = useState("");
 
@@ -190,6 +191,9 @@ export default function BedBoardPage() {
                               setDischargeFor(bed.admissionId!);
                               setSelectedAdmission({ id: bed.admissionId, currentBedId: bed.id });
                             }}
+                            onBill={() => {
+                              setBillFor({ admissionId: bed.admissionId!, patientName: bed.patientName || "Patient" });
+                            }}
                           />
                         ))}
                       </div>
@@ -243,16 +247,25 @@ export default function BedBoardPage() {
             onDone={() => { setDischargeFor(null); load(); }}
           />
         )}
+
+        {billFor !== null && (
+          <BillModal
+            admissionId={billFor.admissionId}
+            patientName={billFor.patientName}
+            onClose={() => setBillFor(null)}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );
 }
 
-function BedCard({ bed, onAdmit, onTransfer, onDischarge }: {
+function BedCard({ bed, onAdmit, onTransfer, onDischarge, onBill }: {
   bed: BedBoardBed;
   onAdmit: () => void;
   onTransfer: () => void;
   onDischarge: () => void;
+  onBill: () => void;
 }) {
   const style = BED_STATUS_STYLES[bed.status] || BED_STATUS_STYLES.Available;
   return (
@@ -272,12 +285,15 @@ function BedCard({ bed, onAdmit, onTransfer, onDischarge }: {
               <Stethoscope className="w-3 h-3" /> {bed.attendingDoctorName}
             </div>
           )}
-          <div className="flex gap-1 mt-2">
-            <button onClick={onTransfer} className="flex-1 text-xs px-2 py-1 bg-white/80 hover:bg-white rounded border border-current/20">
+          <div className="grid grid-cols-3 gap-1 mt-2">
+            <button onClick={onTransfer} className="text-xs px-1.5 py-1 bg-white/80 hover:bg-white rounded border border-current/20">
               Transfer
             </button>
-            <button onClick={onDischarge} className="flex-1 text-xs px-2 py-1 bg-white/80 hover:bg-white rounded border border-current/20">
-              Discharge
+            <button onClick={onBill} className="text-xs px-1.5 py-1 bg-white/80 hover:bg-white rounded border border-current/20 flex items-center justify-center gap-1" title="View bill">
+              <Receipt className="w-3 h-3" /> Bill
+            </button>
+            <button onClick={onDischarge} className="text-xs px-1.5 py-1 bg-white/80 hover:bg-white rounded border border-current/20">
+              D/C
             </button>
           </div>
         </div>
@@ -301,6 +317,7 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [floor, setFloor] = useState("1");
   const [capacity, setCapacity] = useState("10");
   const [location, setLocation] = useState("");
+  const [defaultDailyRate, setDefaultDailyRate] = useState("0");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -309,7 +326,8 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setError("");
     try {
       const r = await apiClient.post("/api/ipd/wards", {
-        name, code, wardType, floor: parseInt(floor), capacity: parseInt(capacity), location: location || null,
+        name, code, wardType, floor: parseInt(floor), capacity: parseInt(capacity),
+        location: location || null, defaultDailyRate: parseFloat(defaultDailyRate) || 0,
       });
       if (r.ok) onCreated();
       else { const b = await r.json().catch(() => ({})); setError(b.message || "Failed"); }
@@ -335,6 +353,7 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <Field label="Floor" value={floor} onChange={setFloor} type="number" />
           <Field label="Capacity" value={capacity} onChange={setCapacity} type="number" />
         </div>
+        <Field label="Default daily rate (BDT)" value={defaultDailyRate} onChange={setDefaultDailyRate} type="number" placeholder="e.g. 5000" />
         <Field label="Location (optional)" value={location} onChange={setLocation} placeholder="Block A Floor 2" />
         <ModalActions onClose={onClose} onSubmit={submit} submitting={submitting} submitText="Create" />
       </div>
@@ -344,13 +363,17 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
 function CreateBedModal({ wardId, onClose, onCreated }: { wardId: number; onClose: () => void; onCreated: () => void }) {
   const [number, setNumber] = useState("");
+  const [dailyRate, setDailyRate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const submit = async () => {
     setSubmitting(true); setError("");
     try {
-      const r = await apiClient.post("/api/ipd/beds", { wardId, number, status: "Available" });
+      const r = await apiClient.post("/api/ipd/beds", {
+        wardId, number, status: "Available",
+        dailyRate: dailyRate ? parseFloat(dailyRate) : null,
+      });
       if (r.ok) onCreated();
       else { const b = await r.json().catch(() => ({})); setError(b.message || "Failed"); }
     } catch (e: any) { setError(e.message); }
@@ -362,6 +385,7 @@ function CreateBedModal({ wardId, onClose, onCreated }: { wardId: number; onClos
       <div className="space-y-3">
         {error && <div className="p-2 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
         <Field label="Bed Number" value={number} onChange={setNumber} placeholder="ICU-1-A" />
+        <Field label="Daily rate override (BDT, blank = inherit ward)" value={dailyRate} onChange={setDailyRate} type="number" placeholder="e.g. 6000" />
         <ModalActions onClose={onClose} onSubmit={submit} submitting={submitting} submitText="Create" />
       </div>
     </Modal>
@@ -542,6 +566,112 @@ function ModalActions({ onClose, onSubmit, submitting, submitText }: any) {
         {submitting ? "Saving…" : submitText}
       </button>
     </div>
+  );
+}
+
+function BillModal({ admissionId, patientName, onClose }: { admissionId: number; patientName: string; onClose: () => void }) {
+  const [bill, setBill] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [lastResult, setLastResult] = useState<any>(null);
+
+  const load = async () => {
+    setLoading(true); setError("");
+    try {
+      const r = await apiClient.get(`/api/ipd/admissions/${admissionId}/bill`);
+      if (r.ok) setBill(await r.json());
+      else if (r.status === 404) setBill(null);
+      else { const b = await r.json().catch(() => ({})); setError(b.message || "Failed to load bill"); }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, [admissionId]);
+
+  const generate = async () => {
+    setGenerating(true); setError("");
+    try {
+      const r = await apiClient.post(`/api/ipd/admissions/${admissionId}/generate-bill`, {});
+      if (r.ok) {
+        const result = await r.json();
+        setLastResult(result);
+        await load();
+      } else { const b = await r.json().catch(() => ({})); setError(b.message || "Failed to generate bill"); }
+    } catch (e: any) { setError(e.message); }
+    finally { setGenerating(false); }
+  };
+
+  return (
+    <Modal title={`Bill — ${patientName}`} onClose={onClose}>
+      <div className="space-y-3">
+        {error && <div className="p-2 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
+
+        {lastResult && (
+          <div className="p-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded text-sm flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Generated {lastResult.newChargesCreated} new charge(s) for {lastResult.totalChargeDays} day(s). Total: {lastResult.totalAmount} BDT.
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-600">
+            {bill ? `${bill.totalDays} day(s) billed · ${bill.currency}` : "No charges yet."}
+          </div>
+          <button
+            onClick={generate}
+            disabled={generating}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            {generating ? "Generating…" : (bill && bill.totalDays > 0 ? "Refresh bill" : "Generate bill")}
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-6 text-slate-500 text-sm">Loading bill…</div>
+        ) : bill && bill.charges && bill.charges.length > 0 ? (
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-700">
+                <tr>
+                  <th className="text-left p-2 font-medium">Date</th>
+                  <th className="text-left p-2 font-medium">Bed / Ward</th>
+                  <th className="text-right p-2 font-medium">Rate</th>
+                  <th className="text-right p-2 font-medium">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bill.charges.map((c: any) => (
+                  <tr key={c.id} className="border-t border-slate-100">
+                    <td className="p-2 text-slate-700">{new Date(c.chargeDate).toLocaleDateString()}</td>
+                    <td className="p-2">
+                      <div className="text-slate-900">{c.bedNumber}</div>
+                      <div className="text-xs text-slate-500">{c.wardName} ({c.wardType})</div>
+                    </td>
+                    <td className="p-2 text-right text-slate-700">{c.dailyRate}</td>
+                    <td className="p-2 text-right font-semibold text-slate-900">{c.amount} {bill.currency}</td>
+                  </tr>
+                ))}
+                <tr className="bg-slate-50 border-t border-slate-200 font-bold">
+                  <td colSpan={3} className="p-2 text-right">Total</td>
+                  <td className="p-2 text-right text-blue-700">{bill.totalAmount} {bill.currency}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-500">
+            <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            No charges yet. Click "Generate bill" to bill this admission.
+          </div>
+        )}
+
+        <div className="flex justify-end pt-2">
+          <button onClick={onClose} className="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded">Close</button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

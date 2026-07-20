@@ -15,6 +15,7 @@ public class WardDto
     public string? Location { get; set; }
     public int Floor { get; set; }
     public int Capacity { get; set; }
+    public decimal DefaultDailyRate { get; set; }
     public bool IsActive { get; set; }
     public int BedCount { get; set; }
     public int AvailableBedCount { get; set; }
@@ -29,6 +30,7 @@ public class CreateWardRequest
     [StringLength(200)] public string? Location { get; set; }
     public int Floor { get; set; } = 1;
     public int Capacity { get; set; } = 0;
+    public decimal DefaultDailyRate { get; set; } = 0m;
 }
 
 public class UpdateWardRequest
@@ -37,6 +39,7 @@ public class UpdateWardRequest
     [StringLength(200)] public string? Location { get; set; }
     public int? Floor { get; set; }
     public int? Capacity { get; set; }
+    public decimal? DefaultDailyRate { get; set; }
     public bool? IsActive { get; set; }
 }
 
@@ -51,6 +54,7 @@ public class BedDto
     public string WardType { get; set; } = string.Empty;
     public string Number { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public decimal? DailyRate { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
     public int? CurrentAdmissionId { get; set; }
@@ -65,12 +69,14 @@ public class CreateBedRequest
     [Required, StringLength(30)] public string Number { get; set; } = string.Empty;
     [StringLength(300)] public string? Notes { get; set; }
     public string Status { get; set; } = nameof(BedStatus.Available);
+    public decimal? DailyRate { get; set; }
 }
 
 public class UpdateBedStatusRequest
 {
     [Required] public string Status { get; set; } = string.Empty;
     [StringLength(300)] public string? Notes { get; set; }
+    public decimal? DailyRate { get; set; }
 }
 
 // ── Admissions ──────────────────────────────────────────────
