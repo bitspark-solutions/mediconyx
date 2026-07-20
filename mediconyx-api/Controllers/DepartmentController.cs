@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using System.Security.Claims;
@@ -94,7 +95,7 @@ public class DepartmentController : ControllerBase
     /// Create department (Admin only)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DEPARTMENT_MANAGE)]
     public async Task<ActionResult<DepartmentDto>> CreateDepartment(CreateDepartmentRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -134,7 +135,7 @@ public class DepartmentController : ControllerBase
     /// Update department (Admin only)
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DEPARTMENT_MANAGE)]
     public async Task<ActionResult<DepartmentDto>> UpdateDepartment(int id, UpdateDepartmentRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -177,7 +178,7 @@ public class DepartmentController : ControllerBase
     /// Soft-delete department (Admin only)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DEPARTMENT_MANAGE)]
     public async Task<IActionResult> DeleteDepartment(int id)
     {
         var tenantId = GetCurrentTenantId();

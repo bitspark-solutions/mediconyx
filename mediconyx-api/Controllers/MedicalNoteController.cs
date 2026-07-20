@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models.DTOs;
 using System.Security.Claims;
 
@@ -119,7 +120,7 @@ public class MedicalNoteController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Doctor,Nurse")]
+    [HasPermission(PermissionCatalog.MEDICAL_NOTE_CREATE)]
     public async Task<ActionResult<MedicalNoteDto>> CreateNote(CreateMedicalNoteRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -153,7 +154,7 @@ public class MedicalNoteController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Nurse")]
+    [HasPermission(PermissionCatalog.MEDICAL_NOTE_CREATE)]
     public async Task<ActionResult<MedicalNoteDto>> UpdateNote(int id, UpdateMedicalNoteRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -182,7 +183,7 @@ public class MedicalNoteController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.MEDICAL_NOTE_CREATE)]
     public async Task<IActionResult> DeleteNote(int id)
     {
         var tenantId = GetCurrentTenantId();

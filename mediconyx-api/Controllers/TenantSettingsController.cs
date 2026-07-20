@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.AI;
@@ -32,7 +33,7 @@ public class TenantSettingsController : ControllerBase
     /// Get current tenant's settings
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Master")]
+    [HasPermission(PermissionCatalog.TENANT_SETTINGS_VIEW)]
     public async Task<ActionResult<TenantSettingsDto>> GetSettings()
     {
         var tenantId = GetCurrentTenantId();
@@ -74,7 +75,7 @@ public class TenantSettingsController : ControllerBase
     /// Update tenant settings
     /// </summary>
     [HttpPut]
-    [Authorize(Roles = "Admin,Master")]
+    [HasPermission(PermissionCatalog.TENANT_SETTINGS_EDIT)]
     public async Task<ActionResult<TenantSettingsDto>> UpdateSettings([FromBody] UpdateTenantSettingsRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -118,7 +119,7 @@ public class TenantSettingsController : ControllerBase
     /// Upload tenant logo
     /// </summary>
     [HttpPost("logo")]
-    [Authorize(Roles = "Admin,Master")]
+    [HasPermission(PermissionCatalog.TENANT_SETTINGS_EDIT)]
     public async Task<ActionResult<LogoUploadResponse>> UploadLogo(IFormFile file)
     {
         var tenantId = GetCurrentTenantId();

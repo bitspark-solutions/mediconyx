@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Appointments;
@@ -20,6 +21,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission(PermissionCatalog.APPOINTMENT_VIEW)]
     public async Task<ActionResult<AppointmentListResponse>> GetAppointments([FromQuery] AppointmentQueryParams queryParams)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -29,6 +31,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_VIEW)]
     public async Task<ActionResult<AppointmentDto>> GetAppointment(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -39,7 +42,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_CREATE)]
     public async Task<ActionResult<AppointmentDto>> CreateAppointment(CreateAppointmentRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -62,7 +65,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_CREATE)]
     public async Task<ActionResult<AppointmentDto>> UpdateAppointment(int id, UpdateAppointmentRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -76,7 +79,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_CREATE)]
     public async Task<ActionResult<AppointmentDto>> UpdateAppointmentStatus(int id, [FromBody] AppointmentStatus status)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -90,7 +93,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpPost("{id}/cancel")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_CANCEL)]
     public async Task<ActionResult<AppointmentDto>> CancelAppointment(int id, CancelAppointmentRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -104,7 +107,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_CANCEL)]
     public async Task<IActionResult> DeleteAppointment(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -120,6 +123,7 @@ public class AppointmentController : ControllerBase
     }
 
     [HttpGet("slots")]
+    [HasPermission(PermissionCatalog.APPOINTMENT_VIEW)]
     public async Task<ActionResult<List<AvailableSlotDto>>> GetAvailableSlots([FromQuery] AvailableSlotsQueryParams queryParams)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);

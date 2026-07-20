@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using System.Security.Claims;
@@ -119,7 +120,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Doctor")]
+    [HasPermission(PermissionCatalog.PRESCRIPTION_CREATE)]
     public async Task<ActionResult<PrescriptionDto>> CreatePrescription(CreatePrescriptionRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -155,7 +156,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Doctor")]
+    [HasPermission(PermissionCatalog.PRESCRIPTION_CREATE)]
     public async Task<ActionResult<PrescriptionDto>> UpdatePrescription(int id, UpdatePrescriptionRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -184,7 +185,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.PRESCRIPTION_CREATE)]
     public async Task<IActionResult> DeletePrescription(int id)
     {
         var tenantId = GetCurrentTenantId();

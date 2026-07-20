@@ -298,7 +298,7 @@ public class IPDController : ControllerBase
             .Include(a => a.AttendingDoctor).ThenInclude(d => d.User)
             .Include(a => a.Transfers).ThenInclude(t => t.FromBed)
             .Include(a => a.Transfers).ThenInclude(t => t.ToBed)
-            .Include(a => a.DischargeSummary).ThenInclude(s => s.DischargingDoctor).ThenInclude(d => d.User)
+            .Include(a => a.DischargeSummary).ThenInclude(s => s!.DischargingDoctor).ThenInclude(d => d.User)
             .Where(a => a.TenantId == TenantId);
         if (patientId.HasValue) q = q.Where(a => a.PatientId == patientId.Value);
         if (activeOnly) q = q.Where(a => a.Status == AdmissionStatus.Active);
@@ -320,7 +320,7 @@ public class IPDController : ControllerBase
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
             .Include(x => x.Transfers).ThenInclude(t => t.FromBed)
             .Include(x => x.Transfers).ThenInclude(t => t.ToBed)
-            .Include(x => x.DischargeSummary).ThenInclude(s => s.DischargingDoctor).ThenInclude(d => d.User)
+            .Include(x => x.DischargeSummary).ThenInclude(s => s!.DischargingDoctor).ThenInclude(d => d.User)
             .FirstOrDefaultAsync(x => x.Id == id && x.TenantId == TenantId);
         if (a == null) return NotFound();
         return Ok(MapAdmission(a));
@@ -488,7 +488,7 @@ public class IPDController : ControllerBase
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
             .Include(x => x.Transfers).ThenInclude(t => t.FromBed)
             .Include(x => x.Transfers).ThenInclude(t => t.ToBed)
-            .Include(x => x.DischargeSummary).ThenInclude(s => s.DischargingDoctor).ThenInclude(d => d.User)
+            .Include(x => x.DischargeSummary).ThenInclude(s => s!.DischargingDoctor).ThenInclude(d => d.User)
             .FirstAsync(x => x.Id == id);
         return Ok(MapAdmission(refreshed));
     }
@@ -585,10 +585,13 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<BedChargeDto>>> GetChargesByDate([FromQuery] DateTime? date = null)
     {
         if (TenantId == null) return Unauthorized();
+        // Query-string dates come in as Kind=Unspecified, which Npgsql rejects for
+        // "timestamp with time zone". Normalize to UTC before comparing.
         var day = (date ?? DateTime.UtcNow).Date;
+        var dayUtc = DateTime.SpecifyKind(day, DateTimeKind.Utc);
         var charges = await _context.BedCharges
             .Include(c => c.Bed).ThenInclude(b => b.Ward)
-            .Where(c => c.TenantId == TenantId && c.ChargeDate == day)
+            .Where(c => c.TenantId == TenantId && c.ChargeDate == dayUtc)
             .OrderBy(c => c.Bed!.Ward!.Name).ThenBy(c => c.Bed!.Number)
             .Select(c => new BedChargeDto
             {

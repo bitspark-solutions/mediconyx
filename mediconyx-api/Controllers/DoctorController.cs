@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Infrastructure;
@@ -33,7 +34,7 @@ public class DoctorController : ControllerBase
     /// List all doctors in the tenant
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_VIEW)]
     public async Task<ActionResult<DoctorListResponse>> GetDoctors(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
@@ -74,7 +75,7 @@ public class DoctorController : ControllerBase
     /// Get a single doctor by ID
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Nurse,Receptionist")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_VIEW)]
     public async Task<ActionResult<DoctorProfileDto>> GetDoctor(int id)
     {
         var tenantId = GetCurrentTenantId();
@@ -94,7 +95,7 @@ public class DoctorController : ControllerBase
     /// Create a new doctor (user + profile)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<ActionResult<DoctorProfileDto>> CreateDoctor([FromBody] CreateDoctorRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -159,7 +160,7 @@ public class DoctorController : ControllerBase
     /// Update a doctor's profile
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<ActionResult<DoctorProfileDto>> UpdateDoctor(int id, [FromBody] UpdateDoctorRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -204,7 +205,7 @@ public class DoctorController : ControllerBase
     /// Deactivate a doctor (soft delete)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<ActionResult> DeactivateDoctor(int id)
     {
         var tenantId = GetCurrentTenantId();
@@ -232,7 +233,7 @@ public class DoctorController : ControllerBase
     /// Get doctors by specialization
     /// </summary>
     [HttpGet("by-specialization/{specialization}")]
-    [Authorize(Roles = "Admin,Doctor,Nurse,Receptionist,Patient")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_VIEW)]
     public async Task<ActionResult<List<DoctorProfileDto>>> GetBySpecialization(string specialization)
     {
         var tenantId = GetCurrentTenantId();

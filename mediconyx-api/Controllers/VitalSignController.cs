@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models.DTOs;
 using System.Security.Claims;
 
@@ -117,7 +118,7 @@ public class VitalSignController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Nurse")]
+    [HasPermission(PermissionCatalog.VITAL_SIGN_RECORD)]
     public async Task<ActionResult<VitalSignDto>> CreateVitalSign(CreateVitalSignRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -182,7 +183,7 @@ public class VitalSignController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.VITAL_SIGN_RECORD)]
     public async Task<IActionResult> DeleteVitalSign(int id)
     {
         var tenantId = GetCurrentTenantId();

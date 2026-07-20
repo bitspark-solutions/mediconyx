@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using mediconyx_api.Middleware;
+using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Common;
 using mediconyx_api.Services.Patients;
@@ -21,6 +23,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission(PermissionCatalog.PATIENT_VIEW)]
     public async Task<ActionResult<PatientListResponse>> GetPatients([FromQuery] PatientQueryParams queryParams)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -31,6 +34,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission(PermissionCatalog.PATIENT_VIEW)]
     public async Task<ActionResult<PatientDto>> GetPatient(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -41,7 +45,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Doctor,Receptionist,Nurse")]
+    [HasPermission(PermissionCatalog.PATIENT_CREATE)]
     public async Task<ActionResult<PatientDto>> CreatePatient(CreatePatientRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -60,7 +64,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Receptionist")]
+    [HasPermission(PermissionCatalog.PATIENT_EDIT)]
     public async Task<ActionResult<PatientDto>> UpdatePatient(int id, UpdatePatientRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -78,7 +82,7 @@ public class PatientController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.PATIENT_EDIT)]
     public async Task<IActionResult> DeletePatient(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);

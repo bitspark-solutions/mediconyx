@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Common;
@@ -20,6 +21,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
     public async Task<ActionResult<InvoiceListResponse>> GetInvoices([FromQuery] InvoiceQueryParams queryParams)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -28,6 +30,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
     public async Task<ActionResult<InvoiceDto>> GetInvoice(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -37,6 +40,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("patient/{patientId}")]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
     public async Task<ActionResult<InvoiceListResponse>> GetInvoicesByPatient(
         int patientId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
@@ -46,6 +50,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpGet("stats")]
+    [HasPermission(PermissionCatalog.INVOICE_VIEW)]
     public async Task<ActionResult<RevenueStatsDto>> GetRevenueStats()
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -54,7 +59,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Accountant")]
+    [HasPermission(PermissionCatalog.INVOICE_CREATE)]
     public async Task<ActionResult<InvoiceDto>> CreateInvoice(CreateInvoiceRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -69,7 +74,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Accountant")]
+    [HasPermission(PermissionCatalog.INVOICE_CREATE)]
     public async Task<ActionResult<InvoiceDto>> UpdateInvoice(int id, UpdateInvoiceRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -83,7 +88,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin,Accountant")]
+    [HasPermission(PermissionCatalog.INVOICE_CREATE)]
     public async Task<ActionResult<InvoiceDto>> UpdateInvoiceStatus(int id, [FromBody] InvoiceStatus status)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -96,7 +101,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpPost("{id}/payments")]
-    [Authorize(Roles = "Admin,Accountant")]
+    [HasPermission(PermissionCatalog.PAYMENT_RECORD)]
     public async Task<ActionResult<InvoiceDto>> RecordPayment(int id, RecordPaymentRequest request)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -111,7 +116,7 @@ public class InvoiceController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.INVOICE_CREATE)]
     public async Task<IActionResult> DeleteInvoice(int id)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using mediconyx_api.Middleware;
+using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Common;
 using mediconyx_api.Services.Users;
@@ -21,6 +23,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpGet("me")]
+    [HasPermission(PermissionCatalog.USER_EDIT_OWN)]
     public async Task<ActionResult<UserDetailDto>> GetCurrentUser()
     {
         var userId = ClaimsHelper.GetUserId(User);
@@ -33,7 +36,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.USER_VIEW)]
     public async Task<ActionResult<UserListResponse>> GetUsers([FromQuery] UserQueryParams queryParams)
     {
         var tenantId = ClaimsHelper.GetTenantId(User);
@@ -41,6 +44,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [HasPermission(PermissionCatalog.USER_VIEW)]
     public async Task<ActionResult<UserDetailDto>> GetUser(int id)
     {
         var currentUserId = ClaimsHelper.GetUserId(User);
@@ -56,7 +60,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.USER_MANAGE)]
     public async Task<ActionResult<UserDetailDto>> CreateUser(CreateUserRequest request)
     {
         var currentUserId = ClaimsHelper.GetUserId(User);
@@ -72,6 +76,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [HasPermission(PermissionCatalog.USER_MANAGE)]
     public async Task<ActionResult<UserDetailDto>> UpdateUser(int id, UpdateUserRequest request)
     {
         var currentUserId = ClaimsHelper.GetUserId(User);
@@ -87,7 +92,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.USER_MANAGE)]
     public async Task<IActionResult> DeleteUser(int id)
     {
         var currentUserId = ClaimsHelper.GetUserId(User);
@@ -103,7 +108,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpPatch("{id}/toggle-active")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.USER_MANAGE)]
     public async Task<ActionResult<UserDetailDto>> ToggleUserActive(int id)
     {
         var currentUserId = ClaimsHelper.GetUserId(User);
@@ -118,6 +123,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpPost("change-password")]
+    [HasPermission(PermissionCatalog.USER_EDIT_OWN)]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
     {
         var userId = ClaimsHelper.GetUserId(User);
@@ -133,7 +139,7 @@ public class UserManagementController : ControllerBase
     }
 
     [HttpPost("reset-password")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.USER_MANAGE)]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
     {
         try

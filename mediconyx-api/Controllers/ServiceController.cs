@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models.DTOs;
 
 namespace mediconyx_api.Controllers;
@@ -26,7 +27,7 @@ public class ServiceController : ControllerBase
     /// List all services for the tenant
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Doctor,Nurse,Receptionist")]
+    [HasPermission(PermissionCatalog.SERVICE_MANAGE)]
     public async Task<ActionResult<List<HospitalServiceDto>>> GetServices([FromQuery] bool includeInactive = false)
     {
         var tenantId = GetCurrentTenantId();
@@ -62,7 +63,7 @@ public class ServiceController : ControllerBase
     /// Get a single service by ID
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Doctor,Nurse,Receptionist")]
+    [HasPermission(PermissionCatalog.SERVICE_MANAGE)]
     public async Task<ActionResult<HospitalServiceDto>> GetService(int id)
     {
         var tenantId = GetCurrentTenantId();
@@ -92,7 +93,7 @@ public class ServiceController : ControllerBase
     /// Create a new service
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.SERVICE_MANAGE)]
     public async Task<ActionResult<HospitalServiceDto>> CreateService([FromBody] CreateHospitalServiceRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -136,7 +137,7 @@ public class ServiceController : ControllerBase
     /// Update a service
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.SERVICE_MANAGE)]
     public async Task<ActionResult<HospitalServiceDto>> UpdateService(int id, [FromBody] UpdateHospitalServiceRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -182,7 +183,7 @@ public class ServiceController : ControllerBase
     /// Delete (soft) a service
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.SERVICE_MANAGE)]
     public async Task<ActionResult> DeleteService(int id)
     {
         var tenantId = GetCurrentTenantId();

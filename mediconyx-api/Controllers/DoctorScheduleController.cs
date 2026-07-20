@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Middleware;
 using mediconyx_api.Models.DTOs;
 using System.Security.Claims;
 
@@ -74,7 +75,7 @@ public class DoctorScheduleController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<ActionResult<DoctorScheduleDto>> CreateSchedule(CreateDoctorScheduleRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -130,7 +131,7 @@ public class DoctorScheduleController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<ActionResult<DoctorScheduleDto>> UpdateSchedule(int id, UpdateDoctorScheduleRequest request)
     {
         var tenantId = GetCurrentTenantId();
@@ -160,7 +161,7 @@ public class DoctorScheduleController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
     public async Task<IActionResult> DeleteSchedule(int id)
     {
         var tenantId = GetCurrentTenantId();
