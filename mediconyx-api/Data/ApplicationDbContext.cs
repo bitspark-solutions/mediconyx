@@ -49,6 +49,13 @@ public class ApplicationDbContext : DbContext
     // Multi-role (Tier 1.2)
     public DbSet<UserRoleAssignment> UserRoleAssignments { get; set; }
 
+    // IPD / Inpatient (Tier 2.1)
+    public DbSet<Ward> Wards { get; set; }
+    public DbSet<Bed> Beds { get; set; }
+    public DbSet<Admission> Admissions { get; set; }
+    public DbSet<AdmissionTransfer> AdmissionTransfers { get; set; }
+    public DbSet<DischargeSummary> DischargeSummaries { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -449,6 +456,98 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.HeadDoctorId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // IPD (Tier 2.1) ──────────────────────────────────────────
+        modelBuilder.Entity<Ward>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.IsActive });
+            entity.HasIndex(e => new { e.TenantId, e.WardType });
+            entity.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.WardType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Location).HasMaxLength(200);
+            entity.HasOne(e => e.Tenant)
+                .WithMany()
+                .HasForeignKey(e => e.TenantId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Bed>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.Status });
+            entity.HasIndex(e => new { e.WardId, e.Number }).IsUnique();
+            entity.Property(e => e.Number).IsRequired().HasMaxLength(30);
+            entity.Property(e => e.Notes).HasMaxLength(300);
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.HasOne(e => e.Ward)
+                .WithMany(w => w.Beds)
+                .HasForeignKey(e => e.WardId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Admission>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.Status });
+            entity.HasIndex(e => new { e.TenantId, e.PatientId, e.Status });
+            entity.HasIndex(e => new { e.TenantId, e.BedId });
+            entity.Property(e => e.AdmissionType).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.Reason).HasMaxLength(1000);
+            entity.Property(e => e.DiagnosisOnAdmission).HasMaxLength(2000);
+            entity.Property(e => e.DischargeNotes).HasMaxLength(2000);
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Bed)
+                .WithMany()
+                .HasForeignKey(e => e.BedId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.AttendingDoctor)
+                .WithMany()
+                .HasForeignKey(e => e.AttendingDoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AdmissionTransfer>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AdmissionId, e.TransferredAt });
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasOne(e => e.Admission)
+                .WithMany(a => a.Transfers)
+                .HasForeignKey(e => e.AdmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.FromBed)
+                .WithMany()
+                .HasForeignKey(e => e.FromBedId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ToBed)
+                .WithMany()
+                .HasForeignKey(e => e.ToBedId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DischargeSummary>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AdmissionId).IsUnique();
+            entity.Property(e => e.ConditionAtDischarge).HasConversion<int>();
+            entity.Property(e => e.DischargeInstructions).HasMaxLength(2000);
+            entity.Property(e => e.MedicationsOnDischarge).HasMaxLength(2000);
+            entity.HasOne(e => e.Admission)
+                .WithOne(a => a.DischargeSummary)
+                .HasForeignKey<DischargeSummary>(e => e.AdmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.DischargingDoctor)
+                .WithMany()
+                .HasForeignKey(e => e.DischargingDoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

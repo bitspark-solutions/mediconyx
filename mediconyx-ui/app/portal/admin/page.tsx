@@ -6,7 +6,7 @@ import ProtectedRoute from "../../../components/ProtectedRoute";
 import AdminReviewQueue from "../../../components/admin/AdminReviewQueue";
 import { apiClient } from "../../../lib/apiClient";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { ListChecks, Users, Settings, Loader2, Save, Upload, Hospital, Stethoscope, Building2 } from "lucide-react";
+import { ListChecks, Users, Settings, Loader2, Save, Upload, Hospital, Stethoscope, Building2, Bed } from "lucide-react";
 
 const MODULE_LABELS: Record<string, string> = {
   moduleOpdEnabled: "OPD Management",
@@ -91,6 +91,12 @@ export default function AdminPortal() {
             >
               <Building2 className="w-4 h-4" /> Tenants
             </button>
+            <a
+              href="/portal/admin/bed-board"
+              className="px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
+              <Bed className="w-4 h-4" /> Bed Board (IPD)
+            </a>
             <button
               onClick={() => setActiveTab("settings")}
               className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === "settings"
