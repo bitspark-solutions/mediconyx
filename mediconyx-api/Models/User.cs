@@ -43,6 +43,13 @@ public class User
 
     /// <summary>Additional roles held by this user. e.g. Doctor + Admin.</summary>
     public ICollection<UserRoleAssignment> AdditionalRoles { get; set; } = new List<UserRoleAssignment>();
+
+    // ── Email verification (for self-registered patients) ──
+    // Staff users are pre-verified (EmailVerified = true on create).
+    // Self-registered patients are EmailVerified = false until they click the link.
+    public bool EmailVerified { get; set; } = true;
+    public string? EmailVerificationToken { get; set; }
+    public DateTime? EmailVerificationTokenExpiry { get; set; }
 }
 
 /// <summary>

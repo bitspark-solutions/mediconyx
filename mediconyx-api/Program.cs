@@ -96,6 +96,7 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IBedBillingService, BedBillingService>();
+builder.Services.AddScoped<IPatientSelfRegistrationService, PatientSelfRegistrationService>();
 
 // Storage service with HttpClient
 builder.Services.AddHttpClient<IStorageService, StorageService>();

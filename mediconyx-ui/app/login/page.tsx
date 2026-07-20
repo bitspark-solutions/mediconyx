@@ -136,6 +136,15 @@ function LoginForm() {
                   <p className="text-sm text-red-600 text-center">{message}</p>
                 </div>
               )}
+
+              <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                <p className="text-sm text-gray-600">
+                  New patient?{" "}
+                  <a href="/register" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
+                    Create a patient account
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
 

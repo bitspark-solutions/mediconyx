@@ -12,11 +12,16 @@ namespace mediconyx_api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IPatientSelfRegistrationService _selfReg;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    public AuthController(
+        IAuthService authService,
+        IPatientSelfRegistrationService selfReg,
+        ILogger<AuthController> logger)
     {
         _authService = authService;
+        _selfReg = selfReg;
         _logger = logger;
     }
 
@@ -32,6 +37,40 @@ public class AuthController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpPost("register-patient")]
+    [AllowAnonymous]
+    public async Task<ActionResult<RegisterPatientResponse>> RegisterPatient(RegisterPatientRequest request)
+    {
+        try
+        {
+            var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var result = await _selfReg.RegisterAsync(request, remoteIp);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("verify-email")]
+    [AllowAnonymous]
+    public async Task<ActionResult<VerifyEmailResponse>> VerifyEmail([FromQuery] string token)
+    {
+        var result = await _selfReg.VerifyEmailAsync(token);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPost("resend-verification")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
+    {
+        var ok = await _selfReg.ResendVerificationAsync(request.Email);
+        if (!ok) return BadRequest(new { message = "Email not found or already verified." });
+        return Ok(new { message = "Verification email sent." });
     }
 
     [HttpPost("login")]
@@ -86,4 +125,9 @@ public class AuthController : ControllerBase
         await _authService.LogoutAsync(userId.Value);
         return Ok(new { message = "Logged out." });
     }
+}
+
+public class ResendVerificationRequest
+{
+    public string Email { get; set; } = string.Empty;
 }

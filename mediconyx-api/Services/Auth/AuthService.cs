@@ -81,6 +81,10 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
+        // Patients must verify their email before logging in.
+        if (user.Role == UserRole.Patient && !user.EmailVerified)
+            throw new UnauthorizedAccessException("Please verify your email before logging in. Check your inbox for the verification link, or request a new one from the login page.");
+
         EnsureUserAndTenantActive(user);
 
         return await IssueTokensAsync(user, "User logged in");
