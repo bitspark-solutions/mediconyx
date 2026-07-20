@@ -28,6 +28,23 @@ public class DoctorProfile
 
     public bool IsActive { get; set; } = true;
 
+    // ── Public-profile fields (Tier 3.4) ──
+    [StringLength(2000)]
+    public string? Bio { get; set; }
+
+    [StringLength(500)]
+    public string? PhotoUrl { get; set; }
+
+    public int YearsOfExperience { get; set; } = 0;
+
+    /// <summary>JSON array of languages, e.g. ["English","Bengali","Hindi"].</summary>
+    [StringLength(500)]
+    public string? LanguagesJson { get; set; }
+
+    /// <summary>JSON array of qualifications, e.g. ["MBBS","FCPS (Cardiology)","MD"].</summary>
+    [StringLength(1000)]
+    public string? QualificationsJson { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }

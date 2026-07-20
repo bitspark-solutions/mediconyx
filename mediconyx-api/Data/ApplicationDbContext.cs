@@ -59,6 +59,9 @@ public class ApplicationDbContext : DbContext
     // Per-bed-day billing (Tier 3.1)
     public DbSet<BedCharge> BedCharges { get; set; }
 
+    // Telemedicine (Tier 3.3)
+    public DbSet<TelehealthSession> TelehealthSessions { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -569,6 +572,27 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.Bed)
                 .WithMany()
                 .HasForeignKey(e => e.BedId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Telemedicine (Tier 3.3)
+        modelBuilder.Entity<TelehealthSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TenantId, e.Status });
+            entity.HasIndex(e => new { e.DoctorId, e.ScheduledAt });
+            entity.HasIndex(e => new { e.PatientId, e.ScheduledAt });
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.JoinUrl).HasMaxLength(500);
+            entity.Property(e => e.JoinToken).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.HasOne(e => e.Patient)
+                .WithMany()
+                .HasForeignKey(e => e.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Doctor)
+                .WithMany()
+                .HasForeignKey(e => e.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

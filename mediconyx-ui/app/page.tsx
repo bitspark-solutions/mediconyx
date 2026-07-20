@@ -112,6 +112,7 @@ export default function Home() {
               </div>
               <a href="#testimonials" className="text-gray-700 hover:text-blue-600 font-medium transition">Testimonials</a>
               <a href="#news" className="text-gray-700 hover:text-blue-600 font-medium transition">News</a>
+              <Link href="/doctors" className="text-gray-700 hover:text-blue-600 font-medium transition">Find a Doctor</Link>
               <Link href="/contact-sales" className="text-gray-700 hover:text-blue-600 font-medium transition">Contact Sales</Link>
 
               {/* Auth-aware navbar buttons */}
