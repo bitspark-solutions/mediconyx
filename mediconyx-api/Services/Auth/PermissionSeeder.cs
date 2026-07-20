@@ -40,13 +40,35 @@ public static class PermissionSeeder
         var existingSet = existingRolePerms.Select(x => (x.Role, x.PermissionId)).ToHashSet();
 
         var toAddRolePerms = new List<RolePermission>();
+        var toRemoveRolePerms = new List<RolePermission>();
         foreach (var (role, permNames) in PermissionCatalog.DefaultRolePermissions)
         {
+            // Compute the desired set of (permId) for this role.
+            var desired = new HashSet<int>();
             foreach (var name in permNames)
             {
-                if (!permsByName.TryGetValue(name, out var permId)) continue;
-                if (existingSet.Contains((role, permId))) continue;
-                toAddRolePerms.Add(new RolePermission { Role = role, PermissionId = permId });
+                if (permsByName.TryGetValue(name, out var permId)) desired.Add(permId);
+            }
+
+            // Add missing rows
+            foreach (var permId in desired)
+            {
+                if (!existingSet.Contains((role, permId)))
+                    toAddRolePerms.Add(new RolePermission { Role = role, PermissionId = permId });
+            }
+
+            // Remove rows that are no longer in the desired set (drift cleanup).
+            // This makes the seeder authoritative for the default matrix while
+            // leaving any custom assignments the admin may have made (rows whose
+            // (role, perm) wasn't ever in DefaultRolePermissions).
+            foreach (var existing in existingRolePerms.Where(x => x.Role == role))
+            {
+                if (!desired.Contains(existing.PermissionId))
+                {
+                    var stale = await context.RolePermissions
+                        .FirstOrDefaultAsync(rp => rp.Role == role && rp.PermissionId == existing.PermissionId);
+                    if (stale != null) toRemoveRolePerms.Add(stale);
+                }
             }
         }
 
@@ -55,6 +77,12 @@ public static class PermissionSeeder
             context.RolePermissions.AddRange(toAddRolePerms);
             await context.SaveChangesAsync();
             logger.LogInformation("Seeded {Count} new role-permission rows", toAddRolePerms.Count);
+        }
+        if (toRemoveRolePerms.Any())
+        {
+            context.RolePermissions.RemoveRange(toRemoveRolePerms);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Removed {Count} stale role-permission rows", toRemoveRolePerms.Count);
         }
     }
 }

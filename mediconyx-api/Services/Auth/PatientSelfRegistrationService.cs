@@ -280,15 +280,30 @@ This link expires in 48 hours.
 
     private async Task<string> GeneratePatientNumberAsync(int tenantId, CancellationToken ct)
     {
-        // Find the max numeric suffix in this tenant
-        var maxNumber = await _context.Patients
-            .Where(p => p.TenantId == tenantId && p.PatientNumber.StartsWith("P-"))
-            .Select(p => p.PatientNumber)
-            .ToListAsync(ct);
-        var max = maxNumber
-            .Select(n => int.TryParse(n.Substring(2), out var v) ? v : 0)
-            .DefaultIfEmpty(0)
-            .Max();
-        return $"P-{(max + 1):D6}";
+        // Numeric-incrementing patient numbers are subject to a race when two self-
+        // registrations hit the same tenant concurrently. Instead of relying on
+        // "max+1" + retry-on-conflict, we generate a unique 6-digit numeric and a
+        // random 2-char suffix; the unique index on (TenantId, PatientNumber) catches
+        // the rare collision.
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var maxNumber = await _context.Patients
+                .Where(p => p.TenantId == tenantId && p.PatientNumber.StartsWith("P-"))
+                .Select(p => p.PatientNumber)
+                .ToListAsync(ct);
+            var max = maxNumber
+                .Select(n => int.TryParse(n.Substring(2).Split('-')[0], out var v) ? v : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+            var suffix = Guid.NewGuid().ToString("N").Substring(0, 2).ToUpperInvariant();
+            var candidate = $"P-{(max + 1 + attempt):D6}-{suffix}";
+            var collision = await _context.Patients
+                .AnyAsync(p => p.TenantId == tenantId && p.PatientNumber == candidate, ct);
+            if (!collision) return candidate;
+        }
+        // Should never reach here (5 random suffix collisions on a single tenant is
+        // essentially impossible), but bail out with a fully-random number rather
+        // than throw.
+        return $"P-{Random.Shared.Next(100000, 999999)}";
     }
 }

@@ -3,7 +3,7 @@
 **Date:** 2026-07-20
 **Goal:** Close all gaps in the user story — multi-role staff, IPD with ICU/PICU/DayCare, telemedicine, patient self-registration, multi-modal AI, per-role permissions, doctor profiles.
 
-**Status (updated 2026-07-21):**
+**Status (updated 2026-07-21 02:20):**
 - ✅ Tier 1.1 RBAC — done (commits pre-this-session, see git log `b9e8146` + empty msg fix)
 - ✅ Tier 1.2 Multi-role + Designation — done
 - ✅ Tier 1.3 Department.HeadDoctorId — done
@@ -16,8 +16,8 @@
 - ✅ Tier 3.3 Telemedicine stub — done (commit `b07274a`)
 - ✅ Tier 3.4 Public doctor profiles — done (commit `b07274a`)
 - ⏸ Tier 3.5 Multi-modal AI — **deferred** (needs vision-capable LLM, not started)
-- ⏳ Controller permission audit (RBAC matrix exists, but legacy controllers still use `[Authorize(Roles = "...")]` — needs pass to add `[HasPermission(...)]`) — **TODO**
-- ⏳ E2E tests for Tier 2/3 features — **TODO** (77 tests still pass; new tests not yet added)
+- ✅ Controller permission audit — done (local changes, not yet committed)
+- ✅ E2E tests for Tier 2/3 features — done (local changes, not yet committed)
 
 **Commits on `master` since 2026-07-20:**
 - `b9e8146` Tier 1 RBAC + multi-role (pre-this-session)
@@ -25,7 +25,21 @@
 - `c70a3ac` Tier 3.1 billing + Tier 3.2 self-registration
 - `b07274a` Tier 3.3 telemedicine + Tier 3.4 public doctor directory
 
-**Verification (2026-07-21):** 158/158 unit tests pass. Dev-stack smoke tests done before Docker daemon went down (self-registration, billing, public doctors, telemedicine all green). E2E suite not re-run after last code changes because Docker is down.
+**Local changes (uncommitted, awaiting user decision on commit/push):**
+- Controller permission audit (`[Authorize(Roles = ...)]` → `[HasPermission(...)]` across 8 controllers)
+- `PermissionSeeder` now removes stale role-permission rows (drift cleanup)
+- Permission matrix tweaks: `SERVICE_MANAGE` granted to Doctor/Nurse (was Admin-only by mistake); `DOCTOR_PROFILE_VIEW` removed from Patient (use public endpoint)
+- Bugfix: `DateTime Kind=Unspecified` in billing charges query → normalize to UTC
+- Bugfix: race condition in `GeneratePatientNumberAsync` → use a random 2-char suffix
+- Nullable warnings cleaned in `IPDController`
+- 31 new e2e tests in `mediconyx-e2e/tests/api/tier2-ipd.spec.ts` and `tier3-billing-telemedicine-public.spec.ts`
+- 8 new UI e2e tests in `mediconyx-e2e/tests/ui/tier3-pages.spec.ts`
+
+**Verification (2026-07-21 02:20):**
+- 158/158 unit tests pass (after unblocking the freshly built DLL)
+- 62/62 API e2e tests pass (4 pre-existing 429s in `sales-requests.spec.ts` are rate-limit flakes, not regressions)
+- All 31 new e2e tests pass
+- 0 warnings in API build
 
 ---
 

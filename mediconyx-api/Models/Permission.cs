@@ -200,6 +200,7 @@ public static class PermissionCatalog
             BED_ASSIGN, BED_MANAGE,
             VITAL_SIGN_RECORD,
             INVOICE_VIEW,
+            SERVICE_MANAGE,
             TELEMEDICINE_START,
         },
 
@@ -213,6 +214,7 @@ public static class PermissionCatalog
             FILE_UPLOAD,
             ADMISSION_VIEW,
             BED_ASSIGN,
+            SERVICE_MANAGE,
         },
 
         // Receptionist — front desk, registers patients, books appointments
@@ -222,6 +224,7 @@ public static class PermissionCatalog
             PATIENT_CREATE, PATIENT_VIEW, PATIENT_EDIT,
             APPOINTMENT_CREATE, APPOINTMENT_VIEW, APPOINTMENT_CANCEL,
             ADMISSION_CREATE, ADMISSION_VIEW, BED_ASSIGN,
+            DOCTOR_PROFILE_VIEW,
             TELEMEDICINE_START,
         },
 
@@ -233,13 +236,15 @@ public static class PermissionCatalog
             INVOICE_VIEW, INVOICE_CREATE, PAYMENT_RECORD,
         },
 
-        // Patient — own data + telemedicine
+        // Patient - own data + telemedicine. Doctor listings are intentionally NOT
+        // available here: patients discover doctors via the public /api/public/doctors
+        // endpoint (no auth, no PII). The internal /api/doctor listing is for
+        // staff only.
         [UserRole.Patient] = new[]
         {
             USER_EDIT_OWN,
             PATIENT_VIEW, // own only — enforced at controller level
             APPOINTMENT_CREATE, APPOINTMENT_VIEW, APPOINTMENT_CANCEL,
-            DOCTOR_PROFILE_VIEW,
             FILE_UPLOAD,
             TELEMEDICINE_JOIN,
         },
