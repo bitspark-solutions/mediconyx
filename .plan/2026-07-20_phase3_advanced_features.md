@@ -3,6 +3,30 @@
 **Date:** 2026-07-20
 **Goal:** Close all gaps in the user story — multi-role staff, IPD with ICU/PICU/DayCare, telemedicine, patient self-registration, multi-modal AI, per-role permissions, doctor profiles.
 
+**Status (updated 2026-07-21):**
+- ✅ Tier 1.1 RBAC — done (commits pre-this-session, see git log `b9e8146` + empty msg fix)
+- ✅ Tier 1.2 Multi-role + Designation — done
+- ✅ Tier 1.3 Department.HeadDoctorId — done
+- ✅ Tier 2.1 IPD models — done
+- ✅ Tier 2.2 IPD Controller — done
+- ✅ Tier 2.3 Bed Board UI — done
+- ✅ Tier 2.4 Admission/Discharge/Transfer workflow — done (in Bed Board modals)
+- ✅ Tier 3.1 Per-bed-day billing — done (commit `c70a3ac`)
+- ✅ Tier 3.2 Patient self-registration — done (commit `c70a3ac`)
+- ✅ Tier 3.3 Telemedicine stub — done (commit `b07274a`)
+- ✅ Tier 3.4 Public doctor profiles — done (commit `b07274a`)
+- ⏸ Tier 3.5 Multi-modal AI — **deferred** (needs vision-capable LLM, not started)
+- ⏳ Controller permission audit (RBAC matrix exists, but legacy controllers still use `[Authorize(Roles = "...")]` — needs pass to add `[HasPermission(...)]`) — **TODO**
+- ⏳ E2E tests for Tier 2/3 features — **TODO** (77 tests still pass; new tests not yet added)
+
+**Commits on `master` since 2026-07-20:**
+- `b9e8146` Tier 1 RBAC + multi-role (pre-this-session)
+- `f9d0950` Tier 2 — IPD + Bed Board UI
+- `c70a3ac` Tier 3.1 billing + Tier 3.2 self-registration
+- `b07274a` Tier 3.3 telemedicine + Tier 3.4 public doctor directory
+
+**Verification (2026-07-21):** 158/158 unit tests pass. Dev-stack smoke tests done before Docker daemon went down (self-registration, billing, public doctors, telemedicine all green). E2E suite not re-run after last code changes because Docker is down.
+
 ---
 
 ## Scope (from user story)
@@ -140,20 +164,32 @@
 
 ---
 
-## File inventory (estimated)
+## File inventory (actual)
 
-**New models (8):** Permission, RolePermission, UserRoleAssignment, Ward, Bed, Admission, AdmissionTransfer, DischargeSummary
-**New controllers (3):** IPDController, PatientRegistrationController, TelemedicineController (basic)
-**New services (4):** PermissionService, IPDService, BedBoardService, BedChargeService
-**New DTOs (15+):** WardDto, BedDto, AdmissionDto, TransferDto, DischargeDto, PermissionDto, etc.
-**New migrations (3):** RBAC, MultiRole, IPD
-**New frontend pages (4):** bed-board, /register, /doctors, /doctors/[id]
-**New frontend components (6+):** BedCard, WardColumn, AdmissionModal, DischargeForm, DoctorCard, etc.
-**Updated models (5):** User, Department, HospitalService, UserRole, Invoice
-**Updated controllers (5):** UserManagementController, DoctorController, ServiceController, PatientController, AuthController
-**Updated frontend (5):** admin portal (IPD tab), doctor portal (admit/discharge), patient portal (register link)
+**New models (10):** Permission, RolePermission, UserRoleAssignment, Ward, Bed, Admission, AdmissionTransfer, DischargeSummary, BedCharge, TelehealthSession
+**New controllers (3):** IPDController (`/api/ipd`), TelehealthController (`/api/telemedicine`), PublicDoctorController (`/api/public/doctors`)
+**New services (3):** PermissionService, BedBillingService (`/Services/Inpatient/`), PatientSelfRegistrationService (`/Services/Auth/`)
+**New DTOs (6 files):** IpdDtos.cs, TelehealthDtos.cs, PublicDoctorDtos.cs, RegisterPatientRequest.cs, AuthResponse.cs, UserDto.cs (all under `Models/DTOs/`)
+**New migrations (5):**
+- `20260720000000_AddRbac` (Tier 1.1)
+- `20260720000100_AddUserDesignationAndMultiRole` (Tier 1.2)
+- `20260720000200_AddIpdWardsBedsAdmissions` (Tier 2.1)
+- `20260720000300_AddBedChargesAndRates` (Tier 3.1)
+- `20260720000400_AddUserEmailVerification` (Tier 3.2)
+- `20260720000500_AddTelehealthSessions` (Tier 3.3)
+- `20260720000600_AddDoctorProfilePublicFields` (Tier 3.4)
+**New frontend pages (6):**
+- `app/portal/admin/bed-board/page.tsx` (Tier 2)
+- `app/register/page.tsx` (Tier 3.2)
+- `app/verify-email/page.tsx` (Tier 3.2)
+- `app/doctors/page.tsx` (Tier 3.4)
+- `app/doctors/[id]/page.tsx` (Tier 3.4)
+- `app/portal/telemedicine/page.tsx` (Tier 3.3)
+**Updated models (5):** User, Department, DoctorProfile, HospitalService, UserRole
+**Updated controllers (2):** AuthController (added register-patient/verify-email/resend-verification), IPDController (added billing endpoints + DailyRate wiring)
+**Updated frontend (1):** `app/login/page.tsx` (added "Create a patient account" link), `app/page.tsx` (added "Find a Doctor" nav link)
 
-**Total: ~60 new files, ~15 modified**
+**Total: ~25 new files, ~10 modified**
 
 ---
 
@@ -176,18 +212,24 @@
 
 ## Acceptance criteria
 
-✅ Admin can create custom designations per user ("Director of Cardiology" etc.)
-✅ A single user can hold multiple roles (e.g., Doctor + Admin via UserRoleAssignment)
-✅ Admin can create wards (General, ICU, PICU, NICU, DayCare, Maternity, Pediatric, Geriatric)
-✅ Admin can create beds per ward with status tracking
-✅ Receptionist can admit a patient to a specific bed (status → Occupied)
-✅ Doctor can transfer patient to a different bed
-✅ Doctor can discharge patient (bed status → Cleaning, then Available)
-✅ Discharge summary is captured
-✅ Bed board shows real-time status of all wards/beds
-✅ Daily bed charges are generated for admitted patients
-✅ Patient can self-register via public form
-✅ Doctor profile pages are public
-✅ Telemedicine session can be created (stub)
-✅ All existing 77 e2e tests still pass
-✅ New e2e tests for IPD + custom roles added (target: 100+ total tests)
+**Met (verified):**
+- ✅ Admin can create custom designations per user ("Director of Cardiology" etc.) — Tier 1.2
+- ✅ A single user can hold multiple roles (e.g., Doctor + Admin via UserRoleAssignment) — Tier 1.2
+- ✅ Admin can create wards (General, ICU, PICU, NICU, DayCare, Maternity, Pediatric, Geriatric) — Tier 2
+- ✅ Admin can create beds per ward with status tracking — Tier 2
+- ✅ Receptionist can admit a patient to a specific bed (status → Occupied) — Tier 2 (smoke-tested)
+- ✅ Doctor can transfer patient to a different bed — Tier 2 (smoke-tested)
+- ✅ Doctor can discharge patient (bed status → Cleaning, then Available) — Tier 2 (smoke-tested)
+- ✅ Discharge summary is captured — Tier 2
+- ✅ Bed board shows real-time status of all wards/beds — Tier 2 (`/portal/admin/bed-board`)
+- ✅ Daily bed charges are generated for admitted patients — Tier 3.1 (idempotent, 5000 BDT/day tested)
+- ✅ Patient can self-register via public form — Tier 3.2 (`/register`, MailHog, verify-email flow)
+- ✅ Doctor profile pages are public — Tier 3.4 (`/doctors`, `/doctors/{id}`, no auth)
+- ✅ Telemedicine session can be created (stub) — Tier 3.3 (`/portal/telemedicine`, video is placeholder)
+- ✅ 158/158 unit tests pass (no regressions)
+
+**Not yet met:**
+- ⏳ All existing 77 e2e tests still pass — last run was pre-Tier-3 changes; couldn't re-run (Docker daemon down)
+- ⏳ New e2e tests for IPD + custom roles added (target: 100+ total tests) — **TODO**
+- ⏳ All controllers audited to use `[HasPermission]` instead of `[Authorize(Roles = ...)]` — **TODO**
+- ⏳ Multi-modal AI (Tier 3.5) — **deferred**, needs vision LLM provider

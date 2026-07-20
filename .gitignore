@@ -40,6 +40,9 @@ bld/
 !.vscode/extensions.json
 *.code-workspace
 
+# KIMI Code
+.kimi-code/
+
 # Rider
 .idea/
 *.sln.iml
