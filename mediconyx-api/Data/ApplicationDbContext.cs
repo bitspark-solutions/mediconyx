@@ -42,6 +42,13 @@ public class ApplicationDbContext : DbContext
     // Hospital management entities
     public DbSet<DoctorProfile> DoctorProfiles { get; set; }
 
+    // RBAC (Tier 1.1)
+    public DbSet<Permission> Permissions { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
+
+    // Multi-role (Tier 1.2)
+    public DbSet<UserRoleAssignment> UserRoleAssignments { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -388,6 +395,60 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.MedicalLicenseNumber).HasMaxLength(100);
             entity.Property(e => e.Specialization).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ConsultationFee).HasColumnType("numeric(10,2)");
+        });
+
+        // Permission configuration
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.Category);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(300);
+        });
+
+        // RolePermission configuration
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Role, e.PermissionId }).IsUnique();
+            entity.Property(e => e.Role).HasConversion<int>();
+            entity.HasOne(e => e.Permission)
+                .WithMany(p => p.RolePermissions)
+                .HasForeignKey(e => e.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserRoleAssignment (Tier 1.2)
+        modelBuilder.Entity<UserRoleAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Role }).IsUnique();
+            entity.Property(e => e.Role).HasConversion<int>();
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.AdditionalRoles)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // User has Designation + PrimaryDepartmentId
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(e => e.Designation).HasMaxLength(150);
+            entity.HasOne(e => e.PrimaryDepartment)
+                .WithMany()
+                .HasForeignKey(e => e.PrimaryDepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Department has HeadDoctor
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.HasOne(e => e.HeadDoctor)
+                .WithMany()
+                .HasForeignKey(e => e.HeadDoctorId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

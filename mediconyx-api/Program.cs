@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -119,6 +120,21 @@ Console.WriteLine($"📊 Embedding Provider: {embeddingProvider} ({embeddingConf
 // LLM Provider Factory (for querying current provider info)
 builder.Services.AddScoped<ILLMProviderFactory, LLMProviderFactory>();
 builder.Services.AddScoped<IRagQueryService, RagQueryService>();
+
+// RBAC (Tier 1.1) — permission service + per-permission policies + handler
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+foreach (var (name, _, _) in PermissionCatalog.All)
+{
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy(name, policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.Requirements.Add(new HasPermissionRequirement(name));
+        });
+    });
+}
 
 // Rate limiting
 builder.Services.AddMemoryCache();
@@ -586,6 +602,10 @@ if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
                     }
                     // ── END STAFF SEED ─────────────────────────────────────────
                 }
+
+                // ── RBAC SEED (Tier 1.1) ────────────────────────────────────
+                var seedLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                await PermissionSeeder.SeedAsync(dbContext, seedLogger);
             }
         }
         catch (Exception ex)

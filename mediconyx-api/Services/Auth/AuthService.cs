@@ -11,6 +11,7 @@ public class AuthService : IAuthService
     private readonly ApplicationDbContext _context;
     private readonly IPasswordService _passwordService;
     private readonly IJwtService _jwtService;
+    private readonly IPermissionService _permissionService;
     private readonly ILogger<AuthService> _logger;
 
     private const int RefreshTokenExpiryDays = 7;
@@ -20,11 +21,13 @@ public class AuthService : IAuthService
         ApplicationDbContext context,
         IPasswordService passwordService,
         IJwtService jwtService,
+        IPermissionService permissionService,
         ILogger<AuthService> logger)
     {
         _context = context;
         _passwordService = passwordService;
         _jwtService = jwtService;
+        _permissionService = permissionService;
         _logger = logger;
     }
 
@@ -53,7 +56,8 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
 
-        var (accessToken, refreshToken) = _jwtService.GenerateTokenPair(user);
+        var permissions = await _permissionService.GetPermissionsForUserAsync(user);
+        var (accessToken, refreshToken) = GenerateTokenPairWithPermissions(user, permissions);
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(RefreshTokenExpiryDays);
 
@@ -143,7 +147,9 @@ public class AuthService : IAuthService
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
 
-        var (accessToken, refreshToken) = _jwtService.GenerateTokenPair(user);
+        // Union of permissions from primary role + all additional roles (Tier 1.2)
+        var permissions = await _permissionService.GetPermissionsForUserAsync(user);
+        var (accessToken, refreshToken) = GenerateTokenPairWithPermissions(user, permissions);
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(RefreshTokenExpiryDays);
 
@@ -153,6 +159,13 @@ public class AuthService : IAuthService
             _logger.LogInformation("{Message}: {Email} in Tenant {TenantId}", logMessage, user.Email, user.TenantId);
 
         return BuildAuthResponse(user, accessToken, refreshToken);
+    }
+
+    private (string AccessToken, string RefreshToken) GenerateTokenPairWithPermissions(User user, IEnumerable<string> permissions)
+    {
+        var access = _jwtService.GenerateAccessToken(user, permissions);
+        var refresh = _jwtService.GenerateRefreshToken();
+        return (access, refresh);
     }
 
     private static AuthResponse BuildAuthResponse(User user, string accessToken, string refreshToken) => new()

@@ -9,6 +9,13 @@ public class Department
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// The doctor who heads this department. Nullable — department may not have a
+    /// formal head yet, or the head may be a non-doctor (e.g. admin director).
+    /// </summary>
+    public int? HeadDoctorId { get; set; }
+    public DoctorProfile? HeadDoctor { get; set; }
+
     // Audit
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }

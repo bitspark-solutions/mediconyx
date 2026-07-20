@@ -15,6 +15,7 @@ public class AuthServiceTests : IDisposable
     private readonly ApplicationDbContext _context;
     private readonly Mock<IPasswordService> _passwordMock;
     private readonly Mock<IJwtService> _jwtMock;
+    private readonly Mock<IPermissionService> _permissionMock;
     private readonly Mock<ILogger<AuthService>> _loggerMock;
     private readonly AuthService _sut;
     private readonly Tenant _tenant;
@@ -28,9 +29,13 @@ public class AuthServiceTests : IDisposable
 
         _passwordMock = new Mock<IPasswordService>();
         _jwtMock = new Mock<IJwtService>();
+        _permissionMock = new Mock<IPermissionService>();
         _loggerMock = new Mock<ILogger<AuthService>>();
 
-        _sut = new AuthService(_context, _passwordMock.Object, _jwtMock.Object, _loggerMock.Object);
+        _permissionMock.Setup(p => p.GetPermissionsForRoleAsync(It.IsAny<UserRole>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        _sut = new AuthService(_context, _passwordMock.Object, _jwtMock.Object, _permissionMock.Object, _loggerMock.Object);
 
         _tenant = new Tenant { Id = 1, Name = "Test Hospital", Subdomain = "test", IsActive = true, CreatedAt = DateTime.UtcNow };
         _context.Tenants.Add(_tenant);
@@ -38,6 +43,10 @@ public class AuthServiceTests : IDisposable
 
         _jwtMock.Setup(j => j.GenerateTokenPair(It.IsAny<User>()))
             .Returns(("access_token", "refresh_token"));
+        _jwtMock.Setup(j => j.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IEnumerable<string>>()))
+            .Returns("access_token_with_perms");
+        _jwtMock.Setup(j => j.GenerateRefreshToken())
+            .Returns("refresh_token");
     }
 
     // ── RegisterAsync ────────────────────────────────────────────────────────
@@ -59,7 +68,7 @@ public class AuthServiceTests : IDisposable
 
         var result = await _sut.RegisterAsync(request);
 
-        result.AccessToken.Should().Be("access_token");
+        result.AccessToken.Should().Be("access_token_with_perms");
         result.User.Email.Should().Be("new@test.com");
         _context.Users.Should().ContainSingle(u => u.Email == "new@test.com");
     }
@@ -119,7 +128,7 @@ public class AuthServiceTests : IDisposable
 
         var result = await _sut.LoginAsync(new LoginRequest { Email = "user@test.com", Password = "Password1!" });
 
-        result.AccessToken.Should().Be("access_token");
+        result.AccessToken.Should().Be("access_token_with_perms");
         result.RefreshToken.Should().Be("refresh_token");
     }
 
@@ -191,7 +200,7 @@ public class AuthServiceTests : IDisposable
 
         var result = await _sut.StaffLoginAsync(new LoginRequest { Email = "doctor@test.com", Password = "x" });
 
-        result.AccessToken.Should().Be("access_token");
+        result.AccessToken.Should().Be("access_token_with_perms");
     }
 
     // ── RefreshTokenAsync ────────────────────────────────────────────────────
@@ -210,7 +219,7 @@ public class AuthServiceTests : IDisposable
 
         var result = await _sut.RefreshTokenAsync("valid_token");
 
-        result.AccessToken.Should().Be("access_token");
+        result.AccessToken.Should().Be("access_token_with_perms");
     }
 
     [Fact]
