@@ -27,7 +27,15 @@ public static class ServiceCollectionExtensions
         IHostEnvironment environment)
     {
         // Add services to the container
-        services.AddControllers();
+        // JsonStringEnumConverter: the UI sends enums as strings ("Male", "Doctor");
+        // numeric values remain accepted for backwards compatibility.
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(
+                    new System.Text.Json.Serialization.JsonStringEnumConverter());
+                options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+            });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
