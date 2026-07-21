@@ -33,7 +33,7 @@ export default function DoctorProfilePage() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9765"}/api/public/doctors/${params.id}`);
+        const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/public/doctors/${params.id}`);
         if (r.ok) setDoctor(await r.json());
         else setError("Doctor not found.");
       } catch (e: any) { setError(e.message); }

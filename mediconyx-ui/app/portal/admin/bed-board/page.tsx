@@ -16,6 +16,9 @@ interface BedBoardWard {
 interface BedBoardBed {
   id: number;
   number: string;
+  kind?: string;
+  cabinType?: string;
+  facilities?: string;
   status: string;
   isActive: boolean;
   admissionId?: number;
@@ -58,6 +61,7 @@ const WARD_TYPE_COLORS: Record<string, { bg: string; border: string; text: strin
   Geriatric:{bg:"bg-violet-50", border: "border-violet-300", text: "text-violet-700" },
   Surgery:{ bg: "bg-orange-50", border: "border-orange-300", text: "text-orange-700" },
   General:{ bg: "bg-emerald-50",border: "border-emerald-300",text: "text-emerald-700" },
+  Cabin:  { bg: "bg-indigo-50", border: "border-indigo-300", text: "text-indigo-700" },
 };
 
 const BED_STATUS_STYLES: Record<string, string> = {
@@ -170,7 +174,7 @@ export default function BedBoardPage() {
                           onClick={() => setShowCreateBed(ward.id)}
                           className="px-3 py-1.5 text-sm bg-white border border-slate-300 hover:bg-slate-50 rounded flex items-center gap-1"
                         >
-                          <Plus className="w-3.5 h-3.5" /> Bed
+                          <Plus className="w-3.5 h-3.5" /> {ward.wardType === "Cabin" ? "Cabin" : "Bed"}
                         </button>
                       </div>
                     </div>
@@ -215,6 +219,7 @@ export default function BedBoardPage() {
         {showCreateBed !== null && (
           <CreateBedModal
             wardId={showCreateBed}
+            defaultKind={board.find(w => w.id === showCreateBed)?.wardType === "Cabin" ? "Cabin" : "Bed"}
             onClose={() => setShowCreateBed(null)}
             onCreated={() => { setShowCreateBed(null); load(); }}
           />
@@ -268,12 +273,28 @@ function BedCard({ bed, onAdmit, onTransfer, onDischarge, onBill }: {
   onBill: () => void;
 }) {
   const style = BED_STATUS_STYLES[bed.status] || BED_STATUS_STYLES.Available;
+  let facilities: string[] = [];
+  try { if (bed.facilities) facilities = JSON.parse(bed.facilities); } catch { /* ignore malformed */ }
+  const isCabin = bed.kind === "Cabin";
   return (
-    <div className={`rounded-lg border-2 p-3 ${style} transition-all`}>
+    <div className={`rounded-lg border-2 p-3 ${style} transition-all`} title={isCabin && facilities.length > 0 ? `Facilities: ${facilities.join(", ")}` : undefined}>
       <div className="flex items-center justify-between mb-2">
         <span className="font-bold text-sm">{bed.number}</span>
         <span className="text-xs font-medium uppercase">{bed.status}</span>
       </div>
+      {isCabin && (
+        <div className="mb-2 flex items-center gap-1 flex-wrap">
+          <span className="text-xs px-1.5 py-0.5 bg-indigo-600 text-white rounded font-semibold">
+            {bed.cabinType || "Cabin"}
+          </span>
+          {facilities.slice(0, 2).map(f => (
+            <span key={f} className="text-[10px] px-1 py-0.5 bg-white/70 rounded border border-current/20">{f}</span>
+          ))}
+          {facilities.length > 2 && (
+            <span className="text-[10px] opacity-70">+{facilities.length - 2} more</span>
+          )}
+        </div>
+      )}
       {bed.status === "Occupied" && bed.patientName ? (
         <div className="space-y-1 mb-2">
           <div className="text-sm font-semibold truncate" title={bed.patientName}>
@@ -344,7 +365,7 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
           <select value={wardType} onChange={e => setWardType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm">
-            {["General","ICU","PICU","NICU","DayCare","Maternity","Pediatric","Geriatric","Surgery"].map(t =>
+            {["General","ICU","PICU","NICU","DayCare","Maternity","Pediatric","Geriatric","Surgery","Cabin"].map(t =>
               <option key={t} value={t}>{t}</option>
             )}
           </select>
@@ -361,11 +382,48 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
   );
 }
 
-function CreateBedModal({ wardId, onClose, onCreated }: { wardId: number; onClose: () => void; onCreated: () => void }) {
+interface CabinTypeInfo {
+  type: string;
+  defaultFacilities: string[];
+  typicalRateMinBdt: number;
+  typicalRateMaxBdt: number;
+}
+
+function CreateBedModal({ wardId, defaultKind = "Bed", onClose, onCreated }: { wardId: number; defaultKind?: "Bed" | "Cabin"; onClose: () => void; onCreated: () => void }) {
   const [number, setNumber] = useState("");
   const [dailyRate, setDailyRate] = useState("");
+  const [kind, setKind] = useState<"Bed" | "Cabin">(defaultKind);
+  const [cabinTypes, setCabinTypes] = useState<CabinTypeInfo[]>([]);
+  const [cabinType, setCabinType] = useState("");
+  const [facilities, setFacilities] = useState<string[]>([]);
+  const [newFacility, setNewFacility] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (kind !== "Cabin") return;
+    apiClient.get("/api/ipd/cabin-types").then(async r => {
+      if (r.ok) {
+        const types: CabinTypeInfo[] = await r.json();
+        setCabinTypes(types);
+        if (!cabinType && types.length > 0) {
+          setCabinType(types[1]?.type ?? types[0].type); // default to "Standard"
+          setFacilities((types[1] ?? types[0]).defaultFacilities);
+        }
+      }
+    });
+  }, [kind]);
+
+  const selectCabinType = (t: string) => {
+    setCabinType(t);
+    const info = cabinTypes.find(x => x.type === t);
+    if (info) setFacilities(info.defaultFacilities);
+  };
+
+  const toggleFacility = (f: string) =>
+    setFacilities(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
+
+  const selectedType = cabinTypes.find(x => x.type === cabinType);
 
   const submit = async () => {
     setSubmitting(true); setError("");
@@ -373,6 +431,9 @@ function CreateBedModal({ wardId, onClose, onCreated }: { wardId: number; onClos
       const r = await apiClient.post("/api/ipd/beds", {
         wardId, number, status: "Available",
         dailyRate: dailyRate ? parseFloat(dailyRate) : null,
+        kind,
+        cabinType: kind === "Cabin" ? cabinType : null,
+        facilities: kind === "Cabin" ? facilities : null,
       });
       if (r.ok) onCreated();
       else { const b = await r.json().catch(() => ({})); setError(b.message || "Failed"); }
@@ -381,11 +442,74 @@ function CreateBedModal({ wardId, onClose, onCreated }: { wardId: number; onClos
   };
 
   return (
-    <Modal title="Add Bed" onClose={onClose}>
+    <Modal title={kind === "Cabin" ? "Add Cabin" : "Add Bed"} onClose={onClose}>
       <div className="space-y-3">
         {error && <div className="p-2 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
-        <Field label="Bed Number" value={number} onChange={setNumber} placeholder="ICU-1-A" />
-        <Field label="Daily rate override (BDT, blank = inherit ward)" value={dailyRate} onChange={setDailyRate} type="number" placeholder="e.g. 6000" />
+
+        <div className="grid grid-cols-2 gap-2">
+          {(["Bed", "Cabin"] as const).map(k => (
+            <button
+              key={k}
+              onClick={() => setKind(k)}
+              className={`px-3 py-2 text-sm rounded border-2 font-medium ${kind === k ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500 hover:border-slate-300"}`}
+            >
+              {k === "Bed" ? "Ward Bed" : "Private Cabin"}
+            </button>
+          ))}
+        </div>
+
+        <Field label={kind === "Cabin" ? "Cabin Number" : "Bed Number"} value={number} onChange={setNumber} placeholder={kind === "Cabin" ? "CAB-201" : "ICU-1-A"} />
+
+        {kind === "Cabin" && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Cabin Type</label>
+              <select value={cabinType} onChange={e => selectCabinType(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+                {cabinTypes.map(t => <option key={t.type} value={t.type}>{t.type} (typ. {t.typicalRateMinBdt}–{t.typicalRateMaxBdt} BDT/day)</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Facilities</label>
+              <div className="flex flex-wrap gap-1.5">
+                {(selectedType?.defaultFacilities ?? facilities).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => toggleFacility(f)}
+                    className={`text-xs px-2 py-1 rounded border ${facilities.includes(f) ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-300"}`}
+                  >
+                    {f}
+                  </button>
+                ))}
+                {facilities.filter(f => !(selectedType?.defaultFacilities ?? []).includes(f)).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => toggleFacility(f)}
+                    className="text-xs px-2 py-1 rounded border bg-indigo-600 text-white border-indigo-600"
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={newFacility}
+                  onChange={e => setNewFacility(e.target.value)}
+                  placeholder="Custom facility (e.g. Balcony)"
+                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded text-sm"
+                />
+                <button
+                  onClick={() => { const f = newFacility.trim(); if (f && !facilities.includes(f)) setFacilities([...facilities, f]); setNewFacility(""); }}
+                  className="px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        <Field label="Daily rate override (BDT, blank = inherit ward)" value={dailyRate} onChange={setDailyRate} type="number" placeholder={selectedType ? `e.g. ${selectedType.typicalRateMinBdt}` : "e.g. 6000"} />
         <ModalActions onClose={onClose} onSubmit={submit} submitting={submitting} submitText="Create" />
       </div>
     </Modal>

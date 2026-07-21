@@ -38,7 +38,7 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9765"}/api/auth/register-patient`, {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/auth/register-patient`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -118,13 +118,13 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Date of birth</label>
-              <input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} required
+              <label htmlFor="date-of-birth" className="block text-sm font-medium text-slate-700 mb-1">Date of birth</label>
+              <input id="date-of-birth" type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} required
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Gender</label>
-              <select value={gender} onChange={e => setGender(e.target.value)}
+              <label htmlFor="gender" className="block text-sm font-medium text-slate-700 mb-1">Gender</label>
+              <select id="gender" value={gender} onChange={e => setGender(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500">
                 <option>Male</option>
                 <option>Female</option>
@@ -137,10 +137,10 @@ export default function RegisterPage() {
           <Field label="Confirm password" value={confirmPassword} onChange={setConfirmPassword} type="password" required />
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label htmlFor="hospital-subdomain" className="block text-sm font-medium text-slate-700 mb-1">
               Hospital subdomain <span className="text-slate-400 font-normal">(optional)</span>
             </label>
-            <input type="text" value={subdomain} onChange={e => setSubdomain(e.target.value)}
+            <input id="hospital-subdomain" type="text" value={subdomain} onChange={e => setSubdomain(e.target.value)}
               placeholder="e.g. citygeneral"
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500" />
             <p className="text-xs text-slate-500 mt-1">
@@ -167,10 +167,11 @@ export default function RegisterPage() {
 }
 
 function Field({ label, value, onChange, type = "text", required = false, placeholder = "" }: any) {
+  const id = `field-${String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">{label}{required && <span className="text-red-500">*</span>}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} required={required} placeholder={placeholder}
+      <label htmlFor={id} className={`block text-sm font-medium text-slate-700 mb-1 ${required ? "after:content-['*'] after:text-red-500" : ""}`}>{label}</label>
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} required={required} placeholder={placeholder}
         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500" />
     </div>
   );

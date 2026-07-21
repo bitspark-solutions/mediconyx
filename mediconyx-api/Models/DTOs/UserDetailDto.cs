@@ -8,6 +8,10 @@ public class UserDetailDto
     public string LastName { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string? Designation { get; set; }
+    public int? PrimaryDepartmentId { get; set; }
+    public string? PrimaryDepartmentName { get; set; }
+    public List<string> AdditionalRoles { get; set; } = new();
     public bool IsActive { get; set; }
     public int TenantId { get; set; }
     public string TenantName { get; set; } = string.Empty;

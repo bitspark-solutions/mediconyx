@@ -14,10 +14,28 @@ public class Bed
     public int WardId { get; set; }
     public Ward Ward { get; set; } = null!;
 
-    /// <summary>Bed number/code within its ward. e.g. "B-101", "PICU-A-3".</summary>
+    /// <summary>Bed number/code within its ward. e.g. "B-101", "PICU-A-3", "CAB-201".</summary>
     [Required]
     [StringLength(30)]
     public string Number { get; set; } = string.Empty;
+
+    /// <summary>Whether this unit is a shared ward bed or a private cabin.</summary>
+    public BedKind Kind { get; set; } = BedKind.Bed;
+
+    /// <summary>
+    /// Cabin category when Kind = Cabin (see <see cref="CabinTypes"/>). Null for regular beds.
+    /// e.g. "Standard", "Deluxe", "VIP", "Suite".
+    /// </summary>
+    [StringLength(50)]
+    public string? CabinType { get; set; }
+
+    /// <summary>
+    /// JSON array of amenity names for cabins, e.g. ["AC","Attached Bathroom","TV","Attendant Bed"].
+    /// Defaults come from <see cref="CabinTypes.DefaultFacilities"/> when not specified at creation.
+    /// Null/empty for regular beds.
+    /// </summary>
+    [StringLength(1000)]
+    public string? Facilities { get; set; }
 
     public BedStatus Status { get; set; } = BedStatus.Available;
 
@@ -33,11 +51,3 @@ public class Bed
     public DateTime? UpdatedAt { get; set; }
 }
 
-public enum BedStatus
-{
-    Available = 0,
-    Occupied = 1,
-    Cleaning = 2,
-    Maintenance = 3,
-    Reserved = 4
-}

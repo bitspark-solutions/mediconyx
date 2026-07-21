@@ -7,6 +7,7 @@ using mediconyx_api.Middleware;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Infrastructure;
+using mediconyx_api.Services.Common;
 using mediconyx_api.Services.AI;
 
 namespace mediconyx_api.Controllers;
@@ -147,6 +148,84 @@ public class DoctorController : ControllerBase
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Doctor {DoctorId} created for tenant {TenantId}", doctorProfile.Id, tenantId);
+
+        // Reload with includes
+        await _context.Entry(doctorProfile).Reference(d => d.User).LoadAsync();
+        if (doctorProfile.DepartmentId.HasValue)
+            await _context.Entry(doctorProfile).Reference(d => d.Department).LoadAsync();
+
+        return CreatedAtAction(nameof(GetDoctor), new { id = doctorProfile.Id }, MapToDto(doctorProfile));
+    }
+
+    /// <summary>
+    /// Attach a doctor profile to an existing staff user (e.g. a Director who also practices)
+    /// </summary>
+    [HttpPost("attach-profile")]
+    [HasPermission(PermissionCatalog.DOCTOR_PROFILE_EDIT)]
+    public async Task<ActionResult<DoctorProfileDto>> AttachProfile([FromBody] AttachDoctorProfileRequest request)
+    {
+        var tenantId = GetCurrentTenantId();
+        if (tenantId == null) return Unauthorized();
+
+        // Validate specialization
+        if (!MedicalSpecializations.All.Contains(request.Specialization))
+            return BadRequest(new { message = $"Invalid specialization. Allowed: {string.Join(", ", MedicalSpecializations.All)}" });
+
+        // User must exist in the caller's tenant
+        var user = await _context.Users
+            .Include(u => u.AdditionalRoles)
+            .FirstOrDefaultAsync(u => u.Id == request.UserId && u.TenantId == tenantId);
+        if (user == null)
+            return NotFound(new { message = "User not found in this hospital" });
+
+        // Reject if the user already has a doctor profile
+        var hasProfile = await _context.DoctorProfiles
+            .AnyAsync(d => d.UserId == user.Id && d.TenantId == tenantId);
+        if (hasProfile)
+            return BadRequest(new { message = "User already has a doctor profile" });
+
+        // Validate department belongs to the tenant
+        if (request.DepartmentId.HasValue)
+        {
+            var deptExists = await _context.Departments
+                .AnyAsync(d => d.Id == request.DepartmentId.Value && d.TenantId == tenantId);
+            if (!deptExists)
+                return BadRequest(new { message = "Invalid department for this hospital" });
+        }
+
+        // Create doctor profile
+        var doctorProfile = new DoctorProfile
+        {
+            UserId = user.Id,
+            TenantId = tenantId.Value,
+            MedicalLicenseNumber = request.MedicalLicenseNumber,
+            Specialization = request.Specialization,
+            DepartmentId = request.DepartmentId,
+            ConsultationDurationMinutes = request.ConsultationDurationMinutes,
+            ConsultationFee = request.ConsultationFee,
+            IsAcceptingPatients = true,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.DoctorProfiles.Add(doctorProfile);
+
+        // Grant the Doctor role if the user's primary role isn't already Doctor
+        if (user.Role != UserRole.Doctor && user.AdditionalRoles.All(a => a.Role != UserRole.Doctor))
+        {
+            _context.UserRoleAssignments.Add(new UserRoleAssignment
+            {
+                UserId = user.Id,
+                Role = UserRole.Doctor,
+                GrantedAt = DateTime.UtcNow,
+                GrantedByUserId = ClaimsHelper.GetUserId(User)
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Doctor profile {DoctorId} attached to user {UserId} in tenant {TenantId}",
+            doctorProfile.Id, user.Id, tenantId);
 
         // Reload with includes
         await _context.Entry(doctorProfile).Reference(d => d.User).LoadAsync();

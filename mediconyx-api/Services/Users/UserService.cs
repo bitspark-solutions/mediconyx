@@ -28,6 +28,8 @@ public class UserService : IUserService
     {
         var user = await _context.Users
             .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
 
@@ -36,7 +38,11 @@ public class UserService : IUserService
 
     public async Task<UserListResponse> GetUsersAsync(int? callerTenantId, UserQueryParams queryParams)
     {
-        var query = _context.Users.Include(u => u.Tenant).AsQueryable();
+        var query = _context.Users
+            .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
+            .AsQueryable();
 
         if (queryParams.TenantId.HasValue)
             query = query.Where(u => u.TenantId == queryParams.TenantId.Value);
@@ -99,6 +105,8 @@ public class UserService : IUserService
 
         var user = await _context.Users
             .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == requestedUserId)
             ?? throw new KeyNotFoundException($"User {requestedUserId} not found.");
 
@@ -127,6 +135,14 @@ public class UserService : IUserService
         if (tenant == null || !tenant.IsActive)
             throw new InvalidOperationException("Invalid or inactive tenant.");
 
+        if (request.PrimaryDepartmentId.HasValue)
+        {
+            var deptExists = await _context.Departments.AnyAsync(d =>
+                d.Id == request.PrimaryDepartmentId.Value && d.TenantId == request.TenantId);
+            if (!deptExists)
+                throw new InvalidOperationException("Invalid department for this tenant.");
+        }
+
         var user = new User
         {
             Email = request.Email.ToLowerInvariant(),
@@ -135,6 +151,8 @@ public class UserService : IUserService
             LastName = request.LastName,
             PhoneNumber = request.PhoneNumber ?? string.Empty,
             Role = request.Role,
+            Designation = string.IsNullOrWhiteSpace(request.Designation) ? null : request.Designation.Trim(),
+            PrimaryDepartmentId = request.PrimaryDepartmentId,
             TenantId = request.TenantId,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -143,10 +161,17 @@ public class UserService : IUserService
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
+        SyncAdditionalRoles(user, request.AdditionalRoles, adminUserId);
+        await _context.SaveChangesAsync();
+
         _logger.LogInformation("User created: {Email} in Tenant {TenantId} by Admin {AdminId}",
             user.Email, user.TenantId, adminUserId);
 
-        var created = await _context.Users.Include(u => u.Tenant).FirstAsync(u => u.Id == user.Id);
+        var created = await _context.Users
+            .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
+            .FirstAsync(u => u.Id == user.Id);
         return MapToDetailDto(created);
     }
 
@@ -154,13 +179,16 @@ public class UserService : IUserService
     {
         var user = await _context.Users
             .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
 
         if (callerUserId != userId && callerRole != UserRole.Admin)
             throw new UnauthorizedAccessException("You do not have permission to update this user.");
 
-        if (callerRole != UserRole.Admin && (request.Role.HasValue || request.IsActive.HasValue))
+        if (callerRole != UserRole.Admin &&
+            (request.Role.HasValue || request.IsActive.HasValue || request.AdditionalRoles != null))
             throw new UnauthorizedAccessException("You do not have permission to change role or active status.");
 
         if (!string.IsNullOrWhiteSpace(request.FirstName)) user.FirstName = request.FirstName;
@@ -169,12 +197,32 @@ public class UserService : IUserService
         if (request.Role.HasValue && callerRole == UserRole.Admin) user.Role = request.Role.Value;
         if (request.IsActive.HasValue && callerRole == UserRole.Admin) user.IsActive = request.IsActive.Value;
 
+        if (request.Designation != null)
+            user.Designation = string.IsNullOrWhiteSpace(request.Designation) ? null : request.Designation.Trim();
+
+        if (request.PrimaryDepartmentId.HasValue)
+        {
+            var deptExists = await _context.Departments.AnyAsync(d =>
+                d.Id == request.PrimaryDepartmentId.Value && d.TenantId == user.TenantId);
+            if (!deptExists)
+                throw new InvalidOperationException("Invalid department for this tenant.");
+            user.PrimaryDepartmentId = request.PrimaryDepartmentId.Value;
+        }
+
+        if (request.AdditionalRoles != null && callerRole == UserRole.Admin)
+            SyncAdditionalRoles(user, request.AdditionalRoles, callerUserId);
+
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("User updated: {UserId} by {CallerUserId}", userId, callerUserId);
 
-        return MapToDetailDto(user);
+        var updated = await _context.Users
+            .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
+            .FirstAsync(u => u.Id == userId);
+        return MapToDetailDto(updated);
     }
 
     public async Task DeactivateUserAsync(int userId, int callerUserId)
@@ -199,6 +247,8 @@ public class UserService : IUserService
 
         var user = await _context.Users
             .Include(u => u.Tenant)
+            .Include(u => u.PrimaryDepartment)
+            .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
 
@@ -273,6 +323,10 @@ public class UserService : IUserService
         LastName = user.LastName,
         PhoneNumber = user.PhoneNumber,
         Role = user.Role.ToString(),
+        Designation = user.Designation,
+        PrimaryDepartmentId = user.PrimaryDepartmentId,
+        PrimaryDepartmentName = user.PrimaryDepartment?.Name,
+        AdditionalRoles = user.AdditionalRoles.Select(a => a.Role.ToString()).ToList(),
         IsActive = user.IsActive,
         TenantId = user.TenantId,
         TenantName = user.Tenant?.Name ?? string.Empty,
@@ -280,4 +334,31 @@ public class UserService : IUserService
         UpdatedAt = user.UpdatedAt,
         LastLoginAt = user.LastLoginAt
     };
+
+    /// <summary>
+    /// Reconcile UserRoleAssignments with the requested set. Roles equal to the
+    /// user's primary Role are skipped (the primary role is already their authority).
+    /// </summary>
+    private void SyncAdditionalRoles(User user, IEnumerable<UserRole>? requestedRoles, int grantedByUserId)
+    {
+        var requested = (requestedRoles ?? Enumerable.Empty<UserRole>())
+            .Where(r => r != user.Role)
+            .Distinct()
+            .ToList();
+
+        var toRemove = user.AdditionalRoles.Where(a => !requested.Contains(a.Role)).ToList();
+        foreach (var assignment in toRemove)
+            _context.UserRoleAssignments.Remove(assignment);
+
+        foreach (var role in requested.Where(r => user.AdditionalRoles.All(a => a.Role != r)))
+        {
+            _context.UserRoleAssignments.Add(new UserRoleAssignment
+            {
+                UserId = user.Id,
+                Role = role,
+                GrantedAt = DateTime.UtcNow,
+                GrantedByUserId = grantedByUserId
+            });
+        }
+    }
 }

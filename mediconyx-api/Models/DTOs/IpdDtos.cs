@@ -53,6 +53,9 @@ public class BedDto
     public string WardName { get; set; } = string.Empty;
     public string WardType { get; set; } = string.Empty;
     public string Number { get; set; } = string.Empty;
+    public string Kind { get; set; } = nameof(BedKind.Bed);
+    public string? CabinType { get; set; }
+    public string? Facilities { get; set; }
     public string Status { get; set; } = string.Empty;
     public decimal? DailyRate { get; set; }
     public string? Notes { get; set; }
@@ -70,6 +73,10 @@ public class CreateBedRequest
     [StringLength(300)] public string? Notes { get; set; }
     public string Status { get; set; } = nameof(BedStatus.Available);
     public decimal? DailyRate { get; set; }
+    public string Kind { get; set; } = nameof(BedKind.Bed);
+    [StringLength(50)] public string? CabinType { get; set; }
+    /// <summary>Optional amenity list; defaults from CabinTypes.DefaultFacilities when omitted for cabins.</summary>
+    public string[]? Facilities { get; set; }
 }
 
 public class UpdateBedStatusRequest
@@ -77,6 +84,8 @@ public class UpdateBedStatusRequest
     [Required] public string Status { get; set; } = string.Empty;
     [StringLength(300)] public string? Notes { get; set; }
     public decimal? DailyRate { get; set; }
+    [StringLength(50)] public string? CabinType { get; set; }
+    public string[]? Facilities { get; set; }
 }
 
 // ── Admissions ──────────────────────────────────────────────
@@ -174,6 +183,9 @@ public class BedBoardBedDto
 {
     public int Id { get; set; }
     public string Number { get; set; } = string.Empty;
+    public string Kind { get; set; } = nameof(BedKind.Bed);
+    public string? CabinType { get; set; }
+    public string? Facilities { get; set; }
     public string Status { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public int? AdmissionId { get; set; }

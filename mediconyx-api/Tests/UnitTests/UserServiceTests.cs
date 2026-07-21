@@ -318,5 +318,125 @@ public class UserServiceTests : IDisposable
         user!.PasswordHash.Should().Be("reset_hash");
     }
 
+    // ── Designation / department / additional roles ──────────────────────────
+
+    private Department AddDepartment(int id, string name, int? tenantId = null)
+    {
+        var dept = new Department
+        {
+            Id = id, TenantId = tenantId ?? _tenant.Id,
+            Name = name, Code = name.ToUpper(), IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Departments.Add(dept);
+        _context.SaveChanges();
+        return dept;
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ShouldPersistDesignationAndDepartment()
+    {
+        AddDepartment(1, "Cardiology");
+        _passwordMock.Setup(p => p.HashPassword(It.IsAny<string>())).Returns("hashed");
+
+        var request = new CreateUserRequest
+        {
+            Email = "dir@test.com", Password = "Pass123!",
+            FirstName = "Dir", LastName = "Ector",
+            Role = UserRole.Admin, TenantId = _tenant.Id,
+            Designation = "Director of Cardiology", PrimaryDepartmentId = 1
+        };
+
+        var result = await _sut.CreateUserAsync(request, adminUserId: 1);
+
+        result.Designation.Should().Be("Director of Cardiology");
+        result.PrimaryDepartmentId.Should().Be(1);
+        result.PrimaryDepartmentName.Should().Be("Cardiology");
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ShouldThrow_WhenDepartmentInOtherTenant()
+    {
+        AddDepartment(1, "Other Dept", tenantId: 99);
+        _passwordMock.Setup(p => p.HashPassword(It.IsAny<string>())).Returns("hashed");
+
+        var request = new CreateUserRequest
+        {
+            Email = "x@test.com", Password = "Pass123!",
+            FirstName = "X", LastName = "Y",
+            Role = UserRole.Nurse, TenantId = _tenant.Id,
+            PrimaryDepartmentId = 1
+        };
+
+        await _sut.Invoking(s => s.CreateUserAsync(request, 1))
+            .Should().ThrowAsync<InvalidOperationException>().WithMessage("*department*");
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ShouldGrantAdditionalRoles_ExcludingPrimary()
+    {
+        _passwordMock.Setup(p => p.HashPassword(It.IsAny<string>())).Returns("hashed");
+
+        var request = new CreateUserRequest
+        {
+            Email = "multi@test.com", Password = "Pass123!",
+            FirstName = "M", LastName = "R",
+            Role = UserRole.Admin, TenantId = _tenant.Id,
+            AdditionalRoles = new[] { UserRole.Admin, UserRole.Doctor, UserRole.Accountant }
+        };
+
+        var result = await _sut.CreateUserAsync(request, adminUserId: 42);
+
+        result.AdditionalRoles.Should().BeEquivalentTo("Doctor", "Accountant");
+        var rows = _context.UserRoleAssignments.Where(a => a.UserId == result.Id).ToList();
+        rows.Should().HaveCount(2);
+        rows.Should().OnlyContain(a => a.GrantedByUserId == 42);
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_ShouldSyncAdditionalRoles_GrantAndRevoke()
+    {
+        var user = AddUser(1, "u@test.com", UserRole.Receptionist);
+        _context.UserRoleAssignments.Add(new UserRoleAssignment
+        {
+            UserId = user.Id, Role = UserRole.Accountant, GrantedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        var request = new UpdateUserRequest
+        {
+            Designation = "Front Desk Lead",
+            AdditionalRoles = new[] { UserRole.Doctor }
+        };
+        var result = await _sut.UpdateUserAsync(1, request, callerUserId: 99, UserRole.Admin);
+
+        result.Designation.Should().Be("Front Desk Lead");
+        result.AdditionalRoles.Should().BeEquivalentTo("Doctor");
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_ShouldThrow_WhenNonAdminChangesAdditionalRoles()
+    {
+        AddUser(1, "u@test.com", UserRole.Doctor);
+
+        var request = new UpdateUserRequest { AdditionalRoles = new[] { UserRole.Admin } };
+
+        await _sut.Invoking(s => s.UpdateUserAsync(1, request, callerUserId: 1, UserRole.Doctor))
+            .Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task UpdateUserAsync_ShouldClearDesignation_WhenBlank()
+    {
+        var user = AddUser(1, "u@test.com", UserRole.Nurse);
+        user.Designation = "Head Nurse";
+        await _context.SaveChangesAsync();
+
+        var result = await _sut.UpdateUserAsync(1, new UpdateUserRequest { Designation = " " },
+            callerUserId: 1, UserRole.Nurse);
+
+        result.Designation.Should().BeNull();
+    }
+
     public void Dispose() => _context.Dispose();
 }

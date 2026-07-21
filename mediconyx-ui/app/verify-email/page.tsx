@@ -20,7 +20,7 @@ function VerifyEmailInner() {
     }
     (async () => {
       try {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9765"}/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+        const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/auth/verify-email?token=${encodeURIComponent(token)}`);
         const data = await r.json().catch(() => ({}));
         if (r.ok && data.success) {
           setResult(data);

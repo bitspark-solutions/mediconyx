@@ -38,7 +38,7 @@ export default function PublicDoctorsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:9765"}/api/public/doctors`);
+      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/public/doctors`);
       if (q) url.searchParams.set("q", q);
       if (specialization) url.searchParams.set("specialization", specialization);
       if (hospital) url.searchParams.set("tenantSubdomain", hospital);

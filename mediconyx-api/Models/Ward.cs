@@ -59,8 +59,9 @@ public static class WardTypes
     public const string Pediatric = "Pediatric";
     public const string Geriatric = "Geriatric";
     public const string Surgery = "Surgery";
+    public const string Cabin = "Cabin";
 
     public static readonly string[] All = {
-        General, ICU, PICU, NICU, DayCare, Maternity, Pediatric, Geriatric, Surgery
+        General, ICU, PICU, NICU, DayCare, Maternity, Pediatric, Geriatric, Surgery, Cabin
     };
 }

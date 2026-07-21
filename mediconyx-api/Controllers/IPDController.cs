@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using mediconyx_api.Data;
 using mediconyx_api.Middleware;
 using mediconyx_api.Models;
@@ -189,6 +190,9 @@ public class IPDController : ControllerBase
             WardName = b.Ward.Name,
             WardType = b.Ward.WardType,
             Number = b.Number,
+            Kind = b.Kind.ToString(),
+            CabinType = b.CabinType,
+            Facilities = b.Facilities,
             Status = b.Status.ToString(),
             DailyRate = b.DailyRate ?? b.Ward.DefaultDailyRate,
             Notes = b.Notes,
@@ -215,11 +219,27 @@ public class IPDController : ControllerBase
         if (!Enum.TryParse<BedStatus>(req.Status, out var status))
             return BadRequest(new { message = $"Invalid status. Allowed: {string.Join(", ", Enum.GetNames<BedStatus>())}" });
 
+        if (!Enum.TryParse<BedKind>(req.Kind, out var kind))
+            return BadRequest(new { message = $"Invalid kind. Allowed: {string.Join(", ", Enum.GetNames<BedKind>())}" });
+
+        string? cabinType = null;
+        string? facilitiesJson = null;
+        if (kind == BedKind.Cabin)
+        {
+            if (string.IsNullOrWhiteSpace(req.CabinType) || !CabinTypes.All.Contains(req.CabinType))
+                return BadRequest(new { message = $"Invalid cabin type. Allowed: {string.Join(", ", CabinTypes.All)}" });
+            cabinType = req.CabinType;
+            facilitiesJson = JsonSerializer.Serialize(req.Facilities ?? CabinTypes.DefaultFacilities[cabinType]);
+        }
+
         var bed = new Bed
         {
             TenantId = TenantId.Value,
             WardId = req.WardId,
             Number = req.Number,
+            Kind = kind,
+            CabinType = cabinType,
+            Facilities = facilitiesJson,
             Status = status,
             DailyRate = req.DailyRate,
             Notes = req.Notes,
@@ -232,7 +252,9 @@ public class IPDController : ControllerBase
         {
             Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
             WardName = ward.Name, WardType = ward.WardType,
-            Number = bed.Number, Status = bed.Status.ToString(),
+            Number = bed.Number, Kind = bed.Kind.ToString(),
+            CabinType = bed.CabinType, Facilities = bed.Facilities,
+            Status = bed.Status.ToString(),
             DailyRate = bed.DailyRate ?? ward.DefaultDailyRate,
             Notes = bed.Notes, IsActive = bed.IsActive
         });
@@ -256,13 +278,26 @@ public class IPDController : ControllerBase
         bed.Status = newStatus;
         bed.Notes = req.Notes ?? bed.Notes;
         if (req.DailyRate.HasValue) bed.DailyRate = req.DailyRate.Value;
+        if (bed.Kind == BedKind.Cabin)
+        {
+            if (req.CabinType != null)
+            {
+                if (!CabinTypes.All.Contains(req.CabinType))
+                    return BadRequest(new { message = $"Invalid cabin type. Allowed: {string.Join(", ", CabinTypes.All)}" });
+                bed.CabinType = req.CabinType;
+            }
+            if (req.Facilities != null)
+                bed.Facilities = JsonSerializer.Serialize(req.Facilities);
+        }
         bed.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return Ok(new BedDto
         {
             Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
             WardName = bed.Ward.Name, WardType = bed.Ward.WardType,
-            Number = bed.Number, Status = bed.Status.ToString(),
+            Number = bed.Number, Kind = bed.Kind.ToString(),
+            CabinType = bed.CabinType, Facilities = bed.Facilities,
+            Status = bed.Status.ToString(),
             DailyRate = bed.DailyRate ?? bed.Ward.DefaultDailyRate,
             Notes = bed.Notes, IsActive = bed.IsActive
         });
@@ -280,6 +315,63 @@ public class IPDController : ControllerBase
         _context.Beds.Remove(bed);
         await _context.SaveChangesAsync();
         return NoContent();
+    }
+
+    // ═══ CABINS ═══════════════════════════════════════════════
+
+    /// <summary>List cabin units (beds with Kind = Cabin), optionally filtered.</summary>
+    [HttpGet("cabins")]
+    [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
+    public async Task<ActionResult<List<BedDto>>> GetCabins([FromQuery] string? status = null, [FromQuery] string? cabinType = null)
+    {
+        if (TenantId == null) return Unauthorized();
+        var q = _context.Beds
+            .Include(b => b.Ward)
+            .Where(b => b.TenantId == TenantId && b.Kind == BedKind.Cabin);
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<BedStatus>(status, out var s))
+            q = q.Where(b => b.Status == s);
+        if (!string.IsNullOrEmpty(cabinType))
+            q = q.Where(b => b.CabinType == cabinType);
+
+        var cabins = await q.OrderBy(b => b.WardId).ThenBy(b => b.Number).ToListAsync();
+        var activeAdmissionByBed = await _context.Admissions
+            .Where(a => a.TenantId == TenantId && a.Status == AdmissionStatus.Active)
+            .ToDictionaryAsync(a => a.BedId, a => a);
+
+        var result = cabins.Select(b => new BedDto
+        {
+            Id = b.Id,
+            TenantId = b.TenantId,
+            WardId = b.WardId,
+            WardName = b.Ward.Name,
+            WardType = b.Ward.WardType,
+            Number = b.Number,
+            Kind = b.Kind.ToString(),
+            CabinType = b.CabinType,
+            Facilities = b.Facilities,
+            Status = b.Status.ToString(),
+            DailyRate = b.DailyRate ?? b.Ward.DefaultDailyRate,
+            Notes = b.Notes,
+            IsActive = b.IsActive,
+            CurrentAdmissionId = activeAdmissionByBed.TryGetValue(b.Id, out var adm) ? adm.Id : null,
+            CurrentPatientId = adm?.PatientId
+        }).ToList();
+        return Ok(result);
+    }
+
+    /// <summary>Static catalog of cabin categories with default amenities and typical BDT rates.</summary>
+    [HttpGet("cabin-types")]
+    [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
+    public ActionResult<List<CabinTypeInfoDto>> GetCabinTypes()
+    {
+        var result = CabinTypes.All.Select(t => new CabinTypeInfoDto
+        {
+            Type = t,
+            DefaultFacilities = CabinTypes.DefaultFacilities[t],
+            TypicalRateMinBdt = CabinTypes.TypicalRatesBdt[t].Min,
+            TypicalRateMaxBdt = CabinTypes.TypicalRatesBdt[t].Max
+        }).ToList();
+        return Ok(result);
     }
 
     // ═══ ADMISSIONS ═════════════════════════════════════════
@@ -526,6 +618,9 @@ public class IPDController : ControllerBase
                 {
                     Id = b.Id,
                     Number = b.Number,
+                    Kind = b.Kind.ToString(),
+                    CabinType = b.CabinType,
+                    Facilities = b.Facilities,
                     Status = b.Status.ToString(),
                     IsActive = b.IsActive,
                     AdmissionId = adm?.Id,
