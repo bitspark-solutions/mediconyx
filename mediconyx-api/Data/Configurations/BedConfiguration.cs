@@ -11,6 +11,7 @@ public class BedConfiguration : IEntityTypeConfiguration<Bed>
         entity.HasKey(e => e.Id);
         entity.HasIndex(e => new { e.TenantId, e.Status });
         entity.HasIndex(e => new { e.TenantId, e.Kind });
+        entity.HasIndex(e => new { e.TenantId, e.BranchId });
         entity.HasIndex(e => new { e.WardId, e.Number }).IsUnique();
         entity.Property(e => e.Number).IsRequired().HasMaxLength(30);
         entity.Property(e => e.Notes).HasMaxLength(300);
@@ -22,5 +23,9 @@ public class BedConfiguration : IEntityTypeConfiguration<Bed>
             .WithMany(w => w.Beds)
             .HasForeignKey(e => e.WardId)
             .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne(e => e.Branch)
+            .WithMany()
+            .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

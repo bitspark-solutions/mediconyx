@@ -8,7 +8,7 @@
 
 Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅ (NEW), doctor-as-staff duality ✅ (NEW `attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅ (NEW), per-bed-day billing ✅.
 Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
-E2E: **152 passed / 0 failed / 3 skipped** (155 total incl. tier4 branch/cabin/employee specs) — last full green run 2026-07-22.
+E2E: **152 passed / 0 failed / 3 skipped** (155 total incl. tier4 branch/cabin/employee specs) — last full green run 2026-07-22 (post Stage 2).
 
 ## Stacks
 
@@ -22,8 +22,8 @@ E2E: **152 passed / 0 failed / 3 skipped** (155 total incl. tier4 branch/cabin/e
 Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-07-21_23-55-00_multibranch_stage1_foundation.md`.
 
 - ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
-- ⬜ **Stage 2 — IPD scoping** (RESUME HERE): add `BranchId` to Ward/Bed (+config, migration backfilling tenant's MAIN branch, DTOs, IPDController validation + `?branchId=` filters); relax ward `Code` uniqueness from per-tenant to per-(TenantId,BranchId); bed-board UI branch filter; branch management UI page for admins.
-- ⬜ **Stage 3 — Flows**: `BranchId` on Appointment/Admission/Invoice; `PrimaryBranchId` on User + JWT `branch_id` claim; employee UI branch field.
+- ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
+- ⬜ **Stage 3 — Flows** (RESUME HERE): `BranchId` on Appointment/Admission/Invoice; `PrimaryBranchId` on User + JWT `branch_id` claim; employee UI branch field.
 - ⬜ **Stage 4 — Polish**: header branch switcher, role-aware default scoping, cross-branch isolation E2E, seed demo 2nd branch.
 
 ## Standing decisions & gotchas

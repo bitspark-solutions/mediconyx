@@ -70,6 +70,21 @@ public class TenantProvisioningService : ITenantProvisioningService
                 _context.Tenants.Add(tenant);
                 await _context.SaveChangesAsync();
 
+                // Every tenant starts with a main branch (multi-branch, Tier 4.x)
+                _context.Branches.Add(new Branch
+                {
+                    TenantId = tenant.Id,
+                    Name = "Main Branch",
+                    Code = "MAIN",
+                    Address = tenant.Address,
+                    Phone = tenant.ContactPhone,
+                    Email = tenant.ContactEmail,
+                    IsMain = true,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+
                 _logger.LogInformation("Tenant created: {TenantId}, Subdomain: {Subdomain}", tenant.Id, subdomain);
 
                 var temporaryPassword = GenerateSecurePassword();

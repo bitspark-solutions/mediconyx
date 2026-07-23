@@ -341,6 +341,9 @@ namespace mediconyx_api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CabinType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -383,6 +386,10 @@ namespace mediconyx_api.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "Kind");
 
@@ -2043,6 +2050,9 @@ namespace mediconyx_api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Capacity")
                         .HasColumnType("integer");
 
@@ -2085,12 +2095,16 @@ namespace mediconyx_api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "Code")
-                        .IsUnique();
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "IsActive");
 
                     b.HasIndex("TenantId", "WardType");
+
+                    b.HasIndex("TenantId", "BranchId", "Code")
+                        .IsUnique();
 
                     b.ToTable("Wards");
                 });
@@ -2160,11 +2174,19 @@ namespace mediconyx_api.Migrations
 
             modelBuilder.Entity("mediconyx_api.Models.Bed", b =>
                 {
+                    b.HasOne("mediconyx_api.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("mediconyx_api.Models.Ward", "Ward")
                         .WithMany("Beds")
                         .HasForeignKey("WardId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Ward");
                 });
@@ -2422,11 +2444,19 @@ namespace mediconyx_api.Migrations
 
             modelBuilder.Entity("mediconyx_api.Models.Ward", b =>
                 {
+                    b.HasOne("mediconyx_api.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("mediconyx_api.Models.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Tenant");
                 });

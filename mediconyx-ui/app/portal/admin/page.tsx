@@ -103,6 +103,12 @@ export default function AdminPortal() {
             >
               <Bed className="w-4 h-4" /> Bed Board (IPD)
             </a>
+            <a
+              href="/portal/admin/branches"
+              className="px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 border-transparent text-gray-400 hover:text-white transition-colors"
+            >
+              <Building2 className="w-4 h-4" /> Branches
+            </a>
             <button
               onClick={() => setActiveTab("settings")}
               className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${activeTab === "settings"

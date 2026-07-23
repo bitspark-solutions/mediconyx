@@ -41,16 +41,19 @@ public class IPDController : ControllerBase
 
     [HttpGet("wards")]
     [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
-    public async Task<ActionResult<List<WardDto>>> GetWards()
+    public async Task<ActionResult<List<WardDto>>> GetWards([FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
-        var wards = await _context.Wards
-            .Where(w => w.TenantId == TenantId)
+        var q = _context.Wards.Where(w => w.TenantId == TenantId);
+        if (branchId.HasValue) q = q.Where(w => w.BranchId == branchId.Value);
+        var wards = await q
             .OrderBy(w => w.Floor).ThenBy(w => w.Name)
             .Select(w => new WardDto
             {
                 Id = w.Id,
                 TenantId = w.TenantId,
+                BranchId = w.BranchId,
+                BranchName = w.Branch.Name,
                 Name = w.Name,
                 Code = w.Code,
                 WardType = w.WardType,
@@ -76,7 +79,8 @@ public class IPDController : ControllerBase
             .Where(x => x.Id == id && x.TenantId == TenantId)
             .Select(w => new WardDto
             {
-                Id = w.Id, TenantId = w.TenantId, Name = w.Name, Code = w.Code,
+                Id = w.Id, TenantId = w.TenantId, BranchId = w.BranchId, BranchName = w.Branch.Name,
+                Name = w.Name, Code = w.Code,
                 WardType = w.WardType, Location = w.Location, Floor = w.Floor,
                 Capacity = w.Capacity, DefaultDailyRate = w.DefaultDailyRate,
                 IsActive = w.IsActive,
@@ -97,13 +101,31 @@ public class IPDController : ControllerBase
         if (!WardTypes.All.Contains(req.WardType))
             return BadRequest(new { message = $"WardType must be one of: {string.Join(", ", WardTypes.All)}" });
 
-        // Code must be unique within tenant
-        if (await _context.Wards.AnyAsync(w => w.TenantId == TenantId && w.Code == req.Code))
-            return BadRequest(new { message = $"Ward code '{req.Code}' already exists." });
+        // Resolve branch: explicit, else the tenant's main branch
+        Branch? branch;
+        if (req.BranchId.HasValue)
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.Id == req.BranchId.Value && b.TenantId == TenantId && b.IsActive);
+            if (branch == null)
+                return BadRequest(new { message = "Branch not found in this hospital." });
+        }
+        else
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.TenantId == TenantId && b.IsMain);
+            if (branch == null)
+                return BadRequest(new { message = "No main branch configured for this hospital." });
+        }
+
+        // Code must be unique within the branch
+        if (await _context.Wards.AnyAsync(w => w.TenantId == TenantId && w.BranchId == branch.Id && w.Code == req.Code))
+            return BadRequest(new { message = $"Ward code '{req.Code}' already exists in this branch." });
 
         var ward = new Ward
         {
             TenantId = TenantId.Value,
+            BranchId = branch.Id,
             Name = req.Name,
             Code = req.Code,
             WardType = req.WardType,
@@ -118,7 +140,8 @@ public class IPDController : ControllerBase
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetWard), new { id = ward.Id }, new WardDto
         {
-            Id = ward.Id, TenantId = ward.TenantId, Name = ward.Name, Code = ward.Code,
+            Id = ward.Id, TenantId = ward.TenantId, BranchId = ward.BranchId, BranchName = branch.Name,
+            Name = ward.Name, Code = ward.Code,
             WardType = ward.WardType, Location = ward.Location, Floor = ward.Floor,
             Capacity = ward.Capacity, DefaultDailyRate = ward.DefaultDailyRate, IsActive = ward.IsActive
         });
@@ -129,7 +152,7 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<WardDto>> UpdateWard(int id, UpdateWardRequest req)
     {
         if (TenantId == null) return Unauthorized();
-        var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == id && w.TenantId == TenantId);
+        var ward = await _context.Wards.Include(w => w.Branch).FirstOrDefaultAsync(w => w.Id == id && w.TenantId == TenantId);
         if (ward == null) return NotFound();
         if (req.Name != null) ward.Name = req.Name;
         if (req.Location != null) ward.Location = req.Location;
@@ -141,7 +164,8 @@ public class IPDController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new WardDto
         {
-            Id = ward.Id, TenantId = ward.TenantId, Name = ward.Name, Code = ward.Code,
+            Id = ward.Id, TenantId = ward.TenantId, BranchId = ward.BranchId, BranchName = ward.Branch.Name,
+            Name = ward.Name, Code = ward.Code,
             WardType = ward.WardType, Location = ward.Location, Floor = ward.Floor,
             Capacity = ward.Capacity, DefaultDailyRate = ward.DefaultDailyRate, IsActive = ward.IsActive
         });
@@ -167,12 +191,13 @@ public class IPDController : ControllerBase
 
     [HttpGet("beds")]
     [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
-    public async Task<ActionResult<List<BedDto>>> GetBeds([FromQuery] int? wardId = null, [FromQuery] string? status = null)
+    public async Task<ActionResult<List<BedDto>>> GetBeds([FromQuery] int? wardId = null, [FromQuery] string? status = null, [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
         var q = _context.Beds
             .Include(b => b.Ward)
             .Where(b => b.TenantId == TenantId);
+        if (branchId.HasValue) q = q.Where(b => b.BranchId == branchId.Value);
         if (wardId.HasValue) q = q.Where(b => b.WardId == wardId.Value);
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<BedStatus>(status, out var s))
             q = q.Where(b => b.Status == s);
@@ -186,6 +211,7 @@ public class IPDController : ControllerBase
         {
             Id = b.Id,
             TenantId = b.TenantId,
+            BranchId = b.BranchId,
             WardId = b.WardId,
             WardName = b.Ward.Name,
             WardType = b.Ward.WardType,
@@ -213,6 +239,9 @@ public class IPDController : ControllerBase
         var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == req.WardId && w.TenantId == TenantId);
         if (ward == null) return BadRequest(new { message = "Ward not found in this tenant." });
 
+        if (req.BranchId.HasValue && req.BranchId.Value != ward.BranchId)
+            return BadRequest(new { message = "BranchId does not match the ward's branch." });
+
         if (await _context.Beds.AnyAsync(b => b.WardId == req.WardId && b.Number == req.Number))
             return BadRequest(new { message = $"Bed '{req.Number}' already exists in this ward." });
 
@@ -235,6 +264,7 @@ public class IPDController : ControllerBase
         var bed = new Bed
         {
             TenantId = TenantId.Value,
+            BranchId = ward.BranchId,
             WardId = req.WardId,
             Number = req.Number,
             Kind = kind,
@@ -250,7 +280,7 @@ public class IPDController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new BedDto
         {
-            Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
+            Id = bed.Id, TenantId = bed.TenantId, BranchId = bed.BranchId, WardId = bed.WardId,
             WardName = ward.Name, WardType = ward.WardType,
             Number = bed.Number, Kind = bed.Kind.ToString(),
             CabinType = bed.CabinType, Facilities = bed.Facilities,
@@ -293,7 +323,7 @@ public class IPDController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new BedDto
         {
-            Id = bed.Id, TenantId = bed.TenantId, WardId = bed.WardId,
+            Id = bed.Id, TenantId = bed.TenantId, BranchId = bed.BranchId, WardId = bed.WardId,
             WardName = bed.Ward.Name, WardType = bed.Ward.WardType,
             Number = bed.Number, Kind = bed.Kind.ToString(),
             CabinType = bed.CabinType, Facilities = bed.Facilities,
@@ -322,12 +352,13 @@ public class IPDController : ControllerBase
     /// <summary>List cabin units (beds with Kind = Cabin), optionally filtered.</summary>
     [HttpGet("cabins")]
     [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
-    public async Task<ActionResult<List<BedDto>>> GetCabins([FromQuery] string? status = null, [FromQuery] string? cabinType = null)
+    public async Task<ActionResult<List<BedDto>>> GetCabins([FromQuery] string? status = null, [FromQuery] string? cabinType = null, [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
         var q = _context.Beds
             .Include(b => b.Ward)
             .Where(b => b.TenantId == TenantId && b.Kind == BedKind.Cabin);
+        if (branchId.HasValue) q = q.Where(b => b.BranchId == branchId.Value);
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<BedStatus>(status, out var s))
             q = q.Where(b => b.Status == s);
         if (!string.IsNullOrEmpty(cabinType))
@@ -342,6 +373,7 @@ public class IPDController : ControllerBase
         {
             Id = b.Id,
             TenantId = b.TenantId,
+            BranchId = b.BranchId,
             WardId = b.WardId,
             WardName = b.Ward.Name,
             WardType = b.Ward.WardType,
@@ -589,13 +621,16 @@ public class IPDController : ControllerBase
 
     [HttpGet("bed-board")]
     [HasPermission(PermissionCatalog.ADMISSION_VIEW)]
-    public async Task<ActionResult<List<BedBoardWardDto>>> GetBedBoard()
+    public async Task<ActionResult<List<BedBoardWardDto>>> GetBedBoard([FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
-        var wards = await _context.Wards
-            .Where(w => w.TenantId == TenantId && w.IsActive)
+        var q = _context.Wards
+            .Where(w => w.TenantId == TenantId && w.IsActive);
+        if (branchId.HasValue) q = q.Where(w => w.BranchId == branchId.Value);
+        var wards = await q
             .OrderBy(w => w.Floor).ThenBy(w => w.Name)
             .Include(w => w.Beds)
+            .Include(w => w.Branch)
             .ToListAsync();
 
         var activeAdmByBed = await _context.Admissions
@@ -610,6 +645,8 @@ public class IPDController : ControllerBase
             Name = w.Name,
             Code = w.Code,
             WardType = w.WardType,
+            BranchId = w.BranchId,
+            BranchName = w.Branch.Name,
             Floor = w.Floor,
             Beds = w.Beds.OrderBy(b => b.Number).Select(b =>
             {

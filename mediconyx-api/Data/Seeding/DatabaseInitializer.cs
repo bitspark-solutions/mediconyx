@@ -35,6 +35,10 @@ public static class DatabaseInitializer
                         await DemoStaffSeeder.SeedAsync(dbContext, passwordService);
                     }
 
+                    // Every tenant must have a main branch (migration backfill only
+                    // covers tenants that existed at migrate time).
+                    await BranchSeeder.EnsureMainBranchesAsync(dbContext);
+
                     // ── RBAC SEED (Tier 1.1) ────────────────────────────────
                     var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
                         .CreateLogger(typeof(DatabaseInitializer).FullName!);

@@ -9,6 +9,8 @@ interface BedBoardWard {
   name: string;
   code: string;
   wardType: string;
+  branchId?: number;
+  branchName?: string;
   floor: number;
   beds: BedBoardBed[];
 }
@@ -51,6 +53,14 @@ interface Patient {
   lastName: string;
 }
 
+interface Branch {
+  id: number;
+  name: string;
+  code: string;
+  isMain: boolean;
+  isActive: boolean;
+}
+
 const WARD_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   ICU:    { bg: "bg-red-50",    border: "border-red-300",    text: "text-red-700" },
   PICU:   { bg: "bg-pink-50",   border: "border-pink-300",   text: "text-pink-700" },
@@ -75,6 +85,8 @@ const BED_STATUS_STYLES: Record<string, string> = {
 export default function BedBoardPage() {
   const [board, setBoard] = useState<BedBoardWard[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,11 +102,13 @@ export default function BedBoardPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [b, w, d, p] = await Promise.all([
-        apiClient.get("/api/ipd/bed-board"),
-        apiClient.get("/api/ipd/wards"),
+      const branchQ = selectedBranch ? `?branchId=${selectedBranch}` : "";
+      const [b, w, d, p, br] = await Promise.all([
+        apiClient.get(`/api/ipd/bed-board${branchQ}`),
+        apiClient.get(`/api/ipd/wards${branchQ}`),
         apiClient.get("/api/doctor?pageSize=100"),
         apiClient.get("/api/patient?pageSize=100"),
+        apiClient.get("/api/branch"),
       ]);
       if (b.ok) setBoard(await b.json());
       if (w.ok) setWards(await w.json());
@@ -106,6 +120,7 @@ export default function BedBoardPage() {
         const pp = await p.json();
         setPatients(pp.patients || []);
       }
+      if (br.ok) setBranches(await br.json());
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -113,7 +128,7 @@ export default function BedBoardPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [selectedBranch]);
 
   return (
     <ProtectedRoute allowedRoles={["Admin", "Doctor", "Nurse", "Receptionist"]}>
@@ -127,6 +142,19 @@ export default function BedBoardPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {branches.length > 1 && (
+              <select
+                value={selectedBranch ?? ""}
+                onChange={e => setSelectedBranch(e.target.value ? parseInt(e.target.value) : null)}
+                className="px-3 py-2 text-sm border border-slate-300 rounded bg-white"
+                title="Filter by branch"
+              >
+                <option value="">All branches</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}{b.isMain ? " (Main)" : ""}</option>
+                ))}
+              </select>
+            )}
             <button onClick={load} className="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded flex items-center gap-1">
               <RefreshCw className="w-4 h-4" /> Refresh
             </button>
@@ -162,6 +190,11 @@ export default function BedBoardPage() {
                         </div>
                         <h2 className="text-xl font-bold text-slate-900">{ward.name}</h2>
                         <span className="text-sm text-slate-500">({ward.code}) · Floor {ward.floor}</span>
+                        {selectedBranch === null && ward.branchName && (
+                          <span className="text-xs px-2 py-0.5 bg-white border border-slate-300 rounded-full text-slate-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {ward.branchName}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-sm">
@@ -211,6 +244,8 @@ export default function BedBoardPage() {
 
         {showCreateWard && (
           <CreateWardModal
+            branches={branches}
+            defaultBranchId={selectedBranch}
             onClose={() => setShowCreateWard(false)}
             onCreated={() => { setShowCreateWard(false); load(); }}
           />
@@ -331,10 +366,11 @@ function BedCard({ bed, onAdmit, onTransfer, onDischarge, onBill }: {
   );
 }
 
-function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function CreateWardModal({ branches = [], defaultBranchId = null, onClose, onCreated }: { branches?: Branch[]; defaultBranchId?: number | null; onClose: () => void; onCreated: () => void }) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [wardType, setWardType] = useState("General");
+  const [branchId, setBranchId] = useState<string>(defaultBranchId ? String(defaultBranchId) : "");
   const [floor, setFloor] = useState("1");
   const [capacity, setCapacity] = useState("10");
   const [location, setLocation] = useState("");
@@ -348,6 +384,7 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
     try {
       const r = await apiClient.post("/api/ipd/wards", {
         name, code, wardType, floor: parseInt(floor), capacity: parseInt(capacity),
+        branchId: branchId ? parseInt(branchId) : null,
         location: location || null, defaultDailyRate: parseFloat(defaultDailyRate) || 0,
       });
       if (r.ok) onCreated();
@@ -370,6 +407,17 @@ function CreateWardModal({ onClose, onCreated }: { onClose: () => void; onCreate
             )}
           </select>
         </div>
+        {branches.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Branch</label>
+            <select value={branchId} onChange={e => setBranchId(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+              <option value="">Main branch (default)</option>
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}{b.isMain ? " (Main)" : ""}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Floor" value={floor} onChange={setFloor} type="number" />
           <Field label="Capacity" value={capacity} onChange={setCapacity} type="number" />

@@ -9,6 +9,8 @@ public class WardDto
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int BranchId { get; set; }
+    public string? BranchName { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string WardType { get; set; } = string.Empty;
@@ -27,6 +29,8 @@ public class CreateWardRequest
     [Required, StringLength(100)] public string Name { get; set; } = string.Empty;
     [Required, StringLength(20)]  public string Code { get; set; } = string.Empty;
     [Required, StringLength(50)]  public string WardType { get; set; } = string.Empty;
+    /// <summary>Branch the ward belongs to. Defaults to the tenant's main branch when omitted.</summary>
+    public int? BranchId { get; set; }
     [StringLength(200)] public string? Location { get; set; }
     public int Floor { get; set; } = 1;
     public int Capacity { get; set; } = 0;
@@ -49,6 +53,7 @@ public class BedDto
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int BranchId { get; set; }
     public int WardId { get; set; }
     public string WardName { get; set; } = string.Empty;
     public string WardType { get; set; } = string.Empty;
@@ -69,6 +74,8 @@ public class BedDto
 public class CreateBedRequest
 {
     [Required] public int WardId { get; set; }
+    /// <summary>Must match the ward's branch when provided; otherwise inherited from the ward.</summary>
+    public int? BranchId { get; set; }
     [Required, StringLength(30)] public string Number { get; set; } = string.Empty;
     [StringLength(300)] public string? Notes { get; set; }
     public string Status { get; set; } = nameof(BedStatus.Available);
@@ -175,6 +182,8 @@ public class BedBoardWardDto
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string WardType { get; set; } = string.Empty;
+    public int BranchId { get; set; }
+    public string? BranchName { get; set; }
     public int Floor { get; set; }
     public List<BedBoardBedDto> Beds { get; set; } = new();
 }
