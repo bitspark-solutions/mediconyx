@@ -12,6 +12,10 @@ public class Ward
     public int TenantId { get; set; }
     public Tenant Tenant { get; set; } = null!;
 
+    /// <summary>Branch (hospital location) this ward belongs to. Multi-branch (Tier 4.2).</summary>
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
+
     [Required]
     [StringLength(100)]
     public string Name { get; set; } = string.Empty;

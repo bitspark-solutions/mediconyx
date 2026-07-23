@@ -11,6 +11,10 @@ public class Bed
     public int Id { get; set; }
     public int TenantId { get; set; }
 
+    /// <summary>Branch (hospital location) this bed belongs to. Denormalized from Ward for simple filtering.</summary>
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
+
     public int WardId { get; set; }
     public Ward Ward { get; set; } = null!;
 
