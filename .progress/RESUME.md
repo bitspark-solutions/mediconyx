@@ -36,14 +36,16 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 - E2E tests must self-provision data (fresh-volume safe).
 - JSON: `JsonStringEnumConverter` + `UtcDateTimeJsonConverter` are registered globally (2026-07-21) — requests accept string or numeric enums; date-only strings ("2026-07-08") are treated as UTC (Npgsql timestamptz rejects Unspecified).
 - Old browser tokens (pre-RBAC, no permission claims) get 403 on all `[HasPermission]` endpoints — log out/in.
-- Uploads: storage-service accepts only PDF/JPEG/PNG/DOC/XLS ≤10MB despite API allowing more — imaging uploads 500 (unfixed).
+- Uploads: unified policy PDF/JPEG/PNG/GIF/DICOM ≤50MB both sides (2026-07-25); storage requires X-Api-Key (dev: empty = open with warning); soft-deletes purged after 30d by SoftDeletePurgeService; signed download URLs are real HMAC tokens. Storage host ports are 8890/8891 (Windows reserves 7871–7970).
+- Kebab-case routes need explicit `[Route]` — `[controller]` does NOT map dashes (fixed for file-attachment, vital-sign, medical-note, doctor-schedule on 2026-07-25).
 - AI/RAG endpoints need an LLM ApiKey in appsettings or they 500.
 
 ## Backlog (prioritized)
 
-1. Multi-branch Stages 2–4 (active).
+1. Multi-branch Stages 3–4 (active).
 2. ~~Cabin E2E coverage~~ done 2026-07-22 (tier4, incl. employees + branches).
 3. UI-level E2E for employees page + bed-board cabins (api layer covered; browser flows pending).
-4. Storage/API upload-policy mismatch (GIF/DICOM/size).
-5. P3 tenant-custom permission bundles — deferred (Designation covers titles; revisit only on real demand).
-6. Admin dashboard KPI placeholders; dead login-page links.
+4. ~~Storage/API upload-policy mismatch~~ done 2026-07-25 (+ storage API-key auth, purge job, real signed URLs, kebab routes, AddAiRagTables migration).
+5. E2E for file upload/download (chain now works; no test coverage yet — high value, it hid 2 bugs).
+6. P3 tenant-custom permission bundles — deferred (Designation covers titles; revisit only on real demand).
+7. Admin dashboard KPI placeholders; dead login-page links; owner dashboard with real metrics.

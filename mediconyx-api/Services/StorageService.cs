@@ -17,6 +17,9 @@ public class StorageService : IStorageService
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
+
+        if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+            _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _options.ApiKey);
     }
 
     public async Task<StorageUploadResult> UploadAsync(

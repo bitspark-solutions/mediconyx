@@ -8,8 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.Configure<StorageOptions>(builder.Configuration.GetSection("Storage"));
+builder.Services.AddSingleton<UrlSigningService>();
 builder.Services.AddSingleton<IStorageProvider, LocalFileSystemProvider>();
 builder.Services.AddSingleton<IFileValidationService, FileValidationService>();
+builder.Services.AddHostedService<SoftDeletePurgeService>();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -24,7 +26,41 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var storageOptions = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<StorageOptions>>().Value;
+if (string.IsNullOrWhiteSpace(storageOptions.ApiKey))
+{
+    app.Logger.LogWarning("Storage:ApiKey is not set — API-key auth is DISABLED. Set it in any deployed environment.");
+}
+
 app.UseCors("AllowMediconyxApi");
+
+// API-key auth for all /api/* endpoints (server-to-server with the main API).
+// Exceptions: /health, and downloads carrying a signed token (verified by the endpoint itself).
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.StartsWithSegments("/api"))
+    {
+        await next();
+        return;
+    }
+    if (string.IsNullOrWhiteSpace(storageOptions.ApiKey))
+    {
+        await next(); // dev mode — auth disabled
+        return;
+    }
+    if (context.Request.Headers["X-Api-Key"] == storageOptions.ApiKey)
+    {
+        await next();
+        return;
+    }
+    if (context.Request.Path.Value?.EndsWith("/download") == true && context.Request.Query.ContainsKey("token"))
+    {
+        await next(); // signed token is verified by the download endpoint
+        return;
+    }
+    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+    await context.Response.WriteAsJsonAsync(new { message = "Missing or invalid API key" });
+});
 
 // Health check endpoint
 app.MapGet("/health", () =>
@@ -98,11 +134,21 @@ app.MapPost("/api/files/upload", async (
 // Download file endpoint
 app.MapGet("/api/files/{fileId}/download", async (
     string fileId,
+    string? token,
     IStorageProvider storageProvider,
+    UrlSigningService urlSigning,
     ILogger<Program> logger) =>
 {
     try
     {
+        // A token query param must be a valid HMAC-signed URL token.
+        // (Requests without a token arrive here only with a valid X-Api-Key, or in dev mode.)
+        if (token != null && !urlSigning.Verify(fileId, token))
+        {
+            logger.LogWarning("Rejected download with invalid/expired token: {FileId}", fileId);
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
         var metadata = await storageProvider.GetMetadataAsync(fileId);
         
         if (metadata == null)

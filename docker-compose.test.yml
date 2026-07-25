@@ -67,9 +67,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       Storage__BasePath: /app/storage
-      Storage__MaxFileSizeBytes: "10485760"
+      Storage__MaxFileSizeBytes: "52428800"
+      Storage__ApiKey: ${STORAGE_API_KEY}
     ports:
-      - "7891:8080"
+      - "8891:8080"
     volumes:
       - test_storage_data:/app/storage
 
@@ -97,6 +98,7 @@ services:
       Smtp__Port: "1025"
       Smtp__EnableSsl: "false"
       StorageService__BaseUrl: http://test-storage:8080
+      StorageService__ApiKey: ${STORAGE_API_KEY}
     ports:
       - "9766:8080"
     depends_on:

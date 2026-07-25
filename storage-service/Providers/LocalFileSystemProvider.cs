@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using storage_service.Configuration;
 using storage_service.Interfaces;
 using storage_service.Models;
+using storage_service.Services;
 
 namespace storage_service.Providers;
 
@@ -12,13 +13,16 @@ public class LocalFileSystemProvider : IStorageProvider
 {
     private readonly StorageOptions _options;
     private readonly ILogger<LocalFileSystemProvider> _logger;
+    private readonly UrlSigningService _urlSigning;
 
     public LocalFileSystemProvider(
         IOptions<StorageOptions> options,
-        ILogger<LocalFileSystemProvider> logger)
+        ILogger<LocalFileSystemProvider> logger,
+        UrlSigningService urlSigning)
     {
         _options = options.Value;
         _logger = logger;
+        _urlSigning = urlSigning;
         
         // Ensure base storage directory exists
         if (!Directory.Exists(_options.BasePath))
@@ -213,22 +217,19 @@ public class LocalFileSystemProvider : IStorageProvider
 
     public async Task<string> GenerateUrlAsync(string fileId, int expiryMinutes)
     {
-        // For local file system, generate a simple signed URL
-        // In production, this would use a signing mechanism
         var metadata = await GetMetadataAsync(fileId);
-        
+
         if (metadata == null)
         {
             throw new FileNotFoundException($"File not found: {fileId}");
         }
-        
+
         var expiry = DateTime.UtcNow.AddMinutes(expiryMinutes);
         var expiryUnix = ((DateTimeOffset)expiry).ToUnixTimeSeconds();
-        
-        // Simple token: base64(fileId|expiry)
-        var token = Convert.ToBase64String(
-            Encoding.UTF8.GetBytes($"{fileId}|{expiryUnix}"));
-        
+
+        // HMAC-signed token — verified by the download endpoint (see UrlSigningService).
+        var token = _urlSigning.Sign(fileId, expiryUnix);
+
         return $"/api/files/{fileId}/download?token={token}";
     }
 

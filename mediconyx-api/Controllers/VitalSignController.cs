@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace mediconyx_api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/vital-sign")]
 [Authorize]
 public class VitalSignController : ControllerBase
 {

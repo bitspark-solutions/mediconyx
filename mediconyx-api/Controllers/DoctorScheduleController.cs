@@ -10,7 +10,7 @@ using System.Security.Claims;
 namespace mediconyx_api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/doctor-schedule")]
 [Authorize]
 public class DoctorScheduleController : ControllerBase
 {

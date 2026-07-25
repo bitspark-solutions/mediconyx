@@ -11,7 +11,7 @@ using mediconyx_api.Services.AI;
 namespace mediconyx_api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/file-attachment")]
 [Authorize]
 public class FileAttachmentController : ControllerBase
 {
@@ -49,20 +49,19 @@ public class FileAttachmentController : ControllerBase
         if (request.File == null || request.File.Length == 0)
             return BadRequest(new { message = "No file uploaded." });
 
-        // File size validation (50MB max for lab reports, 500MB for DICOM)
-        var maxSize = request.Category == FileAttachmentCategory.Imaging ? 500 * 1024 * 1024 : 50 * 1024 * 1024;
+        // File size validation (50MB max — aligned with the storage service's limit)
+        var maxSize = 50 * 1024 * 1024;
         if (request.File.Length > maxSize)
             return BadRequest(new { message = $"File size exceeds maximum allowed ({maxSize / 1024 / 1024}MB)." });
 
-        // Content type validation
+        // Content type validation (must match the storage service's allowed types)
         var allowedTypes = new[]
         {
             "application/pdf",
             "image/jpeg",
             "image/png",
             "image/gif",
-            "application/dicom",
-            "application/octet-stream"
+            "application/dicom"
         };
         if (!allowedTypes.Any(t => request.File.ContentType.Contains(t, StringComparison.OrdinalIgnoreCase)))
             return BadRequest(new { message = "File type not allowed. Allowed: PDF, JPEG, PNG, GIF, DICOM." });

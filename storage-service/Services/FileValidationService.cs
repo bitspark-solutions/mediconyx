@@ -14,6 +14,10 @@ public class FileValidationService : IFileValidationService
         { "application/pdf", new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } } }, // %PDF
         { "image/jpeg", new[] { new byte[] { 0xFF, 0xD8, 0xFF } } },
         { "image/png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
+        { "image/gif", new[] {
+            new byte[] { 0x47, 0x49, 0x46, 0x38, 0x37, 0x61 }, // GIF87a
+            new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 }  // GIF89a
+        } },
         { 
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // DOCX
             new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } } // ZIP signature (DOCX is ZIP)
@@ -97,6 +101,19 @@ public class FileValidationService : IFileValidationService
     {
         try
         {
+            // DICOM stores its "DICM" marker at byte offset 128, after a 128-byte preamble.
+            if (mimeType.Equals("application/dicom", StringComparison.OrdinalIgnoreCase))
+            {
+                var dicomBuffer = new byte[132];
+                var dicomRead = await fileStream.ReadAsync(dicomBuffer, 0, dicomBuffer.Length);
+                var isDicom = dicomRead == dicomBuffer.Length
+                    && dicomBuffer[128] == (byte)'D' && dicomBuffer[129] == (byte)'I'
+                    && dicomBuffer[130] == (byte)'C' && dicomBuffer[131] == (byte)'M';
+                if (!isDicom)
+                    _logger.LogWarning("Magic number validation failed for application/dicom (no DICM preamble marker)");
+                return isDicom;
+            }
+
             if (!MagicNumbers.ContainsKey(mimeType))
             {
                 // No magic number defined for this type, skip validation
