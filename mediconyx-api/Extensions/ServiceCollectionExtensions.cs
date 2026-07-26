@@ -112,6 +112,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IBedBillingService, BedBillingService>();
         services.AddScoped<IPatientSelfRegistrationService, PatientSelfRegistrationService>();
+        services.AddScoped<mediconyx_api.Services.Invitations.IInvitationService, mediconyx_api.Services.Invitations.InvitationService>();
 
         // Storage service with HttpClient
         services.AddHttpClient<IStorageService, StorageService>();

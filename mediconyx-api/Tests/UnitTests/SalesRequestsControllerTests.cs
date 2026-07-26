@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using mediconyx_api.Controllers;
@@ -10,6 +11,7 @@ using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Infrastructure;
+using mediconyx_api.Services.Invitations;
 using System.Security.Claims;
 
 namespace mediconyx_api.Tests.UnitTests;
@@ -21,6 +23,7 @@ public class SalesRequestsControllerTests : IDisposable
     private readonly Mock<ICaptchaService> _captchaMock;
     private readonly Mock<IFileValidationService> _fileValidationMock;
     private readonly Mock<IEmailService> _emailMock;
+    private readonly Mock<IInvitationService> _invitationMock;
     private readonly IMemoryCache _cache;
     private readonly SalesRequestsController _sut;
 
@@ -35,11 +38,24 @@ public class SalesRequestsControllerTests : IDisposable
         _captchaMock = new Mock<ICaptchaService>();
         _fileValidationMock = new Mock<IFileValidationService>();
         _emailMock = new Mock<IEmailService>();
+        _invitationMock = new Mock<IInvitationService>();
         _cache = new MemoryCache(new MemoryCacheOptions());
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Notifications:Enabled"] = "true",
+                ["Notifications:NotifyOnNewRequest"] = "true",
+                ["Notifications:NotifyOnStatusChange"] = "true",
+                ["Notifications:SalesTeamEmail"] = "sales@mediconyx.local",
+                ["FrontendUrl"] = "http://localhost:9673"
+            })
+            .Build();
 
         _sut = new SalesRequestsController(
             _context, _loggerMock.Object, _captchaMock.Object,
-            _fileValidationMock.Object, _cache, _emailMock.Object);
+            _fileValidationMock.Object, _cache, _emailMock.Object,
+            _invitationMock.Object, config);
 
         // Set up default HTTP context with admin user
         var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
@@ -117,7 +133,10 @@ public class SalesRequestsControllerTests : IDisposable
         savedRequest.Status.Should().Be(SalesRequestStatus.Pending);
         savedRequest.HospitalName.Should().Be("New Hospital");
         
-        _emailMock.Verify(e => e.SendNewRequestNotificationAsync(It.IsAny<int>(), "New Hospital", "john@hospital.com"), Times.Once);
+        _emailMock.Verify(e => e.SendEmailAsync(
+            "sales@mediconyx.local",
+            It.Is<string>(s => s.Contains("New Hospital")),
+            It.Is<string>(b => b.Contains("john@hospital.com"))), Times.Once);
     }
 
     [Fact]

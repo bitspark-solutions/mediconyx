@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<SalesRequestNote> SalesRequestNotes { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<OnboardingTimelineEvent> OnboardingTimelineEvents { get; set; }
+    public DbSet<Invitation> Invitations { get; set; }
 
     // New entities for hospital onboarding
     public DbSet<HospitalProfile> HospitalProfiles { get; set; }

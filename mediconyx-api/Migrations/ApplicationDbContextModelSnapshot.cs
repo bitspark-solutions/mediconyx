@@ -961,6 +961,80 @@ namespace mediconyx_api.Migrations
                     b.ToTable("HospitalServices");
                 });
 
+            modelBuilder.Entity("mediconyx_api.Models.Invitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("IntendedRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("InvitedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("SalesRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("TokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("SalesRequestId")
+                        .HasFilter("\"SalesRequestId\" IS NOT NULL");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("Invitations");
+                });
+
             modelBuilder.Entity("mediconyx_api.Models.Invoice", b =>
                 {
                     b.Property<int>("Id")
@@ -2299,6 +2373,23 @@ namespace mediconyx_api.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("mediconyx_api.Models.Invitation", b =>
+                {
+                    b.HasOne("mediconyx_api.Models.SalesRequest", "SalesRequest")
+                        .WithMany()
+                        .HasForeignKey("SalesRequestId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("mediconyx_api.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("SalesRequest");
 
                     b.Navigation("Tenant");
                 });

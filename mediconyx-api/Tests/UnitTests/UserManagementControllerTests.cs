@@ -7,6 +7,7 @@ using System.Security.Claims;
 using mediconyx_api.Controllers;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
+using mediconyx_api.Services.Invitations;
 using mediconyx_api.Services.Users;
 using Xunit;
 
@@ -15,14 +16,16 @@ namespace mediconyx_api.Tests.UnitTests;
 public class UserManagementControllerTests
 {
     private readonly Mock<IUserService> _userServiceMock;
+    private readonly Mock<IInvitationService> _invitationServiceMock;
     private readonly Mock<ILogger<UserManagementController>> _loggerMock;
     private readonly UserManagementController _controller;
 
     public UserManagementControllerTests()
     {
         _userServiceMock = new Mock<IUserService>();
+        _invitationServiceMock = new Mock<IInvitationService>();
         _loggerMock = new Mock<ILogger<UserManagementController>>();
-        _controller = new UserManagementController(_userServiceMock.Object, _loggerMock.Object);
+        _controller = new UserManagementController(_userServiceMock.Object, _invitationServiceMock.Object, _loggerMock.Object);
     }
 
     private void SetupAuthenticatedUser(int userId, UserRole role, int tenantId)

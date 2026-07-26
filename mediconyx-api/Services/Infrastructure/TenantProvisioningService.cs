@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
+using mediconyx_api.Services.Invitations;
 
 namespace mediconyx_api.Services.Infrastructure;
 
@@ -10,15 +11,18 @@ public class TenantProvisioningService : ITenantProvisioningService
 {
     private readonly ApplicationDbContext _context;
     private readonly IPasswordService _passwordService;
+    private readonly IInvitationService _invitationService;
     private readonly ILogger<TenantProvisioningService> _logger;
 
     public TenantProvisioningService(
         ApplicationDbContext context,
         IPasswordService passwordService,
+        IInvitationService invitationService,
         ILogger<TenantProvisioningService> logger)
     {
         _context = context;
         _passwordService = passwordService;
+        _invitationService = invitationService;
         _logger = logger;
     }
 
@@ -87,12 +91,28 @@ public class TenantProvisioningService : ITenantProvisioningService
 
                 _logger.LogInformation("Tenant created: {TenantId}, Subdomain: {Subdomain}", tenant.Id, subdomain);
 
-                var temporaryPassword = GenerateSecurePassword();
+                // If the primary contact accepted an admin invitation, use the password they
+                // chose (no temp password). Otherwise fall back to generating a temp password.
+                var adminEmail = salesRequest.HospitalProfile.PrimaryContactEmail;
+                var acceptedInvite = await _invitationService.GetAcceptedPipelineInvitationForEmailAsync(adminEmail);
+
+                string? temporaryPassword = null;
+                string passwordHash;
+                if (acceptedInvite != null && !string.IsNullOrEmpty(acceptedInvite.PasswordHash))
+                {
+                    passwordHash = acceptedInvite.PasswordHash;
+                    _logger.LogInformation("Using accepted invitation {InvitationId} password for admin {Email}", acceptedInvite.Id, adminEmail);
+                }
+                else
+                {
+                    temporaryPassword = GenerateSecurePassword();
+                    passwordHash = _passwordService.HashPassword(temporaryPassword);
+                }
 
                 var adminUser = new User
                 {
-                    Email = salesRequest.HospitalProfile.PrimaryContactEmail,
-                    PasswordHash = _passwordService.HashPassword(temporaryPassword),
+                    Email = adminEmail,
+                    PasswordHash = passwordHash,
                     FirstName = ExtractFirstName(salesRequest.HospitalProfile.PrimaryContactName),
                     LastName = ExtractLastName(salesRequest.HospitalProfile.PrimaryContactName),
                     PhoneNumber = salesRequest.HospitalProfile.PrimaryContactPhone,
@@ -104,6 +124,9 @@ public class TenantProvisioningService : ITenantProvisioningService
 
                 _context.Users.Add(adminUser);
                 await _context.SaveChangesAsync();
+
+                if (acceptedInvite != null)
+                    await _invitationService.MarkConsumedAsync(acceptedInvite.Id, adminUser.Id);
 
                 _logger.LogInformation("Admin user created: {UserId}, Email: {Email}", adminUser.Id, adminUser.Email);
 
@@ -129,6 +152,7 @@ public class TenantProvisioningService : ITenantProvisioningService
                 result.Subdomain = subdomain;
                 result.AdminEmail = adminUser.Email;
                 result.TemporaryPassword = temporaryPassword;
+                result.UsedInvitation = acceptedInvite != null;
 
                 _logger.LogInformation(
                     "Tenant provisioning completed for SalesRequest {SalesRequestId}. TenantId: {TenantId}",

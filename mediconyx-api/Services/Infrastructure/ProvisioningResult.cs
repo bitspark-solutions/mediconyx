@@ -8,6 +8,8 @@ public class ProvisioningResult
     public string? Subdomain { get; set; }
     public string? AdminEmail { get; set; }
     public string? TemporaryPassword { get; set; }
+    /// <summary>True when the admin's password came from an accepted invitation (no temp password generated).</summary>
+    public bool UsedInvitation { get; set; }
     public string? ErrorMessage { get; set; }
     public List<string> Warnings { get; set; } = new();
 }

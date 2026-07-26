@@ -87,15 +87,28 @@ public class ProvisioningController : ControllerBase
                 result.TenantId,
                 result.AdminUserId);
 
-            // Send welcome email with credentials (fire and forget)
-            if (!string.IsNullOrEmpty(result.AdminEmail) && !string.IsNullOrEmpty(result.TemporaryPassword))
+            // Send the appropriate welcome email (fire and forget). Invite-based admins set
+            // their own password, so they get a "your account is ready" email with no password.
+            if (!string.IsNullOrEmpty(result.AdminEmail))
             {
-                _ = SendWelcomeEmail(
-                    salesRequest.HospitalProfile?.HospitalLegalName ?? salesRequest.HospitalName,
-                    result.AdminEmail,
-                    result.TemporaryPassword,
-                    result.Subdomain ?? string.Empty,
-                    requestId);
+                var hospitalName = salesRequest.HospitalProfile?.HospitalLegalName ?? salesRequest.HospitalName;
+                if (result.UsedInvitation)
+                {
+                    _ = SendInviteBasedWelcomeEmail(
+                        hospitalName,
+                        result.AdminEmail,
+                        result.Subdomain ?? string.Empty,
+                        requestId);
+                }
+                else if (!string.IsNullOrEmpty(result.TemporaryPassword))
+                {
+                    _ = SendWelcomeEmail(
+                        hospitalName,
+                        result.AdminEmail,
+                        result.TemporaryPassword,
+                        result.Subdomain ?? string.Empty,
+                        requestId);
+                }
             }
 
             return Ok(new
@@ -104,7 +117,10 @@ public class ProvisioningController : ControllerBase
                 tenantId = result.TenantId,
                 subdomain = result.Subdomain,
                 adminEmail = result.AdminEmail,
-                message = "Tenant provisioned successfully. Welcome email sent with temporary credentials."
+                usedInvitation = result.UsedInvitation,
+                message = result.UsedInvitation
+                    ? "Tenant provisioned successfully. Admin uses the password set via invitation."
+                    : "Tenant provisioned successfully. Welcome email sent with temporary credentials."
             });
         }
         else
@@ -210,6 +226,59 @@ public class ProvisioningController : ControllerBase
         {
             _logger.LogError(ex, "Failed to send welcome email to {Email} for SalesRequest {RequestId}", adminEmail, requestId);
             // Don't throw - email failure shouldn't break provisioning
+        }
+    }
+
+    private async Task SendInviteBasedWelcomeEmail(
+        string hospitalName,
+        string adminEmail,
+        string subdomain,
+        int requestId)
+    {
+        try
+        {
+            var subject = "Your Mediconyx account is ready!";
+            var loginUrl = $"https://{subdomain}.mediconyx.com/login";
+
+            var body = $@"
+                <h1>Your account is ready!</h1>
+                <p>Dear Administrator,</p>
+                <p>Great news! Your Mediconyx account for <strong>{hospitalName}</strong> has been successfully provisioned and is ready to use.</p>
+
+                <h2>Log in</h2>
+                <ul>
+                    <li><strong>Login URL:</strong> <a href=""{loginUrl}"">{loginUrl}</a></li>
+                    <li><strong>Email:</strong> {adminEmail}</li>
+                    <li><strong>Password:</strong> the password you set when you accepted your invitation</li>
+                </ul>
+
+                <p>Use the email and password you chose during invitation setup to sign in.</p>
+
+                <h2>Need Help?</h2>
+                <p>Our support team is here to assist you: support@mediconyx.com</p>
+
+                <p>Thank you for choosing Mediconyx. We're excited to have you on board!</p>
+
+                <p>Best regards,<br/>
+                The Mediconyx Team</p>
+            ";
+
+            await _emailService.SendEmailAsync(adminEmail, subject, body);
+
+            _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+            {
+                SalesRequestId = requestId,
+                Type = "EmailSent",
+                Description = $"Account-ready email sent to {adminEmail} (invitation-based login)",
+                HappenedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Invite-based welcome email sent to {Email} for SalesRequest {RequestId}", adminEmail, requestId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send invite-based welcome email to {Email} for SalesRequest {RequestId}", adminEmail, requestId);
         }
     }
 }

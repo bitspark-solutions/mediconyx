@@ -5,6 +5,7 @@ using Moq;
 using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Services.Infrastructure;
+using mediconyx_api.Services.Invitations;
 
 namespace mediconyx_api.Tests.UnitTests;
 
@@ -12,6 +13,7 @@ public class TenantProvisioningServiceTests : IDisposable
 {
     private readonly ApplicationDbContext _context;
     private readonly Mock<IPasswordService> _passwordMock;
+    private readonly Mock<IInvitationService> _invitationMock;
     private readonly Mock<ILogger<TenantProvisioningService>> _loggerMock;
     private readonly TenantProvisioningService _sut;
 
@@ -24,8 +26,9 @@ public class TenantProvisioningServiceTests : IDisposable
         _context = new ApplicationDbContext(options);
 
         _passwordMock = new Mock<IPasswordService>();
+        _invitationMock = new Mock<IInvitationService>();
         _loggerMock = new Mock<ILogger<TenantProvisioningService>>();
-        _sut = new TenantProvisioningService(_context, _passwordMock.Object, _loggerMock.Object);
+        _sut = new TenantProvisioningService(_context, _passwordMock.Object, _invitationMock.Object, _loggerMock.Object);
     }
 
     private SalesRequest CreateCompleteSalesRequest(int id, SalesRequestStatus status = SalesRequestStatus.AwaitingPayment, PaymentStatus paymentStatus = PaymentStatus.Paid)

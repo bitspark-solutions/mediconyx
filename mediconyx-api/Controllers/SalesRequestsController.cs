@@ -6,6 +6,7 @@ using mediconyx_api.Data;
 using mediconyx_api.Models;
 using mediconyx_api.Models.DTOs;
 using mediconyx_api.Services.Infrastructure;
+using mediconyx_api.Services.Invitations;
 using System.Security.Cryptography;
 
 namespace mediconyx_api.Controllers;
@@ -20,14 +21,18 @@ public class SalesRequestsController : ControllerBase
     private readonly IFileValidationService _fileValidationService;
     private readonly IMemoryCache _cache;
     private readonly IEmailService _emailService;
+    private readonly IInvitationService _invitationService;
+    private readonly IConfiguration _configuration;
 
     public SalesRequestsController(
-        ApplicationDbContext context, 
+        ApplicationDbContext context,
         ILogger<SalesRequestsController> logger,
         ICaptchaService captchaService,
         IFileValidationService fileValidationService,
         IMemoryCache cache,
-        IEmailService emailService)
+        IEmailService emailService,
+        IInvitationService invitationService,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
@@ -35,6 +40,8 @@ public class SalesRequestsController : ControllerBase
         _fileValidationService = fileValidationService;
         _cache = cache;
         _emailService = emailService;
+        _invitationService = invitationService;
+        _configuration = configuration;
     }
 
     [HttpPost("public")]
@@ -90,7 +97,7 @@ public class SalesRequestsController : ControllerBase
         await _context.SaveChangesAsync();
 
         // Send email notification (fire and forget)
-        _ = _emailService.SendNewRequestNotificationAsync(sr.Id, sr.HospitalName, sr.Email);
+        _ = SendNewRequestNotificationAsync(sr.Id, sr.HospitalName, sr.Email);
 
         InvalidateMetricsCache();
         _logger.LogInformation("Public sales request created {Id} from IP {IP}", sr.Id, remoteIp);
@@ -342,8 +349,8 @@ public class SalesRequestsController : ControllerBase
         r.UpdatedAt = DateTime.UtcNow;
         
         // Send email notification
-        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, old.ToString(), r.Status.ToString());
-        
+        _ = SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, old.ToString(), r.Status.ToString());
+
         _context.AuditLogs.Add(new AuditLog
         {
             EntityName = nameof(SalesRequest),
@@ -427,7 +434,25 @@ public class SalesRequestsController : ControllerBase
         InvalidateMetricsCache();
 
         // Send qualification email (fire and forget)
-        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, "Pending", "Qualified");
+        _ = SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, "Pending", "Qualified");
+
+        // Auto-create an admin invitation for the request's contact email (best-effort).
+        try
+        {
+            await _invitationService.CreatePipelineInvitationAsync(r, userId);
+            _context.OnboardingTimelineEvents.Add(new OnboardingTimelineEvent
+            {
+                SalesRequestId = r.Id,
+                Type = "InvitationSent",
+                Description = $"Admin invitation sent to {r.Email}",
+                HappenedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create admin invitation for qualified SalesRequest {Id}", id);
+        }
 
         _logger.LogInformation("SalesRequest {Id} qualified by user {UserId}", id, userId);
 
@@ -482,7 +507,7 @@ public class SalesRequestsController : ControllerBase
         InvalidateMetricsCache();
 
         // Send rejection email (fire and forget)
-        _ = _emailService.SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, oldStatus.ToString(), "Rejected");
+        _ = SendStatusChangeNotificationAsync(r.Id, r.HospitalName, r.Email, oldStatus.ToString(), "Rejected");
 
         _logger.LogInformation("SalesRequest {Id} rejected: {Reason}", id, request.Reason);
 
@@ -750,6 +775,65 @@ public class SalesRequestsController : ControllerBase
             }
         }
         _logger.LogDebug("Metrics cache invalidated");
+    }
+
+    // ── Sales email helpers (build content + call generic IEmailService) ─────
+
+    private async Task SendNewRequestNotificationAsync(int requestId, string hospitalName, string email)
+    {
+        if (!_configuration.GetValue<bool>("Notifications:Enabled", true)
+            || !_configuration.GetValue<bool>("Notifications:NotifyOnNewRequest", true))
+        {
+            _logger.LogDebug("Email notifications disabled, skipping new request notification");
+            return;
+        }
+
+        var subject = $"New Sales Request from {hospitalName}";
+        var body = $@"
+<html><body>
+<h2>New Sales Request</h2>
+<p>A new sales request has been submitted:</p>
+<ul>
+<li><strong>Hospital:</strong> {hospitalName}</li>
+<li><strong>Email:</strong> {email}</li>
+<li><strong>Request ID:</strong> {requestId}</li>
+</ul>
+<p>View and claim this request in the portal:
+<a href='{_configuration["FrontendUrl"]}/portal/sales'>Sales Dashboard</a></p>
+<p>Best regards,<br/>Mediconyx System</p>
+</body></html>";
+
+        var salesTeamEmail = _configuration["Notifications:SalesTeamEmail"];
+        if (!string.IsNullOrWhiteSpace(salesTeamEmail))
+            await _emailService.SendEmailAsync(salesTeamEmail, subject, body);
+    }
+
+    private async Task SendStatusChangeNotificationAsync(int requestId, string hospitalName, string email, string oldStatus, string newStatus)
+    {
+        if (!_configuration.GetValue<bool>("Notifications:Enabled", true)
+            || !_configuration.GetValue<bool>("Notifications:NotifyOnStatusChange", true))
+        {
+            _logger.LogDebug("Email notifications disabled, skipping status change notification");
+            return;
+        }
+
+        var body = $@"
+<html><body>
+<h2>Request Status Updated</h2>
+<p>Dear Customer,</p>
+<p>Your sales request for <strong>{hospitalName}</strong> has been updated:</p>
+<ul>
+<li><strong>Previous Status:</strong> {oldStatus}</li>
+<li><strong>New Status:</strong> {newStatus}</li>
+<li><strong>Request ID:</strong> {requestId}</li>
+</ul>";
+
+        if (newStatus == "Active")
+            body += $"<p><strong>Congratulations!</strong> Your account is now active. <a href='{_configuration["FrontendUrl"]}/login'>Login to Mediconyx</a></p>";
+
+        body += "<p>Best regards,<br/>Mediconyx Team</p></body></html>";
+
+        await _emailService.SendEmailAsync(email, "Your Mediconyx Request - Status Update", body);
     }
 }
 
