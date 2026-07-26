@@ -124,12 +124,12 @@ public class SalesRequestsController : ControllerBase
                 r.ContactPerson,
                 r.Email,
                 r.Region,
-                r.Status,
+                Status = (int)r.Status,
                 r.OwnerSalesUserId,
                 r.CreatedAt,
                 r.QuotedPrice,
                 r.Currency,
-                r.PaymentStatus
+                PaymentStatus = (int)r.PaymentStatus
             })
             .ToListAsync();
         return Ok(new { total, page, pageSize, items });
