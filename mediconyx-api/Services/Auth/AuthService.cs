@@ -144,6 +144,8 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("User account is inactive.");
         if (!user.Tenant.IsActive)
             throw new UnauthorizedAccessException("Tenant account is inactive.");
+        if (user.Tenant.SubscriptionExpiresAt.HasValue && user.Tenant.SubscriptionExpiresAt.Value < DateTime.UtcNow)
+            throw new UnauthorizedAccessException("Hospital subscription has expired. Contact Mediconyx to renew.");
     }
 
     private async Task<AuthResponse> IssueTokensAsync(User user, string? logMessage)

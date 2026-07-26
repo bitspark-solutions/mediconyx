@@ -224,7 +224,7 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
 
   const handleProvision = async () => {
     setActionLoading(true);
-    const res = await apiClient.post(`/api/sales/provision/${requestId}`, {});
+    const res = await apiClient.post(`/api/sales/requests/${requestId}/provision`, {});
     if (res.ok) await loadRequest();
     else {
       const data = await res.json();

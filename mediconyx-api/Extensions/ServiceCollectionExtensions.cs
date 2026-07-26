@@ -101,6 +101,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFileValidationService, FileValidationService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+        services.AddScoped<mediconyx_api.Services.Common.ITenantModuleService, mediconyx_api.Services.Common.TenantModuleService>();
         services.AddHttpClient<ICaptchaService, RecaptchaService>();
 
         // Feature services

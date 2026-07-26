@@ -42,33 +42,7 @@ public class TenantSettingsController : ControllerBase
         var tenant = await _context.Tenants.FindAsync(tenantId.Value);
         if (tenant == null) return NotFound();
 
-        return Ok(new TenantSettingsDto
-        {
-            Id = tenant.Id,
-            Name = tenant.Name,
-            Address = tenant.Address,
-            ContactEmail = tenant.ContactEmail,
-            ContactPhone = tenant.ContactPhone,
-            LogoUrl = tenant.LogoUrl,
-            Description = tenant.Description,
-            OperatingHours = tenant.OperatingHours,
-            TimeZone = tenant.TimeZone,
-            BusinessRegistrationNumber = tenant.BusinessRegistrationNumber,
-            SubscriptionPlan = tenant.SubscriptionPlan,
-            UserLicenses = tenant.UserLicenses,
-            ModuleOpdEnabled = tenant.ModuleOpdEnabled,
-            ModuleIpdEnabled = tenant.ModuleIpdEnabled,
-            ModuleEmergencyEnabled = tenant.ModuleEmergencyEnabled,
-            ModulePharmacyEnabled = tenant.ModulePharmacyEnabled,
-            ModuleLaboratoryEnabled = tenant.ModuleLaboratoryEnabled,
-            ModuleRadiologyEnabled = tenant.ModuleRadiologyEnabled,
-            ModuleBillingEnabled = tenant.ModuleBillingEnabled,
-            ModuleInventoryEnabled = tenant.ModuleInventoryEnabled,
-            ModuleHrPayrollEnabled = tenant.ModuleHrPayrollEnabled,
-            ModuleAppointmentEnabled = tenant.ModuleAppointmentEnabled,
-            ModuleTelemedicineEnabled = tenant.ModuleTelemedicineEnabled,
-            ModuleAnalyticsEnabled = tenant.ModuleAnalyticsEnabled
-        });
+        return Ok(MapToDto(tenant));
     }
 
     /// <summary>
@@ -94,26 +68,79 @@ public class TenantSettingsController : ControllerBase
         if (request.TimeZone != null) tenant.TimeZone = request.TimeZone;
         if (request.BusinessRegistrationNumber != null) tenant.BusinessRegistrationNumber = request.BusinessRegistrationNumber;
 
+        // Module toggles (null = unchanged)
+        if (request.ModuleOpdEnabled.HasValue) tenant.ModuleOpdEnabled = request.ModuleOpdEnabled.Value;
+        if (request.ModuleIpdEnabled.HasValue) tenant.ModuleIpdEnabled = request.ModuleIpdEnabled.Value;
+        if (request.ModuleEmergencyEnabled.HasValue) tenant.ModuleEmergencyEnabled = request.ModuleEmergencyEnabled.Value;
+        if (request.ModulePharmacyEnabled.HasValue) tenant.ModulePharmacyEnabled = request.ModulePharmacyEnabled.Value;
+        if (request.ModuleLaboratoryEnabled.HasValue) tenant.ModuleLaboratoryEnabled = request.ModuleLaboratoryEnabled.Value;
+        if (request.ModuleRadiologyEnabled.HasValue) tenant.ModuleRadiologyEnabled = request.ModuleRadiologyEnabled.Value;
+        if (request.ModuleBillingEnabled.HasValue) tenant.ModuleBillingEnabled = request.ModuleBillingEnabled.Value;
+        if (request.ModuleInventoryEnabled.HasValue) tenant.ModuleInventoryEnabled = request.ModuleInventoryEnabled.Value;
+        if (request.ModuleHrPayrollEnabled.HasValue) tenant.ModuleHrPayrollEnabled = request.ModuleHrPayrollEnabled.Value;
+        if (request.ModuleAppointmentEnabled.HasValue) tenant.ModuleAppointmentEnabled = request.ModuleAppointmentEnabled.Value;
+        if (request.ModuleTelemedicineEnabled.HasValue) tenant.ModuleTelemedicineEnabled = request.ModuleTelemedicineEnabled.Value;
+        if (request.ModuleAnalyticsEnabled.HasValue) tenant.ModuleAnalyticsEnabled = request.ModuleAnalyticsEnabled.Value;
+
         tenant.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Tenant {TenantId} settings updated by user {UserId}", tenantId, GetCurrentUserId());
 
-        return Ok(new TenantSettingsDto
-        {
-            Id = tenant.Id,
-            Name = tenant.Name,
-            Address = tenant.Address,
-            ContactEmail = tenant.ContactEmail,
-            ContactPhone = tenant.ContactPhone,
-            LogoUrl = tenant.LogoUrl,
-            Description = tenant.Description,
-            OperatingHours = tenant.OperatingHours,
-            TimeZone = tenant.TimeZone,
-            BusinessRegistrationNumber = tenant.BusinessRegistrationNumber
-        });
+        return Ok(MapToDto(tenant));
     }
+
+    /// <summary>
+    /// Master-only: update a tenant's subscription (plan, seats, validity window).
+    /// </summary>
+    [HttpPut("subscription/{tenantId:int}")]
+    [Authorize(Roles = "Master")]
+    public async Task<ActionResult<TenantSettingsDto>> UpdateSubscription(int tenantId, [FromBody] UpdateSubscriptionRequest request)
+    {
+        var tenant = await _context.Tenants.FindAsync(tenantId);
+        if (tenant == null) return NotFound(new { message = "Tenant not found." });
+
+        if (request.SubscriptionPlan != null) tenant.SubscriptionPlan = request.SubscriptionPlan;
+        if (request.UserLicenses.HasValue) tenant.UserLicenses = request.UserLicenses.Value;
+        if (request.SubscriptionStartDate.HasValue) tenant.SubscriptionStartDate = request.SubscriptionStartDate.Value;
+        if (request.SubscriptionExpiresAt.HasValue) tenant.SubscriptionExpiresAt = request.SubscriptionExpiresAt.Value;
+        tenant.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Tenant {TenantId} subscription updated by master user {UserId}", tenantId, GetCurrentUserId());
+
+        return Ok(MapToDto(tenant));
+    }
+
+    private static TenantSettingsDto MapToDto(Models.Tenant tenant) => new()
+    {
+        Id = tenant.Id,
+        Name = tenant.Name,
+        Address = tenant.Address,
+        ContactEmail = tenant.ContactEmail,
+        ContactPhone = tenant.ContactPhone,
+        LogoUrl = tenant.LogoUrl,
+        Description = tenant.Description,
+        OperatingHours = tenant.OperatingHours,
+        TimeZone = tenant.TimeZone,
+        BusinessRegistrationNumber = tenant.BusinessRegistrationNumber,
+        SubscriptionPlan = tenant.SubscriptionPlan,
+        UserLicenses = tenant.UserLicenses,
+        SubscriptionExpiresAt = tenant.SubscriptionExpiresAt,
+        ModuleOpdEnabled = tenant.ModuleOpdEnabled,
+        ModuleIpdEnabled = tenant.ModuleIpdEnabled,
+        ModuleEmergencyEnabled = tenant.ModuleEmergencyEnabled,
+        ModulePharmacyEnabled = tenant.ModulePharmacyEnabled,
+        ModuleLaboratoryEnabled = tenant.ModuleLaboratoryEnabled,
+        ModuleRadiologyEnabled = tenant.ModuleRadiologyEnabled,
+        ModuleBillingEnabled = tenant.ModuleBillingEnabled,
+        ModuleInventoryEnabled = tenant.ModuleInventoryEnabled,
+        ModuleHrPayrollEnabled = tenant.ModuleHrPayrollEnabled,
+        ModuleAppointmentEnabled = tenant.ModuleAppointmentEnabled,
+        ModuleTelemedicineEnabled = tenant.ModuleTelemedicineEnabled,
+        ModuleAnalyticsEnabled = tenant.ModuleAnalyticsEnabled
+    };
 
     /// <summary>
     /// Upload tenant logo

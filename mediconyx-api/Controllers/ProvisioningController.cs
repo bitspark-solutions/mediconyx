@@ -9,7 +9,7 @@ namespace mediconyx_api.Controllers;
 
 [ApiController]
 [Route("api/sales/requests/{requestId:int}")]
-[Authorize(Roles = "Admin,Master")]
+[Authorize(Roles = "Sales,Admin,Master")]
 public class ProvisioningController : ControllerBase
 {
     private readonly ApplicationDbContext _context;

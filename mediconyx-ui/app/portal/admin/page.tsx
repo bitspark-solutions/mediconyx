@@ -415,16 +415,18 @@ function HospitalSettingsTab() {
           <h2 className="text-lg font-semibold text-white">Active Modules</h2>
         </div>
         <p className="text-sm text-gray-400 mb-4">
-          Modules are configured during onboarding. Contact sales to enable additional modules.
+          Toggle modules for this hospital, then click Save Changes. Disabled modules block their features (IPD, Appointments, Telemedicine, Billing) for all users immediately.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {Object.entries(MODULE_LABELS).map(([key, label]) => {
-            const enabled = settings[key] === true;
+            const current = (key in edited ? edited[key] : settings[key]) === true;
             return (
-              <div
+              <button
                 key={key}
-                className={`p-3 rounded border ${
-                  enabled
+                type="button"
+                onClick={() => setEdited({ ...edited, [key]: !current })}
+                className={`p-3 rounded border text-left transition-colors ${
+                  current
                     ? "bg-emerald-500/10 border-emerald-500/30"
                     : "bg-white/5 border-white/10 opacity-60"
                 }`}
@@ -432,12 +434,12 @@ function HospitalSettingsTab() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-white">{label}</span>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    enabled ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-700 text-slate-400"
+                    current ? "bg-emerald-500/20 text-emerald-300" : "bg-slate-700 text-slate-400"
                   }`}>
-                    {enabled ? "Enabled" : "Disabled"}
+                    {current ? "Enabled" : "Disabled"}
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -456,7 +458,14 @@ function HospitalSettingsTab() {
               <label className="block text-xs font-medium text-gray-400 mb-1">User Licenses</label>
               <p className="text-white">{settings.userLicenses || "—"}</p>
             </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Expires</label>
+              <p className={settings.subscriptionExpiresAt && new Date(settings.subscriptionExpiresAt) < new Date() ? "text-red-400 font-semibold" : "text-white"}>
+                {settings.subscriptionExpiresAt ? new Date(settings.subscriptionExpiresAt).toLocaleDateString() : "—"}
+              </p>
+            </div>
           </div>
+          <p className="text-xs text-gray-500 mt-3">Plan changes, renewals, and seat increases are handled by the platform owner.</p>
         </div>
       )}
     </div>

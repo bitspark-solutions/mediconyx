@@ -141,11 +141,71 @@ public class SalesRequestsController : ControllerBase
     {
         var r = await _context.SalesRequests
             .Include(x => x.Attachments)
-            .Include(x => x.NotesList)
+            .Include(x => x.NotesList).ThenInclude(n => n.AuthorUser)
             .Include(x => x.Timeline)
+            .Include(x => x.OwnerSalesUser)
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id);
         if (r == null) return NotFound();
-        return Ok(r);
+
+        // Return a flat DTO with numeric enums and no navigation back-references.
+        // This fixes the JSON object-cycle 500 and gives the sales UI the numeric
+        // status/paymentStatus it compares against.
+        var dto = new SalesRequestDetailDto
+        {
+            Id = r.Id,
+            HospitalName = r.HospitalName,
+            ContactPerson = r.ContactPerson,
+            Email = r.Email,
+            Phone = r.Phone,
+            Region = r.Region,
+            Notes = r.Notes,
+            Status = (int)r.Status,
+            StatusName = r.Status.ToString(),
+            PaymentStatus = (int)r.PaymentStatus,
+            PaymentStatusName = r.PaymentStatus.ToString(),
+            OwnerSalesUserId = r.OwnerSalesUserId,
+            OwnerSalesUserName = r.OwnerSalesUser == null ? null : $"{r.OwnerSalesUser.FirstName} {r.OwnerSalesUser.LastName}".Trim(),
+            ClaimedAt = r.ClaimedAt,
+            ActivatedAt = r.ActivatedAt,
+            DeactivatedAt = r.DeactivatedAt,
+            SubscriptionPlan = r.SubscriptionPlan,
+            BillingCycle = r.BillingCycle.HasValue ? (int)r.BillingCycle.Value : null,
+            Currency = r.Currency,
+            QuotedPrice = r.QuotedPrice,
+            Seats = r.Seats,
+            PaidAt = r.PaidAt,
+            TenantId = r.TenantId,
+            CreatedAt = r.CreatedAt,
+            UpdatedAt = r.UpdatedAt,
+            Attachments = r.Attachments.Select(a => new SalesRequestAttachmentDto
+            {
+                Id = a.Id,
+                FileName = a.FileName,
+                MimeType = a.MimeType,
+                SizeBytes = a.SizeBytes,
+                DocumentType = a.DocumentType.HasValue ? (int)a.DocumentType.Value : null,
+                IsMandatory = a.IsMandatory,
+                UploadedAt = a.UploadedAt
+            }).ToList(),
+            NotesList = r.NotesList.Select(n => new SalesRequestNoteDto
+            {
+                Id = n.Id,
+                Note = n.Note,
+                AuthorUserId = n.AuthorUserId,
+                AuthorUserName = n.AuthorUser == null ? null : $"{n.AuthorUser.FirstName} {n.AuthorUser.LastName}".Trim(),
+                CreatedAt = n.CreatedAt
+            }).ToList(),
+            Timeline = r.Timeline.OrderByDescending(t => t.HappenedAt).Select(t => new SalesRequestTimelineDto
+            {
+                Id = t.Id,
+                Type = t.Type,
+                Description = t.Description,
+                HappenedAt = t.HappenedAt
+            }).ToList()
+        };
+
+        return Ok(dto);
     }
 
     [HttpPost]

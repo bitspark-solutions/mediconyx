@@ -135,6 +135,15 @@ public class UserService : IUserService
         if (tenant == null || !tenant.IsActive)
             throw new InvalidOperationException("Invalid or inactive tenant.");
 
+        // Seat limit enforcement
+        if (tenant.UserLicenses.HasValue)
+        {
+            var activeUsers = await _context.Users.CountAsync(u => u.TenantId == request.TenantId && u.IsActive);
+            if (activeUsers >= tenant.UserLicenses.Value)
+                throw new InvalidOperationException(
+                    $"User license limit ({tenant.UserLicenses.Value}) reached for this hospital. Contact the platform administrator to increase seats.");
+        }
+
         if (request.PrimaryDepartmentId.HasValue)
         {
             var deptExists = await _context.Departments.AnyAsync(d =>

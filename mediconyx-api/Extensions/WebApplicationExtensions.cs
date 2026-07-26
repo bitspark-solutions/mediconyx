@@ -45,6 +45,7 @@ public static class WebApplicationExtensions
         }
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseMiddleware<ModuleEnforcementMiddleware>();
         app.MapControllers();
 
         return app;

@@ -34,6 +34,8 @@ public static class DemoHospitalSeeder
                 ModuleAppointmentEnabled = true,
                 ModuleBillingEnabled = true,
                 ModulePharmacyEnabled = true,
+                ModuleIpdEnabled = true,
+                ModuleTelemedicineEnabled = true,
                 CreatedAt = DateTime.UtcNow
             };
             dbContext.Tenants.Add(hospitalTenant);

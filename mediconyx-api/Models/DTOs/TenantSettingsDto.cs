@@ -14,6 +14,7 @@ public class TenantSettingsDto
     public string? BusinessRegistrationNumber { get; set; }
     public string? SubscriptionPlan { get; set; }
     public int? UserLicenses { get; set; }
+    public DateTime? SubscriptionExpiresAt { get; set; }
     public bool ModuleOpdEnabled { get; set; }
     public bool ModuleIpdEnabled { get; set; }
     public bool ModuleEmergencyEnabled { get; set; }

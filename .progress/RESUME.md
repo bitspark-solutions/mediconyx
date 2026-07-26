@@ -48,4 +48,5 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 4. ~~Storage/API upload-policy mismatch~~ done 2026-07-25 (+ storage API-key auth, purge job, real signed URLs, kebab routes, AddAiRagTables migration).
 5. E2E for file upload/download (chain now works; no test coverage yet — high value, it hid 2 bugs).
 6. P3 tenant-custom permission bundles — deferred (Designation covers titles; revisit only on real demand).
-7. Admin dashboard KPI placeholders; dead login-page links; owner dashboard with real metrics.
+7. Admin dashboard KPI placeholders; dead login-page links; owner dashboard with real metrics + master UI for subscription edits (API exists: `PUT /api/TenantSettings/subscription/{tenantId}`).
+8. ~~Module toggles not enforced~~ done 2026-07-26 (editable + middleware gate). ~~Subscription management~~ done 2026-07-26 (master endpoint, seat limit, expiry login block).
