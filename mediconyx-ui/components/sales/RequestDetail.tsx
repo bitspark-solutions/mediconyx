@@ -36,6 +36,16 @@ interface Attachment {
   documentType?: number;
 }
 
+interface Invitation {
+  id: number;
+  email: string;
+  intendedRole: string;
+  status: string;
+  createdAt: string;
+  acceptedAt: string | null;
+  tokenExpiry: string;
+}
+
 interface RequestData {
   id: number;
   hospitalName: string;
@@ -99,6 +109,9 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const [inviteMessage, setInviteMessage] = useState("");
   const { user } = useAuthStore();
 
   const isOwner = request && user && request.ownerSalesUserId === user.id;
@@ -115,10 +128,41 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
         const data = await res.json();
         setRequest(data);
       }
+      await loadInvitations();
     } catch (error) {
       console.error("Failed to load request", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInvitations = async () => {
+    try {
+      const res = await apiClient.get(`/api/invitations/by-request/${requestId}`);
+      if (res.ok) {
+        setInvitations(await res.json());
+      }
+    } catch (error) {
+      console.error("Failed to load invitations", error);
+    }
+  };
+
+  const handleResendInvite = async (invitationId: number) => {
+    setResendingId(invitationId);
+    setInviteMessage("");
+    try {
+      const res = await apiClient.post(`/api/invitations/${invitationId}/resend`, {});
+      if (res.ok) {
+        setInviteMessage("Invitation resent.");
+        await loadInvitations();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.message || "Failed to resend invitation");
+      }
+    } catch (error) {
+      setError("Error resending invitation");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -368,6 +412,52 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
                   <div><span className="text-gray-400">Payment:</span> <span className="text-white ml-2">{paymentStatusLabels[request.paymentStatus]}</span></div>
                 </div>
               </div>
+              {/* Admin Invitation Section */}
+              {invitations.length > 0 && (
+                <div className="col-span-2 surface rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Admin Invitation</h3>
+                    {inviteMessage && <span className="text-sm text-green-400">{inviteMessage}</span>}
+                  </div>
+                  <div className="space-y-3">
+                    {invitations.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between bg-white/5 rounded-lg p-4">
+                        <div>
+                          <p className="text-white text-sm font-medium">{inv.email}</p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            {inv.intendedRole} • Sent {new Date(inv.createdAt).toLocaleString()}
+                            {inv.acceptedAt
+                              ? ` • Accepted ${new Date(inv.acceptedAt).toLocaleString()}`
+                              : ` • Expires ${new Date(inv.tokenExpiry).toLocaleString()}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                              inv.status === "Accepted"
+                                ? "bg-green-500/20 text-green-300"
+                                : inv.status === "Pending"
+                                ? "bg-yellow-500/20 text-yellow-300"
+                                : "bg-red-500/20 text-red-300"
+                            }`}
+                          >
+                            {inv.status}
+                          </span>
+                          {inv.status !== "Accepted" && (
+                            <button
+                              onClick={() => handleResendInvite(inv.id)}
+                              disabled={resendingId === inv.id}
+                              className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                            >
+                              {resendingId === inv.id ? "Resending..." : "Resend Invite"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Notes Section */}
               <div className="col-span-2 surface rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Notes</h3>
