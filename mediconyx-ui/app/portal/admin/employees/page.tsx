@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import ProtectedRoute from "../../../../components/ProtectedRoute";
 import { apiClient } from "../../../../lib/apiClient";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { Users, RefreshCw, Plus, X, Pencil, Stethoscope, UserX, UserCheck } from "lucide-react";
+import { Users, RefreshCw, Plus, X, Pencil, Stethoscope, UserX, UserCheck, Mail } from "lucide-react";
 
 interface Employee {
   id: number;
@@ -48,6 +48,7 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [editFor, setEditFor] = useState<Employee | null>(null);
   const [doctorFor, setDoctorFor] = useState<Employee | null>(null);
   const [error, setError] = useState("");
@@ -103,6 +104,9 @@ export default function EmployeesPage() {
           <div className="flex items-center gap-2">
             <button onClick={load} className="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded flex items-center gap-1">
               <RefreshCw className="w-4 h-4" /> Refresh
+            </button>
+            <button onClick={() => setShowInvite(true)} className="px-3 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 flex items-center gap-1">
+              <Mail className="w-4 h-4" /> Invite by Email
             </button>
             <button onClick={() => setShowCreate(true)} className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1">
               <Plus className="w-4 h-4" /> New Employee
@@ -222,6 +226,10 @@ export default function EmployeesPage() {
             onClose={() => setShowCreate(false)}
             onSaved={() => { setShowCreate(false); load(); }}
           />
+        )}
+
+        {showInvite && (
+          <InviteEmployeeModal onClose={() => setShowInvite(false)} />
         )}
 
         {editFor && (
@@ -349,6 +357,60 @@ function EmployeeFormModal({ departments, tenantId, employee, onClose, onSaved }
           </p>
         </div>
         <ModalActions onClose={onClose} onSubmit={submit} submitting={submitting} submitText={isEdit ? "Save" : "Create"} />
+      </div>
+    </Modal>
+  );
+}
+
+function InviteEmployeeModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState(4);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState("");
+
+  const submit = async () => {
+    if (!email.trim()) { setError("Email is required."); return; }
+    setSubmitting(true); setError("");
+    try {
+      const r = await apiClient.post("/api/UserManagement/invite", { email, role });
+      const b = await r.json().catch(() => ({}));
+      if (r.ok) setSent(b.message || `Invitation sent to ${email}.`);
+      else setError(b.message || "Failed to send invitation");
+    } catch (e: any) { setError(e.message); }
+    finally { setSubmitting(false); }
+  };
+
+  return (
+    <Modal title="Invite employee by email" onClose={onClose}>
+      <div className="space-y-3">
+        {error && <div className="p-2 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
+        {sent ? (
+          <>
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded text-sm">
+              {sent} They'll set their own password from the link in the email.
+            </div>
+            <div className="flex justify-end pt-1">
+              <button onClick={onClose} className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                Done
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-slate-500">
+              Sends an invitation email. The employee sets their own password and can log in immediately after accepting.
+            </p>
+            <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="ayesha@hospital.com" />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+              <select value={role} onChange={e => setRole(parseInt(e.target.value))} className="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+                {STAFF_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            <ModalActions onClose={onClose} onSubmit={submit} submitting={submitting} submitText="Send invite" />
+          </>
+        )}
       </div>
     </Modal>
   );

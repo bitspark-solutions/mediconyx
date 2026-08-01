@@ -8,7 +8,7 @@
 
 Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅ (NEW), doctor-as-staff duality ✅ (NEW `attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅ (NEW), per-bed-day billing ✅.
 Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
-E2E: **152 passed / 0 failed / 3 skipped** (155 total incl. tier4 branch/cabin/employee specs) — last full green run 2026-07-22 (post Stage 2).
+E2E: **153 passed / 0 failed / 3 skipped** (156 total) — last full green run 2026-08-01. Browser tests record video; collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
 
 ## Stacks
 
