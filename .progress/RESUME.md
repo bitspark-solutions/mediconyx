@@ -8,7 +8,7 @@
 
 Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅ (NEW), doctor-as-staff duality ✅ (NEW `attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅ (NEW), per-bed-day billing ✅.
 Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
-E2E: **153 passed / 0 failed / 3 skipped** (156 total) — last full green run 2026-08-01. Browser tests record video; collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
+E2E: **151 passed / 0 failed / 5 skipped** (156 total) — last full green run 2026-08-02. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
 
 ## Stacks
 
@@ -30,6 +30,7 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 
 - One class per file (hard rule). No AgentSwarm. Check `usage` before tasks; stop at 95%.
 - Hand-written migrations MUST carry `[DbContext(typeof(ApplicationDbContext))]` + `[Migration("id")]` or EF silently ignores them.
+- `DatabaseInitializer.MigrateWithRetryAsync` (2026-08-02): 10 attempts × 3s — covers Postgres-not-ready at API boot (Docker daemon restarts ignore compose healthchecks).
 - Keep ModelSnapshot in sync: scaffold throwaway migration → delete its files → snapshot stays regenerated. Verify with `dotnet ef migrations has-pending-model-changes`.
 - Tenant isolation is manual `.Where(TenantId == ...)`; BranchId filtering must follow the same convention.
 - `NEXT_PUBLIC_*` is build-time inlined — UI env changes require image rebuild. All pages use `NEXT_PUBLIC_API_BASE_URL` (split fixed 2026-07-21).

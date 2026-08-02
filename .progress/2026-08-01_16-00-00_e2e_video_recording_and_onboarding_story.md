@@ -17,4 +17,11 @@
 - Docker Desktop was down mid-session; test stack recreated on fresh tmpfs (self-healing seeders proved again).
 
 ## Note
-- Full-suite runs now produce ~54 videos (~150KB each) — trim `test-results/` periodically; `test-videos/` is gitignored.
+- Full-suite runs now produce ~20 flow videos (~150KB each) — trim `test-results/` periodically; `test-videos/` is gitignored.
+
+## 2026-08-02 follow-up: video tuning + a real startup bug fixed
+
+- **Short videos explained**: 1s clips were not corruption — ui-project micro-tests ("is badge visible?") genuinely finish in ~1s. Config changed: `ui` project → `retain-on-failure` (video kept only when a micro-test breaks), `e2e` project → `on` (all flows recorded). A full run now yields ~20 meaningful flow videos instead of 54 mixed ones.
+- **Real bug found via the video run**: after a Docker Desktop restart, test-api booted *before* Postgres finished initializing → `MigrateAsync` failed with connection-refused → the failure was **swallowed** (logged only) → API served requests against an EMPTY schema → 105/146 tests failed with "relation does not exist". Fixed in `Data/Seeding/DatabaseInitializer.cs`: `MigrateWithRetryAsync` — 10 attempts, 3s backoff. This also de-fangs the long-standing "migration errors swallowed at startup" debt item for the db-not-ready case.
+- Verified: full suite green again (**151 passed / 0 failed**) with `test-videos/2026-08-02_12-58-54_full-suite-final/` (20 flow videos).
+- Ops note: Docker Desktop stopped twice mid-session (idle/reboot) — the retry now covers API boot ordering, but if tests fail with connection errors, check `docker ps` first.
