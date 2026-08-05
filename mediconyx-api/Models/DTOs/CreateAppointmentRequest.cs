@@ -5,6 +5,8 @@ public class CreateAppointmentRequest
     public int PatientId { get; set; }
     public int DoctorId { get; set; }
     public int DepartmentId { get; set; }
+    /// <summary>Branch where the appointment takes place. Defaults to the tenant's main branch when omitted.</summary>
+    public int? BranchId { get; set; }
     public DateTime AppointmentDate { get; set; }
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;

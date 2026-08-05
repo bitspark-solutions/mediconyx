@@ -31,6 +31,9 @@ public class AppointmentService : IAppointmentService
         if (queryParams.DepartmentId.HasValue)
             query = query.Where(a => a.DepartmentId == queryParams.DepartmentId.Value);
 
+        if (queryParams.BranchId.HasValue)
+            query = query.Where(a => a.BranchId == queryParams.BranchId.Value);
+
         if (queryParams.Status.HasValue)
             query = query.Where(a => a.Status == queryParams.Status.Value);
 
@@ -99,9 +102,25 @@ public class AppointmentService : IAppointmentService
         if (endTime <= startTime)
             throw new ArgumentException("End time must be after start time.");
 
+        // Resolve branch: explicit (must belong to the tenant), else the tenant's main branch.
+        Branch branch;
+        if (request.BranchId.HasValue)
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.Id == request.BranchId.Value && b.TenantId == tenantId && b.IsActive)
+                ?? throw new ArgumentException("Branch not found in this tenant.");
+        }
+        else
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.TenantId == tenantId && b.IsMain)
+                ?? throw new ArgumentException("No main branch configured for this tenant.");
+        }
+
         var appointment = new Appointment
         {
             TenantId = tenantId,
+            BranchId = branch.Id,
             PatientId = request.PatientId,
             DoctorId = request.DoctorId,
             DepartmentId = request.DepartmentId,
@@ -267,8 +286,9 @@ public class AppointmentService : IAppointmentService
         var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == a.PatientId);
         var doctor = await _context.Users.FirstOrDefaultAsync(u => u.Id == a.DoctorId);
         var department = await _context.Departments.FirstOrDefaultAsync(d => d.Id == a.DepartmentId);
+        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.Id == a.BranchId);
 
-        return BuildDto(a, patient, doctor, department);
+        return BuildDto(a, patient, doctor, department, branch);
     }
 
     private async Task<List<AppointmentDto>> MapToDtoListAsync(List<Appointment> appointments)
@@ -276,6 +296,7 @@ public class AppointmentService : IAppointmentService
         var patientIds = appointments.Select(a => a.PatientId).Distinct().ToList();
         var doctorIds = appointments.Select(a => a.DoctorId).Distinct().ToList();
         var departmentIds = appointments.Select(a => a.DepartmentId).Distinct().ToList();
+        var branchIds = appointments.Select(a => a.BranchId).Distinct().ToList();
 
         var patients = await _context.Patients
             .Where(p => patientIds.Contains(p.Id))
@@ -286,16 +307,20 @@ public class AppointmentService : IAppointmentService
         var departments = await _context.Departments
             .Where(d => departmentIds.Contains(d.Id))
             .ToDictionaryAsync(d => d.Id);
+        var branches = await _context.Branches
+            .Where(b => branchIds.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id);
 
         return appointments.Select(a => BuildDto(
             a,
             patients.GetValueOrDefault(a.PatientId),
             doctors.GetValueOrDefault(a.DoctorId),
-            departments.GetValueOrDefault(a.DepartmentId)
+            departments.GetValueOrDefault(a.DepartmentId),
+            branches.GetValueOrDefault(a.BranchId)
         )).ToList();
     }
 
-    private static AppointmentDto BuildDto(Appointment a, Patient? patient, User? doctor, Department? department) => new()
+    private static AppointmentDto BuildDto(Appointment a, Patient? patient, User? doctor, Department? department, Branch? branch) => new()
     {
         Id = a.Id,
         PatientId = a.PatientId,
@@ -305,6 +330,8 @@ public class AppointmentService : IAppointmentService
         DoctorName = doctor != null ? $"{doctor.FirstName} {doctor.LastName}" : "",
         DepartmentId = a.DepartmentId,
         DepartmentName = department?.Name ?? "",
+        BranchId = a.BranchId,
+        BranchName = branch?.Name,
         AppointmentDate = a.AppointmentDate,
         StartTime = a.StartTime.ToString(@"hh\:mm"),
         EndTime = a.EndTime.ToString(@"hh\:mm"),

@@ -5,6 +5,10 @@ public class Appointment
     public int Id { get; set; }
     public int TenantId { get; set; }
 
+    /// <summary>Branch (hospital location) where the appointment takes place. Multi-branch (Tier 4.3).</summary>
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
+
     // References — simple int IDs, no navigation properties
     public int PatientId { get; set; }
     public int DoctorId { get; set; }

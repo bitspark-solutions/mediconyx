@@ -39,11 +39,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(e => e.TenantId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // User has Designation + PrimaryDepartmentId
+        // User has Designation + PrimaryDepartmentId + PrimaryBranchId
         entity.Property(e => e.Designation).HasMaxLength(150);
         entity.HasOne(e => e.PrimaryDepartment)
             .WithMany()
             .HasForeignKey(e => e.PrimaryDepartmentId)
+            .OnDelete(DeleteBehavior.SetNull);
+        entity.HasOne(e => e.PrimaryBranch)
+            .WithMany()
+            .HasForeignKey(e => e.PrimaryBranchId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }

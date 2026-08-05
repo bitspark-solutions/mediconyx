@@ -12,11 +12,16 @@ public class AdmissionConfiguration : IEntityTypeConfiguration<Admission>
         entity.HasIndex(e => new { e.TenantId, e.Status });
         entity.HasIndex(e => new { e.TenantId, e.PatientId, e.Status });
         entity.HasIndex(e => new { e.TenantId, e.BedId });
+        entity.HasIndex(e => new { e.TenantId, e.BranchId });
         entity.Property(e => e.AdmissionType).HasConversion<int>();
         entity.Property(e => e.Status).HasConversion<int>();
         entity.Property(e => e.Reason).HasMaxLength(1000);
         entity.Property(e => e.DiagnosisOnAdmission).HasMaxLength(2000);
         entity.Property(e => e.DischargeNotes).HasMaxLength(2000);
+        entity.HasOne(e => e.Branch)
+            .WithMany()
+            .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
         entity.HasOne(e => e.Patient)
             .WithMany()
             .HasForeignKey(e => e.PatientId)

@@ -122,6 +122,9 @@ namespace mediconyx_api.Migrations
                     b.Property<int>("BedId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -161,9 +164,13 @@ namespace mediconyx_api.Migrations
 
                     b.HasIndex("BedId");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("PatientId");
 
                     b.HasIndex("TenantId", "BedId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "Status");
 
@@ -221,6 +228,9 @@ namespace mediconyx_api.Migrations
                     b.Property<DateTime>("AppointmentDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CancelReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -276,6 +286,10 @@ namespace mediconyx_api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "PatientId");
 
@@ -1046,6 +1060,9 @@ namespace mediconyx_api.Migrations
                     b.Property<int?>("AppointmentId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1106,6 +1123,10 @@ namespace mediconyx_api.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "CreatedAt");
 
@@ -1982,6 +2003,9 @@ namespace mediconyx_api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("PrimaryBranchId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("PrimaryDepartmentId")
                         .HasColumnType("integer");
 
@@ -2006,6 +2030,8 @@ namespace mediconyx_api.Migrations
                         .IsUnique();
 
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("PrimaryBranchId");
 
                     b.HasIndex("PrimaryDepartmentId");
 
@@ -2197,6 +2223,12 @@ namespace mediconyx_api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("mediconyx_api.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("mediconyx_api.Models.Patient", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
@@ -2206,6 +2238,8 @@ namespace mediconyx_api.Migrations
                     b.Navigation("AttendingDoctor");
 
                     b.Navigation("Bed");
+
+                    b.Navigation("Branch");
 
                     b.Navigation("Patient");
                 });
@@ -2235,6 +2269,17 @@ namespace mediconyx_api.Migrations
                     b.Navigation("FromBed");
 
                     b.Navigation("ToBed");
+                });
+
+            modelBuilder.Entity("mediconyx_api.Models.Appointment", b =>
+                {
+                    b.HasOne("mediconyx_api.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("mediconyx_api.Models.AuditLog", b =>
@@ -2394,6 +2439,17 @@ namespace mediconyx_api.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("mediconyx_api.Models.Invoice", b =>
+                {
+                    b.HasOne("mediconyx_api.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("mediconyx_api.Models.ModuleSelection", b =>
                 {
                     b.HasOne("mediconyx_api.Models.SalesRequest", "SalesRequest")
@@ -2506,6 +2562,11 @@ namespace mediconyx_api.Migrations
 
             modelBuilder.Entity("mediconyx_api.Models.User", b =>
                 {
+                    b.HasOne("mediconyx_api.Models.Branch", "PrimaryBranch")
+                        .WithMany()
+                        .HasForeignKey("PrimaryBranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("mediconyx_api.Models.Department", "PrimaryDepartment")
                         .WithMany()
                         .HasForeignKey("PrimaryDepartmentId")
@@ -2516,6 +2577,8 @@ namespace mediconyx_api.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("PrimaryBranch");
 
                     b.Navigation("PrimaryDepartment");
 

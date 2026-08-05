@@ -101,6 +101,8 @@ public class AdmissionDto
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+    public int BranchId { get; set; }
+    public string? BranchName { get; set; }
     public int PatientId { get; set; }
     public string PatientName { get; set; } = string.Empty;
     public string PatientNumber { get; set; } = string.Empty;

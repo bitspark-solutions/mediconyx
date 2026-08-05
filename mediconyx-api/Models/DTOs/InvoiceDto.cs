@@ -8,6 +8,8 @@ public class InvoiceDto
     public string PatientName { get; set; } = string.Empty;
     public string PatientNumber { get; set; } = string.Empty;
     public int? AppointmentId { get; set; }
+    public int BranchId { get; set; }
+    public string? BranchName { get; set; }
     public string LineItems { get; set; } = string.Empty;
     public decimal SubTotal { get; set; }
     public decimal TaxRate { get; set; }

@@ -25,6 +25,9 @@ public class InvoiceService : IInvoiceService
         if (queryParams.PatientId.HasValue)
             query = query.Where(i => i.PatientId == queryParams.PatientId.Value);
 
+        if (queryParams.BranchId.HasValue)
+            query = query.Where(i => i.BranchId == queryParams.BranchId.Value);
+
         if (queryParams.Status.HasValue)
             query = query.Where(i => i.Status == queryParams.Status.Value);
 
@@ -146,9 +149,25 @@ public class InvoiceService : IInvoiceService
     {
         var invoiceNumber = await GenerateInvoiceNumberAsync(tenantId);
 
+        // Resolve branch: explicit (must belong to the tenant), else the tenant's main branch.
+        Branch branch;
+        if (request.BranchId.HasValue)
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.Id == request.BranchId.Value && b.TenantId == tenantId && b.IsActive)
+                ?? throw new ArgumentException("Branch not found in this tenant.");
+        }
+        else
+        {
+            branch = await _context.Branches
+                .FirstOrDefaultAsync(b => b.TenantId == tenantId && b.IsMain)
+                ?? throw new ArgumentException("No main branch configured for this tenant.");
+        }
+
         var invoice = new Invoice
         {
             TenantId = tenantId,
+            BranchId = branch.Id,
             PatientId = request.PatientId,
             AppointmentId = request.AppointmentId > 0 ? request.AppointmentId : null,
             InvoiceNumber = invoiceNumber,
@@ -291,7 +310,8 @@ public class InvoiceService : IInvoiceService
     private async Task<InvoiceDto> MapToDtoAsync(Invoice i)
     {
         var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == i.PatientId);
-        return BuildDto(i, patient);
+        var branch = await _context.Branches.FirstOrDefaultAsync(b => b.Id == i.BranchId);
+        return BuildDto(i, patient, branch);
     }
 
     private async Task<List<InvoiceDto>> MapToDtoListAsync(List<Invoice> invoices)
@@ -300,11 +320,18 @@ public class InvoiceService : IInvoiceService
         var patients = await _context.Patients
             .Where(p => patientIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id);
+        var branchIds = invoices.Select(i => i.BranchId).Distinct().ToList();
+        var branches = await _context.Branches
+            .Where(b => branchIds.Contains(b.Id))
+            .ToDictionaryAsync(b => b.Id);
 
-        return invoices.Select(i => BuildDto(i, patients.GetValueOrDefault(i.PatientId))).ToList();
+        return invoices.Select(i => BuildDto(
+            i,
+            patients.GetValueOrDefault(i.PatientId),
+            branches.GetValueOrDefault(i.BranchId))).ToList();
     }
 
-    private static InvoiceDto BuildDto(Invoice i, Patient? patient) => new()
+    private static InvoiceDto BuildDto(Invoice i, Patient? patient, Branch? branch) => new()
     {
         Id = i.Id,
         InvoiceNumber = i.InvoiceNumber,
@@ -312,6 +339,8 @@ public class InvoiceService : IInvoiceService
         PatientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "",
         PatientNumber = patient?.PatientNumber ?? "",
         AppointmentId = i.AppointmentId,
+        BranchId = i.BranchId,
+        BranchName = branch?.Name,
         LineItems = i.LineItems,
         SubTotal = i.SubTotal,
         TaxRate = i.TaxRate,

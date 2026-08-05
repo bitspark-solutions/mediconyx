@@ -8,6 +8,7 @@ public class UpdateUserRequest
     public UserRole? Role { get; set; }
     public string? Designation { get; set; }
     public int? PrimaryDepartmentId { get; set; }
+    public int? PrimaryBranchId { get; set; }
     public UserRole[]? AdditionalRoles { get; set; }
     public bool? IsActive { get; set; }
 }

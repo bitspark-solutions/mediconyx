@@ -29,6 +29,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
@@ -41,6 +42,7 @@ public class UserService : IUserService
         var query = _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .AsQueryable();
 
@@ -106,6 +108,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == requestedUserId)
             ?? throw new KeyNotFoundException($"User {requestedUserId} not found.");
@@ -152,6 +155,14 @@ public class UserService : IUserService
                 throw new InvalidOperationException("Invalid department for this tenant.");
         }
 
+        if (request.PrimaryBranchId.HasValue)
+        {
+            var branchExists = await _context.Branches.AnyAsync(b =>
+                b.Id == request.PrimaryBranchId.Value && b.TenantId == request.TenantId && b.IsActive);
+            if (!branchExists)
+                throw new InvalidOperationException("Invalid branch for this tenant.");
+        }
+
         var user = new User
         {
             Email = request.Email.ToLowerInvariant(),
@@ -162,6 +173,7 @@ public class UserService : IUserService
             Role = request.Role,
             Designation = string.IsNullOrWhiteSpace(request.Designation) ? null : request.Designation.Trim(),
             PrimaryDepartmentId = request.PrimaryDepartmentId,
+            PrimaryBranchId = request.PrimaryBranchId,
             TenantId = request.TenantId,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -179,6 +191,7 @@ public class UserService : IUserService
         var created = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstAsync(u => u.Id == user.Id);
         return MapToDetailDto(created);
@@ -189,6 +202,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
@@ -218,6 +232,15 @@ public class UserService : IUserService
             user.PrimaryDepartmentId = request.PrimaryDepartmentId.Value;
         }
 
+        if (request.PrimaryBranchId.HasValue)
+        {
+            var branchExists = await _context.Branches.AnyAsync(b =>
+                b.Id == request.PrimaryBranchId.Value && b.TenantId == user.TenantId && b.IsActive);
+            if (!branchExists)
+                throw new InvalidOperationException("Invalid branch for this tenant.");
+            user.PrimaryBranchId = request.PrimaryBranchId.Value;
+        }
+
         if (request.AdditionalRoles != null && callerRole == UserRole.Admin)
             SyncAdditionalRoles(user, request.AdditionalRoles, callerUserId);
 
@@ -229,6 +252,7 @@ public class UserService : IUserService
         var updated = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstAsync(u => u.Id == userId);
         return MapToDetailDto(updated);
@@ -257,6 +281,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.Tenant)
             .Include(u => u.PrimaryDepartment)
+            .Include(u => u.PrimaryBranch)
             .Include(u => u.AdditionalRoles)
             .FirstOrDefaultAsync(u => u.Id == userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
@@ -335,6 +360,8 @@ public class UserService : IUserService
         Designation = user.Designation,
         PrimaryDepartmentId = user.PrimaryDepartmentId,
         PrimaryDepartmentName = user.PrimaryDepartment?.Name,
+        PrimaryBranchId = user.PrimaryBranchId,
+        PrimaryBranchName = user.PrimaryBranch?.Name,
         AdditionalRoles = user.AdditionalRoles.Select(a => a.Role.ToString()).ToList(),
         IsActive = user.IsActive,
         TenantId = user.TenantId,

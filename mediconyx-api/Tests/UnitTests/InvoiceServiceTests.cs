@@ -21,6 +21,8 @@ public class InvoiceServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
+        _context.Branches.Add(new Branch { Id = 1, TenantId = TenantId, Name = "Main Branch", Code = "MAIN", IsMain = true });
+        _context.SaveChanges();
         _sut = new InvoiceService(_context, Mock.Of<ILogger<InvoiceService>>());
     }
 
@@ -182,6 +184,56 @@ public class InvoiceServiceTests : IDisposable
 
         first.InvoiceNumber.Should().EndWith("0001");
         second.InvoiceNumber.Should().EndWith("0002");
+    }
+
+    [Fact]
+    public async Task CreateInvoiceAsync_ShouldDefaultToMainBranch()
+    {
+        var request = new CreateInvoiceRequest
+        {
+            PatientId = 1, LineItems = "[]",
+            SubTotal = 100m, TaxRate = 0, TaxAmount = 0,
+            DiscountAmount = 0, TotalAmount = 100m
+        };
+
+        var result = await _sut.CreateInvoiceAsync(TenantId, createdByUserId: 1, request);
+
+        result.BranchId.Should().Be(1);
+        result.BranchName.Should().Be("Main Branch");
+    }
+
+    [Fact]
+    public async Task CreateInvoiceAsync_ShouldThrow_WhenBranchNotInTenant()
+    {
+        var request = new CreateInvoiceRequest
+        {
+            PatientId = 1, BranchId = 999, LineItems = "[]",
+            SubTotal = 100m, TaxRate = 0, TaxAmount = 0,
+            DiscountAmount = 0, TotalAmount = 100m
+        };
+
+        await _sut.Invoking(s => s.CreateInvoiceAsync(TenantId, 1, request))
+            .Should().ThrowAsync<ArgumentException>().WithMessage("*Branch not found*");
+    }
+
+    [Fact]
+    public async Task GetInvoicesAsync_ShouldFilterByBranchId()
+    {
+        AddInvoice(1);
+        _context.Invoices.Add(new Invoice
+        {
+            Id = 2, TenantId = TenantId, BranchId = 2, PatientId = 1,
+            InvoiceNumber = "INV-BR2-0001", LineItems = "[]",
+            SubTotal = 100, TaxRate = 0, TaxAmount = 0, DiscountAmount = 0,
+            TotalAmount = 100, PaidAmount = 0, Status = InvoiceStatus.Draft,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        var result = await _sut.GetInvoicesAsync(TenantId,
+            new InvoiceQueryParams { BranchId = 2, PageSize = 20, PageNumber = 1 });
+
+        result.Invoices.Should().ContainSingle().Which.BranchId.Should().Be(2);
     }
 
     // ── UpdateInvoiceAsync ───────────────────────────────────────────────────

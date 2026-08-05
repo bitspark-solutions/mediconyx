@@ -5,6 +5,7 @@ public class AppointmentQueryParams
     public int? PatientId { get; set; }
     public int? DoctorId { get; set; }
     public int? DepartmentId { get; set; }
+    public int? BranchId { get; set; }
     public AppointmentStatus? Status { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }

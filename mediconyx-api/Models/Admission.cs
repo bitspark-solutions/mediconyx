@@ -11,6 +11,10 @@ public class Admission
     public int Id { get; set; }
     public int TenantId { get; set; }
 
+    /// <summary>Branch of the current bed. Denormalized for simple filtering; updated on transfer.</summary>
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
+
     public int PatientId { get; set; }
     public Patient Patient { get; set; } = null!;
 

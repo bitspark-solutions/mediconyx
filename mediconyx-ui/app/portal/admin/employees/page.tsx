@@ -15,11 +15,19 @@ interface Employee {
   designation?: string | null;
   primaryDepartmentId?: number | null;
   primaryDepartmentName?: string | null;
+  primaryBranchId?: number | null;
+  primaryBranchName?: string | null;
   additionalRoles: string[];
   isActive: boolean;
 }
 
 interface Department {
+  id: number;
+  name: string;
+  code: string;
+}
+
+interface Branch {
   id: number;
   name: string;
   code: string;
@@ -45,6 +53,7 @@ export default function EmployeesPage() {
   const { user } = useAuthStore();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -56,9 +65,10 @@ export default function EmployeesPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [u, d] = await Promise.all([
+      const [u, d, b] = await Promise.all([
         apiClient.get("/api/UserManagement?pageSize=100"),
         apiClient.get("/api/department?pageSize=100"),
+        apiClient.get("/api/branch"),
       ]);
       if (u.ok) {
         const uu = await u.json();
@@ -67,6 +77,10 @@ export default function EmployeesPage() {
       if (d.ok) {
         const dd = await d.json();
         setDepartments(dd.departments || []);
+      }
+      if (b.ok) {
+        const bb = await b.json();
+        setBranches(Array.isArray(bb) ? bb : bb.branches || []);
       }
     } catch (e: any) {
       setError(e.message);
@@ -150,6 +164,7 @@ export default function EmployeesPage() {
                     <th className="px-4 py-3 text-left">Role</th>
                     <th className="px-4 py-3 text-left">Designation</th>
                     <th className="px-4 py-3 text-left">Department</th>
+                    <th className="px-4 py-3 text-left">Branch</th>
                     <th className="px-4 py-3 text-left">Status</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -171,6 +186,7 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-600">{emp.designation || "—"}</td>
                       <td className="px-4 py-3 text-slate-600">{emp.primaryDepartmentName || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600">{emp.primaryBranchName || "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           emp.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
@@ -222,6 +238,7 @@ export default function EmployeesPage() {
         {showCreate && (
           <EmployeeFormModal
             departments={departments}
+            branches={branches}
             tenantId={user?.tenantId ?? 0}
             onClose={() => setShowCreate(false)}
             onSaved={() => { setShowCreate(false); load(); }}
@@ -235,6 +252,7 @@ export default function EmployeesPage() {
         {editFor && (
           <EmployeeFormModal
             departments={departments}
+            branches={branches}
             tenantId={user?.tenantId ?? 0}
             employee={editFor}
             onClose={() => setEditFor(null)}
@@ -255,8 +273,9 @@ export default function EmployeesPage() {
   );
 }
 
-function EmployeeFormModal({ departments, tenantId, employee, onClose, onSaved }: {
+function EmployeeFormModal({ departments, branches, tenantId, employee, onClose, onSaved }: {
   departments: Department[];
+  branches: Branch[];
   tenantId: number;
   employee?: Employee;
   onClose: () => void;
@@ -273,6 +292,7 @@ function EmployeeFormModal({ departments, tenantId, employee, onClose, onSaved }
   );
   const [designation, setDesignation] = useState(employee?.designation ?? "");
   const [departmentId, setDepartmentId] = useState(employee?.primaryDepartmentId?.toString() ?? "");
+  const [branchId, setBranchId] = useState(employee?.primaryBranchId?.toString() ?? "");
   const [additionalRoles, setAdditionalRoles] = useState<number[]>(
     (employee?.additionalRoles ?? [])
       .map(r => STAFF_ROLES.find(x => x.label === r)?.value)
@@ -293,6 +313,7 @@ function EmployeeFormModal({ departments, tenantId, employee, onClose, onSaved }
         role,
         designation: designation || null,
         primaryDepartmentId: departmentId ? parseInt(departmentId) : null,
+        primaryBranchId: branchId ? parseInt(branchId) : null,
         additionalRoles,
       };
       const r = isEdit
@@ -333,6 +354,16 @@ function EmployeeFormModal({ departments, tenantId, employee, onClose, onSaved }
               {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Primary branch</label>
+          <select value={branchId} onChange={e => setBranchId(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded text-sm">
+            <option value="">— All branches (tenant-wide) —</option>
+            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <p className="text-xs text-slate-400 mt-1">
+            The employee's home branch. Baked into their login token — changes apply after their next login.
+          </p>
         </div>
         <Field label="Designation (free text)" value={designation} onChange={setDesignation} placeholder="e.g. Director of Cardiology, Head Nurse" />
         <div>

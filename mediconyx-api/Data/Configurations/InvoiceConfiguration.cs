@@ -13,6 +13,11 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         entity.HasIndex(e => new { e.TenantId, e.PatientId });
         entity.HasIndex(e => new { e.TenantId, e.Status });
         entity.HasIndex(e => new { e.TenantId, e.CreatedAt });
+        entity.HasIndex(e => new { e.TenantId, e.BranchId });
+        entity.HasOne(e => e.Branch)
+            .WithMany()
+            .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
         entity.Property(e => e.InvoiceNumber).IsRequired().HasMaxLength(20);
         entity.Property(e => e.LineItems).IsRequired().HasMaxLength(10000);
         entity.Property(e => e.SubTotal).HasColumnType("numeric(12,2)");

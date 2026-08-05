@@ -11,6 +11,8 @@ public class UserDetailDto
     public string? Designation { get; set; }
     public int? PrimaryDepartmentId { get; set; }
     public string? PrimaryDepartmentName { get; set; }
+    public int? PrimaryBranchId { get; set; }
+    public string? PrimaryBranchName { get; set; }
     public List<string> AdditionalRoles { get; set; } = new();
     public bool IsActive { get; set; }
     public int TenantId { get; set; }

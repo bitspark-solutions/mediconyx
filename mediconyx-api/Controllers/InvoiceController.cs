@@ -69,8 +69,12 @@ public class InvoiceController : ControllerBase
         if (request.PatientId <= 0) return BadRequest(new { message = "Patient ID is required." });
         if (string.IsNullOrWhiteSpace(request.LineItems)) return BadRequest(new { message = "Line items are required." });
 
-        var invoice = await _invoiceService.CreateInvoiceAsync(tenantId.Value, userId.Value, request);
-        return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, invoice);
+        try
+        {
+            var invoice = await _invoiceService.CreateInvoiceAsync(tenantId.Value, userId.Value, request);
+            return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, invoice);
+        }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [HttpPut("{id}")]

@@ -10,6 +10,8 @@ public class AppointmentDto
     public string DoctorName { get; set; } = string.Empty;
     public int DepartmentId { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
+    public int BranchId { get; set; }
+    public string? BranchName { get; set; }
     public DateTime AppointmentDate { get; set; }
     public string StartTime { get; set; } = string.Empty;
     public string EndTime { get; set; } = string.Empty;

@@ -413,10 +413,12 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<AdmissionDto>>> GetAdmissions(
         [FromQuery] int? patientId = null,
         [FromQuery] string? status = null,
-        [FromQuery] bool activeOnly = false)
+        [FromQuery] bool activeOnly = false,
+        [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
         var q = _context.Admissions
+            .Include(a => a.Branch)
             .Include(a => a.Patient)
             .Include(a => a.Bed).ThenInclude(b => b.Ward)
             .Include(a => a.AttendingDoctor).ThenInclude(d => d.User)
@@ -425,6 +427,7 @@ public class IPDController : ControllerBase
             .Include(a => a.DischargeSummary).ThenInclude(s => s!.DischargingDoctor).ThenInclude(d => d.User)
             .Where(a => a.TenantId == TenantId);
         if (patientId.HasValue) q = q.Where(a => a.PatientId == patientId.Value);
+        if (branchId.HasValue) q = q.Where(a => a.BranchId == branchId.Value);
         if (activeOnly) q = q.Where(a => a.Status == AdmissionStatus.Active);
         if (!string.IsNullOrEmpty(status) && Enum.TryParse<AdmissionStatus>(status, out var s))
             q = q.Where(a => a.Status == s);
@@ -439,6 +442,7 @@ public class IPDController : ControllerBase
     {
         if (TenantId == null) return Unauthorized();
         var a = await _context.Admissions
+            .Include(x => x.Branch)
             .Include(x => x.Patient)
             .Include(x => x.Bed).ThenInclude(b => b.Ward)
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
@@ -476,6 +480,7 @@ public class IPDController : ControllerBase
         var admission = new Admission
         {
             TenantId = TenantId.Value,
+            BranchId = bed.BranchId,
             PatientId = req.PatientId,
             BedId = req.BedId,
             AttendingDoctorId = req.AttendingDoctorId,
@@ -496,6 +501,7 @@ public class IPDController : ControllerBase
 
         // Refetch with includes
         var created = await _context.Admissions
+            .Include(x => x.Branch)
             .Include(x => x.Patient)
             .Include(x => x.Bed).ThenInclude(b => b.Ward)
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
@@ -538,12 +544,14 @@ public class IPDController : ControllerBase
         fromBed.Status = BedStatus.Cleaning;
         newBed.Status = BedStatus.Occupied;
         admission.BedId = newBed.Id;
+        admission.BranchId = newBed.BranchId;
         admission.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Admission {AdmissionId} transferred from bed {From} to {To}", id, fromBed.Number, newBed.Number);
 
         var refreshed = await _context.Admissions
+            .Include(x => x.Branch)
             .Include(x => x.Patient)
             .Include(x => x.Bed).ThenInclude(b => b.Ward)
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
@@ -607,6 +615,7 @@ public class IPDController : ControllerBase
         _logger.LogInformation("Admission {AdmissionId} discharged ({Condition})", id, condition);
 
         var refreshed = await _context.Admissions
+            .Include(x => x.Branch)
             .Include(x => x.Patient)
             .Include(x => x.Bed).ThenInclude(b => b.Ward)
             .Include(x => x.AttendingDoctor).ThenInclude(d => d.User)
@@ -747,6 +756,8 @@ public class IPDController : ControllerBase
     {
         Id = a.Id,
         TenantId = a.TenantId,
+        BranchId = a.BranchId,
+        BranchName = a.Branch.Name,
         PatientId = a.PatientId,
         PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
         PatientNumber = a.Patient.PatientNumber,

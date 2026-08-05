@@ -21,6 +21,8 @@ public class AppointmentServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _context = new ApplicationDbContext(options);
+        _context.Branches.Add(new Branch { Id = 1, TenantId = TenantId, Name = "Main Branch", Code = "MAIN", IsMain = true });
+        _context.SaveChanges();
         _sut = new AppointmentService(_context, Mock.Of<ILogger<AppointmentService>>());
     }
 
@@ -162,6 +164,57 @@ public class AppointmentServiceTests : IDisposable
 
         await _sut.Invoking(s => s.CreateAppointmentAsync(TenantId, 1, request))
             .Should().ThrowAsync<ArgumentException>().WithMessage("*start time*");
+    }
+
+    [Fact]
+    public async Task CreateAppointmentAsync_ShouldDefaultToMainBranch()
+    {
+        var request = new CreateAppointmentRequest
+        {
+            PatientId = 1, DoctorId = 10, DepartmentId = 1,
+            AppointmentDate = DateTime.UtcNow.Date,
+            StartTime = "09:00", EndTime = "09:30",
+            Type = AppointmentType.Consultation
+        };
+
+        var result = await _sut.CreateAppointmentAsync(TenantId, createdByUserId: 1, request);
+
+        result.BranchId.Should().Be(1);
+        result.BranchName.Should().Be("Main Branch");
+    }
+
+    [Fact]
+    public async Task CreateAppointmentAsync_ShouldThrow_WhenBranchNotInTenant()
+    {
+        var request = new CreateAppointmentRequest
+        {
+            PatientId = 1, DoctorId = 10, DepartmentId = 1, BranchId = 999,
+            AppointmentDate = DateTime.UtcNow.Date,
+            StartTime = "09:00", EndTime = "09:30",
+            Type = AppointmentType.Consultation
+        };
+
+        await _sut.Invoking(s => s.CreateAppointmentAsync(TenantId, 1, request))
+            .Should().ThrowAsync<ArgumentException>().WithMessage("*Branch not found*");
+    }
+
+    [Fact]
+    public async Task GetAppointmentsAsync_ShouldFilterByBranchId()
+    {
+        AddAppointment(1);
+        _context.Appointments.Add(new Appointment
+        {
+            Id = 2, TenantId = TenantId, BranchId = 2, PatientId = 1, DoctorId = 10, DepartmentId = 1,
+            AppointmentDate = DateTime.UtcNow.Date, StartTime = TimeSpan.FromHours(10),
+            EndTime = TimeSpan.FromHours(11), Status = AppointmentStatus.Scheduled,
+            Type = AppointmentType.Consultation, CreatedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+
+        var result = await _sut.GetAppointmentsAsync(TenantId,
+            new AppointmentQueryParams { BranchId = 2, PageSize = 20, PageNumber = 1 });
+
+        result.Appointments.Should().ContainSingle().Which.BranchId.Should().Be(2);
     }
 
     // ── UpdateAppointmentAsync ───────────────────────────────────────────────

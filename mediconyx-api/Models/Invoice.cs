@@ -4,6 +4,11 @@ public class Invoice
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+
+    /// <summary>Branch (hospital location) this invoice was billed at. Multi-branch (Tier 4.3).</summary>
+    public int BranchId { get; set; }
+    public Branch Branch { get; set; } = null!;
+
     public int PatientId { get; set; }
     public int? AppointmentId { get; set; }
 

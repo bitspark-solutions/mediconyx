@@ -43,6 +43,9 @@ bld/
 # KIMI Code
 .kimi-code/
 
+# Qwen Code
+.qwen/
+
 # Rider
 .idea/
 *.sln.iml

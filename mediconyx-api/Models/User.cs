@@ -28,6 +28,13 @@ public class User
     public int? PrimaryDepartmentId { get; set; }
     public Department? PrimaryDepartment { get; set; }
 
+    /// <summary>
+    /// The user's home branch. Null = tenant-wide (e.g. admins who work across branches).
+    /// Baked into the JWT as the `branch_id` claim at login (Stage 3 multi-branch).
+    /// </summary>
+    public int? PrimaryBranchId { get; set; }
+    public Branch? PrimaryBranch { get; set; }
+
     // Multi-tenant support
     public int TenantId { get; set; }
     public Tenant Tenant { get; set; } = null!;

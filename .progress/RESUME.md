@@ -2,17 +2,18 @@
 
 > Stable resume point. **Update this file at the end of every work session.**
 > Session history lives in `.progress/<datetime>_<title>.md`; plans in `.plan/`.
-> Last updated: 2026-07-21 (late) — multi-branch Stage 1.
+> New sessions: read this file first (the project `AGENTS.md` instructs this).
+> Last updated: 2026-08-05 — Multi-branch Stage 3 (flows) done.
 
 ## Where we are
 
 Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅ (NEW), doctor-as-staff duality ✅ (NEW `attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅ (NEW), per-bed-day billing ✅.
 Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
-E2E: **151 passed / 0 failed / 5 skipped** (156 total) — last full green run 2026-08-02. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
+E2E: **152 passed / 0 failed / 4 skipped** (156 total) — last full green run 2026-08-05. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
 
 ## Stacks
 
-- **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 7890, MailHog 8025. Rebuilt with all changes 2026-07-21.
+- **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 7890, MailHog 8025. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
 - **Test** (docker-compose.test.yml): UI 9674, API 9766, storage 7891. Fresh-volume, all changes, E2E green.
 - Run E2E: `cd ../mediconyx-e2e && npm run test:env`.
 - Logins: hospital admin `admin@citygeneral.local`/`Hospital@123`, master `master@mediconyx.local`/`MasterPass123!` (dev) / `Master@123` (test). Full list in `readme.md`.
@@ -23,8 +24,8 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 
 - ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
 - ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
-- ⬜ **Stage 3 — Flows** (RESUME HERE): `BranchId` on Appointment/Admission/Invoice; `PrimaryBranchId` on User + JWT `branch_id` claim; employee UI branch field.
-- ⬜ **Stage 4 — Polish**: header branch switcher, role-aware default scoping, cross-branch isolation E2E, seed demo 2nd branch.
+- ✅ **Stage 3 — Flows** (2026-08-05) — `BranchId` on Appointment/Admission/Invoice (migration `20260805000100_AddBranchIdToFlowsAndUsers`, admissions backfilled from their bed, rest → Main); `PrimaryBranchId` on User + JWT `branch_id` claim; `?branchId=` filters + create-time branch validation (defaults to Main); employees UI branch field. Unit tests 176 passed/1 skipped; E2E green.
+- ⬜ **Stage 4 — Polish** (RESUME HERE): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
 
 ## Standing decisions & gotchas
 
@@ -32,6 +33,7 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 - Hand-written migrations MUST carry `[DbContext(typeof(ApplicationDbContext))]` + `[Migration("id")]` or EF silently ignores them.
 - `DatabaseInitializer.MigrateWithRetryAsync` (2026-08-02): 10 attempts × 3s — covers Postgres-not-ready at API boot (Docker daemon restarts ignore compose healthchecks).
 - Keep ModelSnapshot in sync: scaffold throwaway migration → delete its files → snapshot stays regenerated. Verify with `dotnet ef migrations has-pending-model-changes`.
+- Docker Desktop restart can leave container host-port bindings dead while the container shows "Up" — `docker restart <container>` rebinds (bit us on test MailHog 8026, 2026-08-05).
 - Tenant isolation is manual `.Where(TenantId == ...)`; BranchId filtering must follow the same convention.
 - `NEXT_PUBLIC_*` is build-time inlined — UI env changes require image rebuild. All pages use `NEXT_PUBLIC_API_BASE_URL` (split fixed 2026-07-21).
 - E2E tests must self-provision data (fresh-volume safe).

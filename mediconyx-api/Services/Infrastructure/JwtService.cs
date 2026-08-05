@@ -39,6 +39,11 @@ public class JwtService : IJwtService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        // Optional: the user's home branch (multi-branch Stage 3). Old tokens simply
+        // lack this claim until the user logs in again — same as role claims.
+        if (user.PrimaryBranchId.HasValue)
+            claims.Add(new Claim("branch_id", user.PrimaryBranchId.Value.ToString()));
+
         // One claim per permission — checked via PermissionService.HasPermission.
         // For Master, also include "all" so downstream services can short-circuit.
         if (user.Role == UserRole.Master)
