@@ -189,12 +189,14 @@ export default function RequestDetail({ requestId, onClose }: RequestDetailProps
     try {
       const formData = new FormData();
       formData.append("file", file);
+      // Token comes from the zustand auth store (persisted as 'auth-storage') —
+      // localStorage.getItem("accessToken") is always null, which 401'd every upload.
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/sales/requests/${requestId}/attachments`,
         {
           method: "POST",
           body: formData,
-          headers: { Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}` },
+          headers: { Authorization: `Bearer ${useAuthStore.getState().accessToken || ""}` },
         }
       );
       if (res.ok) {

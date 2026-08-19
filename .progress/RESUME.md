@@ -3,7 +3,7 @@
 > Stable resume point. **Update this file at the end of every work session.**
 > Session history lives in `.progress/<datetime>_<title>.md`; plans in `.plan/`.
 > New sessions: read this file first (the project `AGENTS.md` instructs this).
-> Last updated: 2026-08-05 — Multi-branch Stage 3 (flows) done.
+> Last updated: 2026-08-12 — Onboarding UI spec WIP + MailHog port move. Stage 3 (multi-branch) done 2026-08-05.
 
 ## Where we are
 
@@ -25,7 +25,11 @@ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-
 - ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
 - ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
 - ✅ **Stage 3 — Flows** (2026-08-05) — `BranchId` on Appointment/Admission/Invoice (migration `20260805000100_AddBranchIdToFlowsAndUsers`, admissions backfilled from their bed, rest → Main); `PrimaryBranchId` on User + JWT `branch_id` claim; `?branchId=` filters + create-time branch validation (defaults to Main); employees UI branch field. Unit tests 176 passed/1 skipped; E2E green.
-- ⬜ **Stage 4 — Polish** (RESUME HERE): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
+- ⬜ **Stage 4 — Polish** (next after onboarding-UI spec lands): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
+
+## Paused mid-flight (2026-08-12): fully-visible onboarding UI spec
+
+Details: `.progress/2026-08-12_01-33-55_onboarding_ui_spec_wip.md`. New spec `tests/e2e/onboarding-story-ui.spec.ts` (every step in-browser) written; 3 real UI bugs fixed (profile form empty-string optionals; null-token uploads in sales RequestDetail + PatientReportUpload); test MailHog moved 8026→**8126** (Hyper-V exclusion 7960–8059); test-ui rebuilt with all fixes. **Resume: smoke-run the new spec, then headed slow-mo demo + video.** Note: nothing from 8/5 or 8/12 sessions committed yet.
 
 ## Standing decisions & gotchas
 

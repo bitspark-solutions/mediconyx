@@ -51,7 +51,7 @@ services:
       - mediconyx-test
     restart: unless-stopped
     ports:
-      - "8026:8025"
+      - "8126:8025"
       - "1026:1025"
 
   # ── Layer 2: Application ─────────────────────────────────────

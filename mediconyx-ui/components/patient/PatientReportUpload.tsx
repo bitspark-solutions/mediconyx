@@ -185,11 +185,13 @@ export default function PatientReportUpload() {
         if (description) formData.append("description", description);
 
         // Use raw request for FormData - don't set Content-Type so browser adds boundary
+        // Token comes from the zustand auth store (persisted as 'auth-storage') —
+        // localStorage.getItem("accessToken") is always null, which 401'd every upload.
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9765"}/api/file-attachment/upload`, {
           method: "POST",
           body: formData,
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            Authorization: `Bearer ${useAuthStore.getState().accessToken || ""}`,
           },
         });
 

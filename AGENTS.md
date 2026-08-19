@@ -12,7 +12,7 @@ At the start of every session, read **`.progress/RESUME.md`** before doing anyth
 ## Build / run / test
 
 - Dev stack: `docker compose up -d` → UI http://localhost:9673, API http://localhost:9765 (/swagger), DB 9543, storage 8890, MailHog 8025.
-- Test stack: `docker compose -f docker-compose.test.yml up -d` → UI 9674, API 9766, storage 8891, MailHog 8026.
+- Test stack: `docker compose -f docker-compose.test.yml up -d` → UI 9674, API 9766, storage 8891, MailHog 8126 (moved off 8026 on 2026-08-12 — Windows Hyper-V exclusion range 7960–8059 stole it).
 - API build: `"C:/Program Files/dotnet/dotnet.exe" build mediconyx-api/mediconyx-api.csproj`
 - API tests: `"C:/Program Files/dotnet/dotnet.exe" test mediconyx-api/Tests/mediconyx-api.Tests.csproj` (expect 170 passed / 1 skipped)
 - UI check: `cd mediconyx-ui && npx tsc --noEmit`

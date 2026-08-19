@@ -96,7 +96,17 @@ export default function HospitalProfileForm({ requestId, onSaved }: HospitalProf
         setSuccess(false);
 
         try {
-            const res = await apiClient.post(`/api/sales/requests/${requestId}/hospital-profile`, profile);
+            // Optional fields must be null, not "" — the API's [Url]/[EmailAddress]
+            // validators skip null but reject empty strings.
+            const payload = {
+                ...profile,
+                addressLine2: profile.addressLine2?.trim() || null,
+                secondaryContactName: profile.secondaryContactName?.trim() || null,
+                secondaryContactEmail: profile.secondaryContactEmail?.trim() || null,
+                secondaryContactPhone: profile.secondaryContactPhone?.trim() || null,
+                websiteUrl: profile.websiteUrl?.trim() || null,
+            };
+            const res = await apiClient.post(`/api/sales/requests/${requestId}/hospital-profile`, payload);
             if (res.ok) {
                 setSuccess(true);
                 onSaved?.();
