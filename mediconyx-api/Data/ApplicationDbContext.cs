@@ -66,6 +66,15 @@ public class ApplicationDbContext : DbContext
     // Telemedicine (Tier 3.3)
     public DbSet<TelehealthSession> TelehealthSessions { get; set; }
 
+    // Accounting Foundation (Tier 5.1)
+    public DbSet<Account> Accounts { get; set; }
+    public DbSet<FiscalYear> FiscalYears { get; set; }
+    public DbSet<FiscalPeriod> FiscalPeriods { get; set; }
+    public DbSet<JournalEntry> JournalEntries { get; set; }
+    public DbSet<JournalPosting> JournalPostings { get; set; }
+    public DbSet<AccountBalance> AccountBalances { get; set; }
+    public DbSet<InvoiceLineItem> InvoiceLineItems { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

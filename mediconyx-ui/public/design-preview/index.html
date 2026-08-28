@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mediconyx — Hospital Administrator Executive Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      /* Clean Executive Light Theme */
+      --bg-page: #f8fafc;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-hover: #e2e8f0;
+      
+      --border-light: #e2e8f0;
+      --border-focus: #4f46e5;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-soft: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --primary-hover: #4338ca;
+      
+      --success: #059669;
+      --success-light: #ecfdf5;
+      --warning: #d97706;
+      --warning-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --purple: #7c3aed;
+      --purple-light: #f5f3ff;
+      --cyan: #0891b2;
+      --cyan-light: #ecfeff;
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+      
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.08);
+    }
+
+    [data-theme="dark"] {
+      /* Deep Executive Dark Theme */
+      --bg-page: #0b1120;
+      --bg-sidebar: #0f172a;
+      --bg-card: #131d35;
+      --bg-subtle: #1e293b;
+      --bg-hover: #253248;
+      
+      --border-light: rgba(255, 255, 255, 0.08);
+      --border-focus: #6366f1;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-soft: #64748b;
+      
+      --primary: #6366f1;
+      --primary-light: rgba(99, 102, 241, 0.15);
+      --primary-hover: #4f46e5;
+      
+      --success: #10b981;
+      --success-light: rgba(16, 185, 129, 0.15);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --purple: #a855f7;
+      --purple-light: rgba(168, 85, 247, 0.15);
+      --cyan: #06b6d4;
+      --cyan-light: rgba(6, 182, 212, 0.15);
+      
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 30px -4px rgba(0, 0, 0, 0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    .app-shell {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Clean, Professional Sidebar */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-light);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .tenant-badge {
+      font-size: 0.72rem;
+      color: var(--primary);
+      font-weight: 600;
+      background: var(--primary-light);
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      margin-top: 0.15rem;
+      display: inline-block;
+    }
+
+    .nav-section {
+      padding: 1rem 0.75rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-section-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-soft);
+      padding: 0.6rem 0.75rem 0.3rem;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.75rem;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+
+    .nav-link.active {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .badge-pill {
+      font-size: 0.72rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+    }
+
+    .nav-link.active .badge-pill {
+      background: var(--primary);
+      color: white;
+    }
+
+    .sidebar-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-subtle);
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 60px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      flex-shrink: 0;
+    }
+
+    .route-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .route-url-pill {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .branch-select {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.4rem 0.75rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-main);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .page-view {
+      display: none;
+      max-width: 1200px;
+      margin: 0 auto;
+      animation: fadeIn 0.15s ease forwards;
+    }
+
+    .page-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0.55rem 1.1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.55rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-subtle);
+    }
+
+    /* Segmented Filter Pills */
+    .filter-tabs {
+      display: flex;
+      gap: 0.3rem;
+      background: var(--bg-subtle);
+      padding: 0.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+      width: fit-content;
+    }
+
+    .filter-tab-btn {
+      border: none;
+      background: transparent;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .filter-tab-btn.active {
+      background: var(--bg-card);
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Financial Profit & Loss Row */
+    .financial-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1.2fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .financial-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .finance-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .finance-card.highlight {
+      border-color: var(--primary);
+      background: linear-gradient(145deg, var(--primary-light), var(--bg-card));
+    }
+
+    .finance-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .finance-amount {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 0.4rem 0;
+      letter-spacing: -0.03em;
+    }
+
+    .finance-trend {
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .trend-up { color: var(--success); }
+    .trend-down { color: var(--danger); }
+
+    /* Clinical Vital Metrics Grid (Admissions, Discharges, Mortality, Births) */
+    .vitals-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    @media (max-width: 1024px) {
+      .vitals-summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .vital-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .vital-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .vital-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .vital-val {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 0.2rem 0;
+    }
+
+    .vital-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Common Card Container */
+    .content-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+    }
+
+    .box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .box-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* Table Styles */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .data-table td {
+      padding: 0.85rem 0.75rem;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.875rem;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Accommodation Tier Badges */
+    .tier-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .tier-vip { background: var(--purple-light); color: var(--purple); }
+    .tier-deluxe { background: var(--cyan-light); color: var(--cyan); }
+    .tier-standard { background: var(--primary-light); color: var(--primary); }
+    .tier-shared { background: var(--warning-light); color: var(--warning); }
+    .tier-icu { background: var(--danger-light); color: var(--danger); }
+
+    /* Modal Form Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      max-width: 580px;
+      width: 100%;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-lg);
+      animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes modalSlide {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.85rem;
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+      background: var(--bg-card);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- Hospital Administrator Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">M</div>
+        <div>
+          <div class="brand-title">Mediconyx</div>
+          <div class="tenant-badge">City General Hospital</div>
+        </div>
+      </div>
+
+      <nav class="nav-section">
+        <div class="nav-section-title">Executive Foundation</div>
+        
+        <!-- Page 1: Dashboard Overview -->
+        <a class="nav-link active" id="nav-dashboard" onclick="navigateTo('dashboard')">
+          <span>📊 Financial & Vital KPIs</span>
+        </a>
+
+        <!-- Page 2: Wards & Cabins Setup -->
+        <a class="nav-link" id="nav-wards" onclick="navigateTo('wards')">
+          <span>🛏️ Wards & Cabins Setup</span>
+          <span class="badge-pill">60 Beds</span>
+        </a>
+
+        <!-- Page 3: Staff & Permissions -->
+        <a class="nav-link" id="nav-staff" onclick="navigateTo('staff')">
+          <span>👥 Staff & Permissions</span>
+          <span class="badge-pill">24 Staff</span>
+        </a>
+
+        <!-- Page 4: Branch Management -->
+        <a class="nav-link" id="nav-branches" onclick="navigateTo('branches')">
+          <span>🏢 Branch Network</span>
+          <span class="badge-pill">3 Units</span>
+        </a>
+
+        <!-- Page 5: Hospital Settings -->
+        <a class="nav-link" id="nav-settings" onclick="navigateTo('settings')">
+          <span>⚙️ Hospital Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div>
+          <div style="font-weight:600; font-size:0.85rem;">Hospital Admin</div>
+          <div style="font-size:0.72rem; color:var(--text-muted);">admin@citygeneral.local</div>
+        </div>
+        <button onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;" title="Toggle Dark/Light">🌓</button>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <div class="main-wrapper">
+      
+      <!-- Top Navigation Bar -->
+      <header class="topbar">
+        <div class="route-breadcrumb">
+          <span>Admin Portal</span>
+          <span>/</span>
+          <span id="breadcrumbTitle" style="font-weight:600; color:var(--text-main);">Financial & Vital KPIs</span>
+          <span class="route-url-pill" id="routeUrlIndicator">/portal/admin</span>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Multi-Branch Selector (Max Healthcare model) -->
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Branch:</span>
+            <select class="branch-select" onchange="alert('Switched administrative scope to: ' + this.value)">
+              <option value="all">🏢 All Branches (Aggregate)</option>
+              <option value="main" selected>📍 Main Campus (Gulshan)</option>
+              <option value="dhanmondi">🏥 Dhanmondi Specialized Wing</option>
+              <option value="uttara">🩺 Uttara Satellite Care Center</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Main Container -->
+      <main class="page-content">
+
+        <!-- =========================================================================
+             PAGE 1: HOSPITAL EXECUTIVE PROFIT & CLINICAL VITAL DASHBOARD
+             ========================================================================= -->
+        <div id="page-dashboard" class="page-view active">
+          
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Hospital Executive Performance</h1>
+              <p class="page-subtitle">Real-time revenue, operational margins, and patient vital flow</p>
+            </div>
+
+            <!-- Date Range Filter -->
+            <div class="filter-tabs">
+              <button class="filter-tab-btn" onclick="filterPeriod('today')">Today</button>
+              <button class="filter-tab-btn active" onclick="filterPeriod('this_week')">This Week</button>
+              <button class="filter-tab-btn" onclick="filterPeriod('this_month')">This Month</button>
+              <button class="filter-tab-btn" onclick="filterPeriod('custom')">Custom Range</button>
+            </div>
+          </div>
+
+          <!-- Top Row: Profit & Financial Health -->
+          <div class="financial-grid">
+            
+            <!-- Revenue Card -->
+            <div class="finance-card">
+              <div class="finance-title">Total Inflow (Revenue)</div>
+              <div class="finance-amount">৳ 24,85,000</div>
+              <div class="finance-trend trend-up">
+                <span>▲ +14.2%</span> <span style="color:var(--text-muted); font-weight:normal;">vs previous period</span>
+              </div>
+            </div>
+
+            <!-- Operating Costs Card -->
+            <div class="finance-card">
+              <div class="finance-title">Operating Expenses</div>
+              <div class="finance-amount">৳ 10,60,000</div>
+              <div class="finance-trend" style="color:var(--text-muted);">
+                <span>Doctor Payouts + Ward Supplies + Admin</span>
+              </div>
+            </div>
+
+            <!-- Net Profit Card (Highlighted) -->
+            <div class="finance-card highlight">
+              <div class="finance-title" style="color:var(--primary);">Net Operating Profit</div>
+              <div class="finance-amount" style="color:var(--primary);">৳ 14,25,000</div>
+              <div class="finance-trend trend-up">
+                <span>▲ 57.3% Margin</span> <span style="color:var(--text-muted); font-weight:normal;">(৳1.42M net earnings)</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Second Row: 4 Clinical Vital Health Metrics -->
+          <div class="vitals-summary-grid">
+            
+            <!-- Metric 1: Total Admitted Patients -->
+            <div class="vital-card">
+              <div class="vital-card-header">
+                <span class="finance-title">Active Admissions</span>
+                <div class="vital-icon-box" style="background:var(--primary-light); color:var(--primary);">🏥</div>
+              </div>
+              <div class="vital-val">46 <span style="font-size:1rem; font-weight:600; color:var(--text-muted);">/ 60 Beds</span></div>
+              <div class="vital-note"><strong style="color:var(--success);">76.6%</strong> Floor Occupancy Rate</div>
+            </div>
+
+            <!-- Metric 2: Released / Discharged Patients -->
+            <div class="vital-card">
+              <div class="vital-card-header">
+                <span class="finance-title">Discharged This Week</span>
+                <div class="vital-icon-box" style="background:var(--success-light); color:var(--success);">🚪</div>
+              </div>
+              <div class="vital-val">28 <span style="font-size:1rem; font-weight:600; color:var(--text-muted);">Patients</span></div>
+              <div class="vital-note">Avg Stay (ALOS): <strong>3.4 Days</strong></div>
+            </div>
+
+            <!-- Metric 3: Hospital Mortality (Passed Away) -->
+            <div class="vital-card">
+              <div class="vital-card-header">
+                <span class="finance-title">Hospital Mortality</span>
+                <div class="vital-icon-box" style="background:var(--danger-light); color:var(--danger);">🕊️</div>
+              </div>
+              <div class="vital-val">2 <span style="font-size:1rem; font-weight:600; color:var(--danger);">Deceased</span></div>
+              <div class="vital-note">Mortality Rate: <strong>0.4%</strong> (ICU Audit Log)</div>
+            </div>
+
+            <!-- Metric 4: New Babies Born (Births) -->
+            <div class="vital-card">
+              <div class="vital-card-header">
+                <span class="finance-title">New Borns (Births)</span>
+                <div class="vital-icon-box" style="background:var(--purple-light); color:var(--purple);">👶</div>
+              </div>
+              <div class="vital-val">11 <span style="font-size:1rem; font-weight:600; color:var(--purple);">Deliveries</span></div>
+              <div class="vital-note">Maternity Ward & OT Deliveries</div>
+            </div>
+
+          </div>
+
+          <!-- Third Row: Departmental Profit Breakdown -->
+          <div class="content-box">
+            <div class="box-header">
+              <div class="box-title">Revenue & Profit Breakdown by Service Stream</div>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Audited Inpatient & Outpatient Invoicing</span>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Department / Stream</th>
+                  <th>Patient Volume</th>
+                  <th>Gross Revenue</th>
+                  <th>Direct Expenses</th>
+                  <th>Net Profit</th>
+                  <th>Profit Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>VIP & Deluxe Cabins</strong></td>
+                  <td>14 Admissions</td>
+                  <td>৳ 6,80,000</td>
+                  <td>৳ 1,20,000</td>
+                  <td style="color:var(--success); font-weight:700;">৳ 5,60,000</td>
+                  <td><span class="badge-pill" style="background:var(--success-light); color:var(--success);">82.3%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Intensive Care Unit (ICU / CCU)</strong></td>
+                  <td>6 Critical Admissions</td>
+                  <td>৳ 5,40,000</td>
+                  <td>৳ 2,10,000</td>
+                  <td style="color:var(--success); font-weight:700;">৳ 3,30,000</td>
+                  <td><span class="badge-pill" style="background:var(--success-light); color:var(--success);">61.1%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>OPD Consultations (Specialist Clinics)</strong></td>
+                  <td>420 Consultations</td>
+                  <td>৳ 4,20,000</td>
+                  <td>৳ 2,50,000</td>
+                  <td style="color:var(--success); font-weight:700;">৳ 1,70,000</td>
+                  <td><span class="badge-pill" style="background:var(--success-light); color:var(--success);">40.5%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Diagnostic Pathology & Imaging</strong></td>
+                  <td>310 Tests</td>
+                  <td>৳ 5,10,000</td>
+                  <td>৳ 1,80,000</td>
+                  <td style="color:var(--success); font-weight:700;">৳ 3,30,000</td>
+                  <td><span class="badge-pill" style="background:var(--success-light); color:var(--success);">64.7%</span></td>
+                </tr>
+                <tr>
+                  <td><strong>General & Pediatric Wards</strong></td>
+                  <td>26 Admissions</td>
+                  <td>৳ 3,35,000</td>
+                  <td>৳ 3,00,000</td>
+                  <td style="color:var(--success); font-weight:700;">৳ 35,000</td>
+                  <td><span class="badge-pill" style="background:var(--warning-light); color:var(--warning);">10.4%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- =========================================================================
+             PAGE 2: WARDS, CABINS & BED ARCHITECTURE SETUP
+             ========================================================================= -->
+        <div id="page-wards" class="page-view">
+          
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Wards, Cabins & Bed Architecture</h1>
+              <p class="page-subtitle">Configure hospital accommodation tiers, room amenities, and daily rates</p>
+            </div>
+            
+            <div style="display:flex; gap:0.6rem;">
+              <button class="btn-secondary" onclick="openModal('addWardModal')">+ Add New Ward</button>
+              <button class="btn-primary" onclick="openModal('addCabinModal')">+ Add Cabin / Bed</button>
+            </div>
+          </div>
+
+          <!-- Accommodation Tiers Table -->
+          <div class="content-box">
+            <div class="box-header">
+              <div class="box-title">Configured Hospital Accommodation Inventory</div>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Floor-by-Floor Breakdown</span>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Unit Code & Name</th>
+                  <th>Floor</th>
+                  <th>Classification</th>
+                  <th>Included Amenities & Facilities</th>
+                  <th>Per-Day Rate (BDT)</th>
+                  <th>Capacity</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>CABIN-401</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Presidential Suite</div>
+                  </td>
+                  <td>Floor 4</td>
+                  <td><span class="tier-badge tier-vip">VIP Suite</span></td>
+                  <td>AC, Living Room, Kitchenette, Smart TV, Fridge, Attendant Bed, WiFi</td>
+                  <td><strong>৳ 35,000</strong> / day</td>
+                  <td>1 Bed</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>CABIN-301 to 308</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Deluxe Single AC</div>
+                  </td>
+                  <td>Floor 3</td>
+                  <td><span class="tier-badge tier-deluxe">Deluxe Cabin</span></td>
+                  <td>AC, Attached Bathroom, TV, Refrigerator, Attendant Sofa, WiFi</td>
+                  <td><strong>৳ 12,000</strong> / day</td>
+                  <td>8 Cabins</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>CABIN-201 to 210</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Standard AC Private</div>
+                  </td>
+                  <td>Floor 2</td>
+                  <td><span class="tier-badge tier-standard">Standard Cabin</span></td>
+                  <td>AC, Attached Bathroom, Attendant Bed, Nurse Call Button</td>
+                  <td><strong>৳ 8,500</strong> / day</td>
+                  <td>10 Cabins</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>CABIN-SH-101 to 104</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Twin-Sharing Cabin</div>
+                  </td>
+                  <td>Floor 2</td>
+                  <td><span class="tier-badge tier-shared">Shared Cabin</span></td>
+                  <td>2 Beds with Privacy Curtain, Shared Bathroom, Attendant Chairs</td>
+                  <td><strong>৳ 4,500</strong> / day</td>
+                  <td>8 Beds</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>ICU WING (Beds 1-8)</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Intensive Care Unit</div>
+                  </td>
+                  <td>Floor 1</td>
+                  <td><span class="tier-badge tier-icu">ICU Critical Care</span></td>
+                  <td>Ventilator Port, Cardiac Monitor, Central O2, 1:1 Nursing Station</td>
+                  <td><strong>৳ 15,000</strong> / day</td>
+                  <td>8 Beds</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>GENERAL WARD (M-101 to 120)</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Male Medical Ward</div>
+                  </td>
+                  <td>Floor 1</td>
+                  <td><span class="tier-badge" style="background:var(--bg-subtle); color:var(--text-main);">General Ward</span></td>
+                  <td>Shared Nursing Station, Nurse Call, Shared Restrooms</td>
+                  <td><strong>৳ 1,500</strong> / day</td>
+                  <td>20 Beds</td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Edit Rate</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- =========================================================================
+             PAGE 3: STAFF & EMPLOYEE MANAGEMENT WITH INVITATIONS
+             ========================================================================= -->
+        <div id="page-staff" class="page-view">
+          
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Hospital Staff & Invitations</h1>
+              <p class="page-subtitle">Invite new personnel, manage pending email activations, and assign role permissions</p>
+            </div>
+            
+            <button class="btn-primary" onclick="openModal('addStaffModal')">
+              <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              + Invite New Staff Member
+            </button>
+          </div>
+
+          <!-- Pending Invitations Queue -->
+          <div class="content-box" style="margin-bottom:1.5rem; border-color:var(--warning); background:linear-gradient(145deg, rgba(245, 158, 11, 0.03), var(--bg-card));">
+            <div class="box-header" style="border-color:rgba(245, 158, 11, 0.2);">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <div class="vital-icon-box" style="width:28px; height:28px; font-size:0.85rem; background:var(--warning-light); color:var(--warning);">✉️</div>
+                <div class="box-title" style="font-size:1rem;">Pending Invitations (Awaiting Acceptance)</div>
+              </div>
+              <span class="badge-pill" style="background:var(--warning-light); color:var(--warning);">2 Sent (Expiring in 48 hrs)</span>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invited Email</th>
+                  <th>Assigned Role & Designation</th>
+                  <th>Assigned Branch</th>
+                  <th>Invited Date</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>dr.farhana@cardiology.local</strong>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Invite Token: #INV-9402</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-standard">Doctor</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Consultant Cardiologist</div>
+                  </td>
+                  <td>📍 Main Campus</td>
+                  <td>Today, 01:30 AM</td>
+                  <td><span class="badge-pill" style="background:var(--warning-light); color:var(--warning);">● Pending Acceptance</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;" onclick="alert('Resent invitation email to dr.farhana@cardiology.local via MailHog!')">Resend Email</button>
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem; color:var(--danger);" onclick="alert('Revoked invitation #INV-9402')">Revoke</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong>tarek.pharmacist@citygeneral.local</strong>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">Invite Token: #INV-8831</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-purple">Pharmacist</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Chief Inpatient Dispenser</div>
+                  </td>
+                  <td>🏥 Dhanmondi Wing</td>
+                  <td>Yesterday</td>
+                  <td><span class="badge-pill" style="background:var(--warning-light); color:var(--warning);">● Pending Acceptance</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;" onclick="alert('Resent invitation email to tarek.pharmacist@citygeneral.local via MailHog!')">Resend Email</button>
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem; color:var(--danger);" onclick="alert('Revoked invitation #INV-8831')">Revoke</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Active Staff Table & Filter Controls -->
+          <div class="content-box">
+            <div class="box-header" style="flex-wrap:wrap; gap:1rem;">
+              <div>
+                <div class="box-title">Active Hospital Staff Directory (<span id="staffCountDisplay">7</span> Members)</div>
+                <span style="font-size:0.8rem; color:var(--text-muted);">Real-time searchable personnel directory</span>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="display:flex; align-items:center; gap:0.75rem; flex:1; max-width:420px; min-width:260px;">
+                <div style="position:relative; width:100%;">
+                  <span style="position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); font-size:0.9rem; color:var(--text-muted);">🔍</span>
+                  <input type="text" id="staffSearchInput" class="form-input" style="padding-left:2.2rem; padding-right:2rem; font-size:0.85rem;" placeholder="Search name, email, role, phone..." oninput="filterStaffTable()" />
+                  <button id="clearSearchBtn" onclick="clearStaffSearch()" style="display:none; position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.8rem;">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Controls Bar -->
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0.75rem; margin-bottom:1.25rem; padding-bottom:1rem; border-bottom:1px solid var(--border-light);">
+              
+              <!-- Role Filter Segmented Pills -->
+              <div class="filter-tabs" id="roleFilterTabs">
+                <button class="filter-tab-btn active" onclick="setRoleFilter('ALL', this)">All Roles</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('Doctor', this)">🩺 Doctors</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('Nurse', this)">👩‍⚕️ Nurses</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('WardStaff', this)">🛏️ Ward Staff</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('Receptionist', this)">📋 Reception</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('Accountant', this)">💳 Cashier</button>
+                <button class="filter-tab-btn" onclick="setRoleFilter('Pharmacist', this)">💊 Pharmacy</button>
+              </div>
+
+              <!-- Secondary Filters (Department & Branch) -->
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <select id="staffDeptFilter" class="form-select" style="padding:0.4rem 0.65rem; font-size:0.8rem; width:auto;" onchange="filterStaffTable()">
+                  <option value="ALL">🏢 All Departments</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="ICU">ICU & Critical Care</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                  <option value="General Medicine">General Medicine</option>
+                  <option value="OPD Registration">OPD Front Office</option>
+                  <option value="Accounts">Accounts & Billing</option>
+                  <option value="Pharmacy">Pharmacy</option>
+                </select>
+
+                <select id="staffBranchFilter" class="form-select" style="padding:0.4rem 0.65rem; font-size:0.8rem; width:auto;" onchange="filterStaffTable()">
+                  <option value="ALL">📍 All Branches</option>
+                  <option value="Main Campus">📍 Main Campus (Gulshan)</option>
+                  <option value="Dhanmondi Wing">🏥 Dhanmondi Wing</option>
+                  <option value="Uttara Satellite">🩺 Uttara Satellite</option>
+                </select>
+              </div>
+
+            </div>
+
+            <table class="data-table" id="staffDataTable">
+              <thead>
+                <tr>
+                  <th>Employee Name</th>
+                  <th>Role & Designation</th>
+                  <th>Department</th>
+                  <th>Assigned Branch</th>
+                  <th>Contact</th>
+                  <th>Account Status</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody">
+                <tr data-role="Doctor" data-dept="Cardiology" data-branch="Main Campus" data-search="dr sarah ahmed doctor@citygeneral.local senior consultant cardiology 01711223344">
+                  <td>
+                    <strong>Dr. Sarah Ahmed</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">doctor@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-standard">Doctor</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Senior Consultant</div>
+                  </td>
+                  <td>Cardiology</td>
+                  <td>📍 Main Campus</td>
+                  <td>01711223344</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Doctor" data-dept="General Medicine" data-branch="Dhanmondi Wing" data-search="dr tareq rahman tareq.doc@citygeneral.local associate specialist general medicine 01799887766">
+                  <td>
+                    <strong>Dr. Tareq Rahman</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">tareq.doc@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-standard">Doctor</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Associate Specialist</div>
+                  </td>
+                  <td>General Medicine</td>
+                  <td>🏥 Dhanmondi Wing</td>
+                  <td>01799887766</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Nurse" data-dept="ICU" data-branch="Main Campus" data-search="fatema begum fatema.nurse@citygeneral.local head inpatient matron icu floor 4 cabins 01822334455">
+                  <td>
+                    <strong>Fatema Begum</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">fatema.nurse@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-deluxe">Nurse</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Head Inpatient Matron</div>
+                  </td>
+                  <td>ICU & Floor 4 Cabins</td>
+                  <td>📍 Main Campus</td>
+                  <td>01822334455</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Nurse" data-dept="Pediatrics" data-branch="Main Campus" data-search="nasrin sultana nasrin.ped@citygeneral.local senior pediatric nurse pediatrics 01833445566">
+                  <td>
+                    <strong>Nasrin Sultana</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">nasrin.ped@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-deluxe">Nurse</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Senior Pediatric Nurse</div>
+                  </td>
+                  <td>Pediatrics</td>
+                  <td>📍 Main Campus</td>
+                  <td>01833445566</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="WardStaff" data-dept="General Medicine" data-branch="Main Campus" data-search="abdul karim karim.ward@citygeneral.local patient shifting attendant floor 2 3 wards 01933445566">
+                  <td>
+                    <strong>Abdul Karim</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">karim.ward@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge" style="background:var(--bg-subtle);">Ward Staff</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Patient Shifting & Attendant</div>
+                  </td>
+                  <td>Floor 2 & 3 Wards</td>
+                  <td>📍 Main Campus</td>
+                  <td>01933445566</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Receptionist" data-dept="OPD Registration" data-branch="Dhanmondi Wing" data-search="kamrul hasan reception@citygeneral.local front desk officer opd registration 01755667788">
+                  <td>
+                    <strong>Kamrul Hasan</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">reception@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-shared">Receptionist</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Front Desk Officer</div>
+                  </td>
+                  <td>OPD Registration</td>
+                  <td>🏥 Dhanmondi Wing</td>
+                  <td>01755667788</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Accountant" data-dept="Accounts" data-branch="Main Campus" data-search="shahidul alam cashier@citygeneral.local senior billing cashier accounts billing 01788776655">
+                  <td>
+                    <strong>Shahidul Alam</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">cashier@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-standard">Cashier / Billing</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Senior Billing Officer</div>
+                  </td>
+                  <td>Accounts & Billing</td>
+                  <td>📍 Main Campus</td>
+                  <td>01788776655</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+
+                <tr data-role="Pharmacist" data-dept="Pharmacy" data-branch="Uttara Satellite" data-search="monir hossain monir.rx@citygeneral.local chief dispensary officer pharmacy 01744556677">
+                  <td>
+                    <strong>Monir Hossain</strong>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">monir.rx@citygeneral.local</div>
+                  </td>
+                  <td>
+                    <span class="tier-badge tier-purple">Pharmacist</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">Chief Dispensary Officer</div>
+                  </td>
+                  <td>Pharmacy</td>
+                  <td>🩺 Uttara Satellite</td>
+                  <td>01744556677</td>
+                  <td><span style="color:var(--success); font-weight:700; font-size:0.75rem;">● Active</span></td>
+                  <td style="text-align:right;">
+                    <button class="btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Permissions</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Empty State for filtered search results -->
+            <div id="staffEmptyState" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+              <div style="font-size:2rem; margin-bottom:0.5rem;">🔍</div>
+              <div style="font-weight:600; font-size:1rem; color:var(--text-main);">No staff members found</div>
+              <p style="font-size:0.85rem; margin-top:0.25rem;">Try adjusting your search keywords or clearing the active filters.</p>
+              <button class="btn-secondary" style="margin-top:1rem;" onclick="resetAllStaffFilters()">Reset All Filters</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =========================================================================
+             PAGE 4: BRANCH NETWORK MANAGEMENT
+             ========================================================================= -->
+        <div id="page-branches" class="page-view">
+          
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Hospital Branch Network</h1>
+              <p class="page-subtitle">Multi-location operational management (Max Healthcare Model)</p>
+            </div>
+            
+            <button class="btn-primary" onclick="alert('Open Add Branch Modal')">+ Add New Branch Unit</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.25rem;">
+            
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <div class="box-title">📍 Main Campus</div>
+                  <div style="font-size:0.75rem; color:var(--primary); font-weight:600;">Headquarters (Main)</div>
+                </div>
+                <span class="tier-badge tier-standard">Active</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                <div>House 12, Road 4, Gulshan-2, Dhaka</div>
+                <div>Beds: <strong>60 Beds (40 Wards + 20 Cabins)</strong></div>
+                <div>Staff: <strong>24 Active Personnel</strong></div>
+                <div>Emergency: <strong>24/7 ICU & Trauma</strong></div>
+              </div>
+            </div>
+
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <div class="box-title">🏥 Dhanmondi Wing</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Specialized Branch</div>
+                </div>
+                <span class="tier-badge tier-standard">Active</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                <div>Road 27, Dhanmondi, Dhaka</div>
+                <div>Beds: <strong>20 Deluxe Cabins</strong></div>
+                <div>Staff: <strong>12 Active Personnel</strong></div>
+                <div>Focus: <strong>Elective Surgery & OPD</strong></div>
+              </div>
+            </div>
+
+            <div class="content-box">
+              <div class="box-header">
+                <div>
+                  <div class="box-title">🩺 Uttara Satellite</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">Daycare & Diagnostic</div>
+                </div>
+                <span class="tier-badge tier-standard">Active</span>
+              </div>
+              <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6;">
+                <div>Sector 7, Uttara, Dhaka</div>
+                <div>Beds: <strong>Daycare Only</strong></div>
+                <div>Staff: <strong>8 Active Personnel</strong></div>
+                <div>Focus: <strong>OPD & Pathology Collection</strong></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- =========================================================================
+             PAGE 5: HOSPITAL SETTINGS & MODULE TOGGLES
+             ========================================================================= -->
+        <div id="page-settings" class="page-view">
+          
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Hospital Settings & Legal Profile</h1>
+              <p class="page-subtitle">Organization legal details, logo, and active system modules</p>
+            </div>
+            
+            <button class="btn-primary" onclick="alert('Settings saved successfully!')">Save Profile Changes</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1.5rem;">
+            
+            <div class="content-box">
+              <div class="box-header">
+                <div class="box-title">Legal Entity Details</div>
+              </div>
+              
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label">Hospital Registered Legal Name</label>
+                  <input type="text" class="form-input" value="City General Hospital Limited" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">DGHS Clinical License Number</label>
+                  <input type="text" class="form-input" value="DGHS-LIC-2026-8942" />
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label">Tax ID (TIN / BIN)</label>
+                  <input type="text" class="form-input" value="BIN-992019481" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Billing Currency</label>
+                  <input type="text" class="form-input" value="BDT (৳)" disabled />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Official Contact Email</label>
+                <input type="email" class="form-input" value="contact@citygeneral.com.bd" />
+              </div>
+            </div>
+
+            <div class="content-box">
+              <div class="box-header">
+                <div class="box-title">Active Module Bundles</div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:0.75rem; font-size:0.875rem;">
+                <label style="display:flex; align-items:center; justify-content:space-between;">
+                  <span>Outpatient (OPD) & Scheduling</span>
+                  <input type="checkbox" checked disabled style="accent-color:var(--primary);">
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between;">
+                  <span>Inpatient (IPD) & Cabin Bed Board</span>
+                  <input type="checkbox" checked disabled style="accent-color:var(--primary);">
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between;">
+                  <span>Billing & Per-Bed Day Calculation</span>
+                  <input type="checkbox" checked disabled style="accent-color:var(--primary);">
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between;">
+                  <span>Emergency & ICU Critical Care</span>
+                  <input type="checkbox" checked disabled style="accent-color:var(--primary);">
+                </label>
+                <label style="display:flex; align-items:center; justify-content:space-between;">
+                  <span>AI Clinical RAG Summarization</span>
+                  <input type="checkbox" checked disabled style="accent-color:var(--primary);">
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+
+  </div>
+
+  <!-- Modal 1: Add Cabin / Bed -->
+  <div id="addCabinModal" class="modal-overlay" onclick="closeModal(event, 'addCabinModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+        <h3 style="font-family:var(--font-display); font-size:1.2rem;">Add New Cabin or Ward Bed</h3>
+        <button onclick="closeModal(null, 'addCabinModal')" style="background:none;border:none;cursor:pointer;font-size:1.2rem;">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Room / Cabin Code</label>
+        <input type="text" class="form-input" placeholder="e.g. CABIN-405, ICU-BED-09" />
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Floor Number</label>
+          <select class="form-select">
+            <option>Floor 1 (Emergency & ICU)</option>
+            <option>Floor 2 (General Wards & Shared)</option>
+            <option>Floor 3 (Deluxe Cabins)</option>
+            <option>Floor 4 (VIP Suites)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Accommodation Category</label>
+          <select class="form-select">
+            <option>VIP Suite (৳30k - ৳50k)</option>
+            <option>Deluxe Cabin (৳10k - ৳15k)</option>
+            <option>Standard Cabin (৳6k - ৳10k)</option>
+            <option>Shared / Twin Cabin (৳3k - ৳6k)</option>
+            <option>ICU Bed (৳15k - ৳25k)</option>
+            <option>General Ward Bed (৳1.5k)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Daily Charge (BDT Rate per Day)</label>
+        <input type="number" class="form-input" placeholder="e.g. 12000" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amenities Included</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem;">
+          <label><input type="checkbox" checked> Air Conditioned (AC)</label>
+          <label><input type="checkbox" checked> Attached Bathroom</label>
+          <label><input type="checkbox" checked> Attendant Bed/Couch</label>
+          <label><input type="checkbox" checked> Smart TV & WiFi</label>
+          <label><input type="checkbox"> Mini Refrigerator</label>
+          <label><input type="checkbox"> Central Oxygen Port</label>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+        <button class="btn-secondary" onclick="closeModal(null, 'addCabinModal')">Cancel</button>
+        <button class="btn-primary" onclick="alert('Cabin created successfully!'); closeModal(null, 'addCabinModal')">Create Room / Bed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Invite Staff Member -->
+  <div id="addStaffModal" class="modal-overlay" onclick="closeModal(event, 'addStaffModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <div class="vital-icon-box" style="width:32px; height:32px; font-size:1rem; background:var(--primary-light); color:var(--primary);">✉️</div>
+          <h3 style="font-family:var(--font-display); font-size:1.2rem;">Invite New Staff Member</h3>
+        </div>
+        <button onclick="closeModal(null, 'addStaffModal')" style="background:none;border:none;cursor:pointer;font-size:1.2rem;">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Employee Work Email (Invitation will be sent here)</label>
+        <input type="email" class="form-input" id="inviteEmailInput" placeholder="e.g. dr.farhana@cardiology.local" />
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Full Name (Optional)</label>
+          <input type="text" class="form-input" placeholder="e.g. Dr. Farhana Yasmin" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">System Role</label>
+          <select class="form-select" id="inviteRoleSelect" onchange="toggleDoctorFields(this.value)">
+            <option value="Doctor">Doctor / Consultant</option>
+            <option value="Nurse">Inpatient Nurse / Matron</option>
+            <option value="WardStaff">Ward Staff / Attendant</option>
+            <option value="Receptionist">Receptionist / Front Desk</option>
+            <option value="Accountant">Accountant / Cashier</option>
+            <option value="Pharmacist">Pharmacist</option>
+            <option value="LabTechnician">Lab Technician</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Custom Designation / Title</label>
+          <input type="text" class="form-input" placeholder="e.g. Senior Inpatient Matron" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select class="form-select">
+            <option>Cardiology</option>
+            <option>Intensive Care (ICU)</option>
+            <option>General Medicine</option>
+            <option>Pediatrics & Neonatal</option>
+            <option>Surgery & OT</option>
+            <option>Front Office & Billing</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Primary Assigned Branch</label>
+        <select class="form-select">
+          <option>📍 Main Campus (Gulshan)</option>
+          <option>🏥 Dhanmondi Specialized Wing</option>
+          <option>🩺 Uttara Satellite Care Center</option>
+        </select>
+      </div>
+
+      <!-- Doctor-specific optional fields -->
+      <div id="doctorExtraFields" style="background:var(--bg-subtle); padding:0.9rem; border-radius:var(--radius-md); margin-bottom:1rem;">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:0.5rem; text-transform:uppercase;">🩺 Doctor Profile Setup</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:0.75rem;">OPD Consultation Fee (BDT)</label>
+            <input type="number" class="form-input" placeholder="1500" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:0.75rem;">Consultation Room #</label>
+            <input type="text" class="form-input" placeholder="Room 304" />
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.4; margin-bottom:1.25rem;">
+        ℹ️ <em>The invitee will receive an email with a secure registration link valid for 48 hours to set their password and activate their account.</em>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+        <button class="btn-secondary" onclick="closeModal(null, 'addStaffModal')">Cancel</button>
+        <button class="btn-primary" onclick="sendStaffInvite()">
+          <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Invitation Email
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation Router Logic
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      
+      const targetPage = document.getElementById('page-' + pageId);
+      if (targetPage) targetPage.classList.add('active');
+
+      const navEl = document.getElementById('nav-' + pageId);
+      if (navEl) navEl.classList.add('active');
+
+      const breadcrumb = document.getElementById('breadcrumbTitle');
+      const urlDisplay = document.getElementById('routeUrlIndicator');
+      
+      if (pageId === 'dashboard') {
+        breadcrumb.innerText = "Financial & Vital KPIs";
+        urlDisplay.innerText = "/portal/admin";
+      } else if (pageId === 'wards') {
+        breadcrumb.innerText = "Wards & Cabins Setup";
+        urlDisplay.innerText = "/portal/admin/wards-cabins";
+      } else if (pageId === 'staff') {
+        breadcrumb.innerText = "Staff & Permissions";
+        urlDisplay.innerText = "/portal/admin/employees";
+      } else if (pageId === 'branches') {
+        breadcrumb.innerText = "Branch Network";
+        urlDisplay.innerText = "/portal/admin/branches";
+      } else if (pageId === 'settings') {
+        breadcrumb.innerText = "Hospital Settings";
+        urlDisplay.innerText = "/portal/admin/settings";
+      }
+    }
+
+    // Period Filter
+    function filterPeriod(period) {
+      document.querySelectorAll('.filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      alert(`Updated hospital performance report for: ${period.toUpperCase()}`);
+    }
+
+    // Invite Staff Form Logic
+    function toggleDoctorFields(role) {
+      const docFields = document.getElementById('doctorExtraFields');
+      if (role === 'Doctor') {
+        docFields.style.display = 'block';
+      } else {
+        docFields.style.display = 'none';
+      }
+    }
+
+    function sendStaffInvite() {
+      const email = document.getElementById('inviteEmailInput').value || 'new.staff@citygeneral.local';
+      const role = document.getElementById('inviteRoleSelect').value;
+      alert(`✉️ Invitation email dispatched to: ${email}!\nRole: ${role}\nToken generated and queued via SMTP (MailHog). The user can now set their password at /accept-invite?token=...`);
+      closeModal(null, 'addStaffModal');
+    }
+
+    // Staff Directory Filtering Logic
+    let currentRoleFilter = 'ALL';
+
+    function setRoleFilter(role, btnEl) {
+      currentRoleFilter = role;
+      document.querySelectorAll('#roleFilterTabs .filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      filterStaffTable();
+    }
+
+    function clearStaffSearch() {
+      const searchInput = document.getElementById('staffSearchInput');
+      searchInput.value = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      filterStaffTable();
+      searchInput.focus();
+    }
+
+    function resetAllStaffFilters() {
+      document.getElementById('staffSearchInput').value = '';
+      document.getElementById('clearSearchBtn').style.display = 'none';
+      document.getElementById('staffDeptFilter').value = 'ALL';
+      document.getElementById('staffBranchFilter').value = 'ALL';
+      currentRoleFilter = 'ALL';
+      
+      const firstTab = document.querySelector('#roleFilterTabs .filter-tab-btn');
+      document.querySelectorAll('#roleFilterTabs .filter-tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (firstTab) firstTab.classList.add('active');
+
+      filterStaffTable();
+    }
+
+    function filterStaffTable() {
+      const searchVal = (document.getElementById('staffSearchInput')?.value || '').trim().toLowerCase();
+      const deptVal = document.getElementById('staffDeptFilter')?.value || 'ALL';
+      const branchVal = document.getElementById('staffBranchFilter')?.value || 'ALL';
+      
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (clearBtn) {
+        clearBtn.style.display = searchVal ? 'block' : 'none';
+      }
+
+      const rows = document.querySelectorAll('#staffTableBody tr');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const role = row.getAttribute('data-role');
+        const dept = row.getAttribute('data-dept');
+        const branch = row.getAttribute('data-branch');
+        const searchKeywords = (row.getAttribute('data-search') || '').toLowerCase();
+
+        const roleMatch = (currentRoleFilter === 'ALL' || role === currentRoleFilter);
+        const deptMatch = (deptVal === 'ALL' || dept === deptVal);
+        const branchMatch = (branchVal === 'ALL' || branch === branchVal);
+        
+        const normSearch = searchVal.replace(/[^a-z0-9]/g, '');
+        const normKeywords = searchKeywords.replace(/[^a-z0-9]/g, '');
+        const searchMatch = (!searchVal || searchKeywords.includes(searchVal) || (normSearch.length > 0 && normKeywords.includes(normSearch)));
+
+        if (roleMatch && deptMatch && branchMatch && searchMatch) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const countDisplay = document.getElementById('staffCountDisplay');
+      if (countDisplay) countDisplay.innerText = visibleCount;
+
+      const emptyState = document.getElementById('staffEmptyState');
+      const dataTable = document.getElementById('staffDataTable');
+      if (emptyState && dataTable) {
+        if (visibleCount === 0) {
+          emptyState.style.display = 'block';
+          dataTable.style.display = 'none';
+        } else {
+          emptyState.style.display = 'none';
+          dataTable.style.display = 'table';
+        }
+      }
+    }
+
+    // Modal Handlers
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(event, modalId) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    }
+  </script>
+</body>
+</html>

@@ -114,6 +114,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPatientSelfRegistrationService, PatientSelfRegistrationService>();
         services.AddScoped<mediconyx_api.Services.Invitations.IInvitationService, mediconyx_api.Services.Invitations.InvitationService>();
 
+        // Accounting Foundation (Tier 5.1)
+        services.AddScoped<mediconyx_api.Services.Accounting.ILedgerService, mediconyx_api.Services.Accounting.LedgerService>();
+        services.AddScoped<mediconyx_api.Services.Accounting.IInvoiceAccountingService, mediconyx_api.Services.Accounting.InvoiceAccountingService>();
+        services.AddScoped<mediconyx_api.Services.Accounting.IAdminKpiService, mediconyx_api.Services.Accounting.AdminKpiService>();
+
         // Storage service with HttpClient
         services.AddHttpClient<IStorageService, StorageService>();
         services.Configure<StorageServiceOptions>(
