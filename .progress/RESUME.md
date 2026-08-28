@@ -3,33 +3,36 @@
 > Stable resume point. **Update this file at the end of every work session.**
 > Session history lives in `.progress/<datetime>_<title>.md`; plans in `.plan/`.
 > New sessions: read this file first (the project `AGENTS.md` instructs this).
-> Last updated: 2026-08-12 — Onboarding UI spec WIP + MailHog port move. Stage 3 (multi-branch) done 2026-08-05.
-
-## Where we are
-
-Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅ (NEW), doctor-as-staff duality ✅ (NEW `attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅ (NEW), per-bed-day billing ✅.
-Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
-E2E: **152 passed / 0 failed / 4 skipped** (156 total) — last full green run 2026-08-05. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding`.
-
-## Stacks
-
-- **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 7890, MailHog 8025. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
-- **Test** (docker-compose.test.yml): UI 9674, API 9766, storage 7891. Fresh-volume, all changes, E2E green.
-- Run E2E: `cd ../mediconyx-e2e && npm run test:env`.
-- Logins: hospital admin `admin@citygeneral.local`/`Hospital@123`, master `master@mediconyx.local`/`MasterPass123!` (dev) / `Master@123` (test). Full list in `readme.md`.
-
-## Active workstream: multi-branch (Max Healthcare model)
-
-Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-07-21_23-55-00_multibranch_stage1_foundation.md`.
-
-- ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
-- ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
-- ✅ **Stage 3 — Flows** (2026-08-05) — `BranchId` on Appointment/Admission/Invoice (migration `20260805000100_AddBranchIdToFlowsAndUsers`, admissions backfilled from their bed, rest → Main); `PrimaryBranchId` on User + JWT `branch_id` claim; `?branchId=` filters + create-time branch validation (defaults to Main); employees UI branch field. Unit tests 176 passed/1 skipped; E2E green.
-- ⬜ **Stage 4 — Polish** (next after onboarding-UI spec lands): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
-
-## Paused mid-flight (2026-08-12): fully-visible onboarding UI spec
-
-Details: `.progress/2026-08-12_01-33-55_onboarding_ui_spec_wip.md`. New spec `tests/e2e/onboarding-story-ui.spec.ts` (every step in-browser) written; 3 real UI bugs fixed (profile form empty-string optionals; null-token uploads in sales RequestDetail + PatientReportUpload); test MailHog moved 8026→**8126** (Hyper-V exclusion 7960–8059); test-ui rebuilt with all fixes. **Resume: smoke-run the new spec, then headed slow-mo demo + video.** Note: nothing from 8/5 or 8/12 sessions committed yet.
+> Last updated: 2026-08-29 — Fully-visible Onboarding UI flow confirmed, fixed, and verified (153/153 E2E green). Slow-mo video demo generated.
+ 
+ ## Where we are
+ 
+ Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅, doctor-as-staff duality ✅ (`attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅, per-bed-day billing ✅, fully-visible browser onboarding story ✅.
+ Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
+ E2E: **153 passed / 0 failed / 4 skipped** (157 total) — 100% green run 2026-08-29. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding` (API-driven) and `npm run test:onboarding:ui` / `npm run test:onboarding:ui:slow` (fully-visible browser-driven).
+ 
+ ## Stacks
+ 
+ - **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 8890, MailHog 8025. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
+ - **Test** (docker-compose.test.yml): UI 9674, API 9766, storage 8891, MailHog 8126. Fresh-volume, all changes, E2E green.
+ - Run E2E: `cd ../mediconyx-e2e && npm run test:env`.
+ - Logins: hospital admin `admin@citygeneral.local`/`Hospital@123`, master `master@mediconyx.local`/`MasterPass123!` (dev) / `Master@123` (test). Full list in `readme.md`.
+ 
+ ## Active workstream: multi-branch (Max Healthcare model)
+ 
+ Plan: `.plan/2026-07-21_multibranch_support.md`. Progress logs: `.progress/2026-07-21_23-55-00_multibranch_stage1_foundation.md`.
+ 
+ - ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
+ - ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
+ - ✅ **Stage 3 — Flows** (2026-08-05) — `BranchId` on Appointment/Admission/Invoice (migration `20260805000100_AddBranchIdToFlowsAndUsers`, admissions backfilled from their bed, rest → Main); `PrimaryBranchId` on User + JWT `branch_id` claim; `?branchId=` filters + create-time branch validation (defaults to Main); employees UI branch field. Unit tests 176 passed/1 skipped; E2E green.
+ - ⬜ **Stage 4 — Polish** (next): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
+ 
+ ## Completed: fully-visible onboarding UI spec & E2E verification (2026-08-29)
+ 
+ Details: `.progress/2026-08-29_00-42-00_onboarding_ui_story_complete.md`.
+ 1. Fixed duplicate fixture SHA-256 collision where `license.pdf`, `tax-certificate.pdf`, and `business-registration.pdf` had identical contents and the API deduplication discarded the 2nd and 3rd uploads.
+ 2. Fixed `uiLogin` to clear previous sessions so `AuthRedirectGuard` does not bounce back to sales portal before logging in as newly provisioned hospital admin.
+ 3. Added `npm run test:onboarding:ui` and `npm run test:onboarding:ui:slow` in `mediconyx-e2e`. Generated full slow-mo MP4 demo video in `test-videos/2026-08-29_00-41-28_onboarding-story-ui-slow`. All 153 tests passed (0 failed).
 
 ## Standing decisions & gotchas
 
