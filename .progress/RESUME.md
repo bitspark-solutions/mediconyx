@@ -34,6 +34,18 @@
  2. Fixed `uiLogin` to clear previous sessions so `AuthRedirectGuard` does not bounce back to sales portal before logging in as newly provisioned hospital admin.
  3. Added `npm run test:onboarding:ui` and `npm run test:onboarding:ui:slow` in `mediconyx-e2e`. Generated full slow-mo MP4 demo video in `test-videos/2026-08-29_00-41-28_onboarding-story-ui-slow`. All 153 tests passed (0 failed).
 
+## Tooling: graphify code-graph MCP (2026-09-29)
+
+Installed `graphify-local-server` at `C:\Users\Mohsin\Projects\graphify-local-server`, running as the **`graphify-local-server` Docker container** (`restart: unless-stopped`, port 28848). Registered as MCP in Mavis, Antigravity, Qoder, VS Code — all four use the `docker exec -i graphify-local-server python /app/mcp/graphify_mcp.py` form. Tools take `project_path: "mediconyx"`.
+
+Mediconyx graph: 5097 nodes / 9639 edges / 287 communities, built inside the container from commit `83c5cf58` (master). Artifacts land on the host via the bind mount at `data/mediconyx/graphify-out/` (`graph.json`, `graph.html`, `GRAPH_REPORT.md`).
+
+Gotchas:
+- Build/refresh over REST (`POST /api/build` with `path: "/app/workspaces/mediconyx"`, `force: true`, ~4 min). The `graphify_build` **MCP tool times out** on a full rebuild — drive it over REST instead.
+- Graphs must be built with **container** paths (`/app/workspaces/...`, set via `HOST_WORKSPACE_DIR` in the repo `.env`). A host-path build leaves file references that don't resolve inside the container.
+- After a build, run `docker exec graphify-local-server graphify cluster-only /app/data/mediconyx` to emit `GRAPH_REPORT.md`. Community *names* stay as `Community N` placeholders unless an LLM backend key (e.g. `GOOGLE_API_KEY`) is set — the structural edges are still real.
+- The leftover native `.venv` in that repo is unused; safe to delete.
+
 ## Standing decisions & gotchas
 
 - One class per file (hard rule). No AgentSwarm. Check `usage` before tasks; stop at 95%.
