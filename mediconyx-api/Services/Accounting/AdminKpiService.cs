@@ -186,7 +186,7 @@ public class AdminKpiService : IAdminKpiService
 
         // New births: admissions to Maternity wards in the period
         var maternityWardIds = await _context.Wards
-            .Where(w => w.TenantId == tenantId && w.WardType == WardType.Maternity)
+            .Where(w => w.TenantId == tenantId && w.WardType == WardTypes.Maternity)
             .Select(w => w.Id)
             .ToListAsync();
 

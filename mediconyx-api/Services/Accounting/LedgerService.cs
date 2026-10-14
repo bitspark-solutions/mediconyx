@@ -637,7 +637,7 @@ public class LedgerService : ILedgerService
 
         var creator = await _context.Users
             .Where(u => u.Id == entry.CreatedByUserId)
-            .Select(u => u.FullName)
+            .Select(u => u.FirstName + " " + u.LastName)
             .FirstOrDefaultAsync();
 
         var period = await _context.FiscalPeriods

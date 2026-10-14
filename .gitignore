@@ -320,8 +320,9 @@ secrets/
 # Configuration with secrets (keep templates)
 mediconyx-api/appsettings.Development.json
 mediconyx-api/appsettings.Production.json
-!mediconyx-api/appsettings.json
+mediconyx-api/appsettings.json
 !mediconyx-api/appsettings.*.example.json
+!mediconyx-api/appsettings.Test.json
 
 # ===========================================
 # Temporary Files
@@ -399,7 +400,6 @@ openapi.json
 # ===========================================
 
 # Keep example config files
-!appsettings.json
 !appsettings.*.example.json
 !.env.example
 !.env.template
@@ -427,3 +427,6 @@ openapi.json
 # Test logs
 test_log*.txt
 
+
+# Never commit test build artifacts
+mediconyx-api/Tests/bin-clean/
