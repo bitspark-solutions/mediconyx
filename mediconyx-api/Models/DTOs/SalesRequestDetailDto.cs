@@ -43,31 +43,3 @@ public class SalesRequestDetailDto
     public List<SalesRequestNoteDto> NotesList { get; set; } = new();
     public List<SalesRequestTimelineDto> Timeline { get; set; } = new();
 }
-
-public class SalesRequestAttachmentDto
-{
-    public int Id { get; set; }
-    public string FileName { get; set; } = string.Empty;
-    public string MimeType { get; set; } = string.Empty;
-    public long SizeBytes { get; set; }
-    public int? DocumentType { get; set; }
-    public bool IsMandatory { get; set; }
-    public DateTime UploadedAt { get; set; }
-}
-
-public class SalesRequestNoteDto
-{
-    public int Id { get; set; }
-    public string Note { get; set; } = string.Empty;
-    public int AuthorUserId { get; set; }
-    public string? AuthorUserName { get; set; }
-    public DateTime CreatedAt { get; set; }
-}
-
-public class SalesRequestTimelineDto
-{
-    public int Id { get; set; }
-    public string Type { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public DateTime HappenedAt { get; set; }
-}

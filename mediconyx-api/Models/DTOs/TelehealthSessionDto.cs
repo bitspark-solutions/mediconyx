@@ -24,12 +24,3 @@ public class TelehealthSessionDto
         : 0;
     public DateTime CreatedAt { get; set; }
 }
-
-public class CreateTelehealthSessionRequest
-{
-    [Required] public int PatientId { get; set; }
-    [Required] public int DoctorId { get; set; }
-    public int? AppointmentId { get; set; }
-    [Required] public DateTime ScheduledAt { get; set; }
-    [StringLength(2000)] public string? Notes { get; set; }
-}

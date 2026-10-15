@@ -17,31 +17,3 @@ public class FileAttachmentDto
     public DateTime UploadedAt { get; set; }
     public string UploadedByUserName { get; set; } = string.Empty;
 }
-
-public class FileAttachmentListResponse
-{
-    public List<FileAttachmentDto> Attachments { get; set; } = new();
-    public int TotalCount { get; set; }
-    public int PageNumber { get; set; }
-    public int PageSize { get; set; }
-    public int TotalPages { get; set; }
-}
-
-public class FileAttachmentQueryParams
-{
-    public int? PatientId { get; set; }
-    public int? AppointmentId { get; set; }
-    public FileAttachmentCategory? Category { get; set; }
-    public int PageNumber { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
-    public string SortBy { get; set; } = "UploadedAt";
-    public string SortOrder { get; set; } = "desc";
-}
-
-public class FileUploadRequest
-{
-    public int PatientId { get; set; }
-    public int? AppointmentId { get; set; }
-    public FileAttachmentCategory Category { get; set; }
-    public string? Description { get; set; }
-}

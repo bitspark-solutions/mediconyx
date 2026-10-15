@@ -28,10 +28,3 @@ public class PublicDoctorDto
     public string? HospitalLogoUrl { get; set; }
     public string? HospitalSubdomain { get; set; }
 }
-
-public class PublicDoctorListResponse
-{
-    public int TotalCount { get; set; }
-    public List<PublicDoctorDto> Doctors { get; set; } = new();
-    public List<string> AvailableSpecializations { get; set; } = new();
-}

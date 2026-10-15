@@ -45,26 +45,3 @@ public class RegisterPatientRequest
     /// <summary>reCAPTCHA token from the client. Bypassed in dev/test if no secret configured.</summary>
     public string? CaptchaToken { get; set; }
 }
-
-public class RegisterPatientResponse
-{
-    public string Message { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string TenantName { get; set; } = string.Empty;
-    public bool RequiresEmailVerification { get; set; }
-}
-
-public class VerifyEmailRequest
-{
-    [Required]
-    public string Token { get; set; } = string.Empty;
-}
-
-public class VerifyEmailResponse
-{
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? Email { get; set; }
-    public string? TenantName { get; set; }
-    public AuthResponse? AuthResponse { get; set; }   // populated when verification auto-logs the user in
-}
