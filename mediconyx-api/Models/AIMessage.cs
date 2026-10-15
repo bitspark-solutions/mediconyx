@@ -21,20 +21,3 @@ public class AIMessage
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
-
-public enum AIMessageRole
-{
-    User = 0,
-    Assistant = 1,
-    System = 2
-}
-
-// DTO for citations
-public class RagCitation
-{
-    public string SourceType { get; set; } = string.Empty;
-    public int SourceId { get; set; }
-    public string SourceName { get; set; } = string.Empty;
-    public string Excerpt { get; set; } = string.Empty;
-    public float RelevanceScore { get; set; }
-}

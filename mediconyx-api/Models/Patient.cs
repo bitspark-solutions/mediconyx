@@ -36,10 +36,3 @@ public class Patient
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }
-
-public enum Gender
-{
-    Male = 0,
-    Female = 1,
-    Other = 2
-}

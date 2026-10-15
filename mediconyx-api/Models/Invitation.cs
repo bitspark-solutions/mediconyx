@@ -1,13 +1,5 @@
 namespace mediconyx_api.Models;
 
-public enum InvitationStatus
-{
-    Pending = 0,
-    Accepted = 1,
-    Expired = 2,
-    Revoked = 3
-}
-
 /// <summary>
 /// A secure invitation for a user to join Mediconyx by setting their own password.
 /// Two flavours:

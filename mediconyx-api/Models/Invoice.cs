@@ -38,26 +38,3 @@ public class Invoice
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }
-
-public enum InvoiceStatus
-{
-    Draft = 0,
-    Issued = 1,
-    Paid = 2,
-    PartiallyPaid = 3,
-    Overdue = 4,
-    Cancelled = 5,
-    Refunded = 6
-}
-
-public enum InvoicePaymentMethod
-{
-    Cash = 0,
-    Card = 1,
-    BankTransfer = 2,
-    bKash = 3,
-    Nagad = 4,
-    Rocket = 5,
-    Insurance = 6,
-    Other = 7
-}

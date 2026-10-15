@@ -38,23 +38,3 @@ public class Appointment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }
-
-public enum AppointmentStatus
-{
-    Scheduled = 0,
-    CheckedIn = 1,
-    InProgress = 2,
-    Completed = 3,
-    Cancelled = 4,
-    NoShow = 5
-}
-
-public enum AppointmentType
-{
-    Consultation = 0,
-    FollowUp = 1,
-    Checkup = 2,
-    Emergency = 3,
-    Procedure = 4,
-    Telemedicine = 5
-}
