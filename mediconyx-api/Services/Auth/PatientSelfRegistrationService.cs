@@ -7,13 +7,6 @@ using mediconyx_api.Services.Infrastructure;
 
 namespace mediconyx_api.Services.Auth;
 
-public interface IPatientSelfRegistrationService
-{
-    Task<RegisterPatientResponse> RegisterAsync(RegisterPatientRequest request, string? remoteIp, CancellationToken ct = default);
-    Task<VerifyEmailResponse> VerifyEmailAsync(string token, CancellationToken ct = default);
-    Task<bool> ResendVerificationAsync(string email, CancellationToken ct = default);
-}
-
 public class PatientSelfRegistrationService : IPatientSelfRegistrationService
 {
     private readonly ApplicationDbContext _context;

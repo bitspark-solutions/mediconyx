@@ -7,23 +7,6 @@ using mediconyx_api.Models;
 
 namespace mediconyx_api.Services.Auth;
 
-/// <summary>
-/// Centralized permission check. Reads role from JWT claim "role", then loads
-/// the RolePermission set from the DB. We use a per-request cache so a single
-/// controller with multiple [HasPermission] attributes doesn't re-query.
-/// </summary>
-public interface IPermissionService
-{
-    /// <summary>True if the user (identified by role claim) has the named permission.</summary>
-    bool HasPermission(ClaimsPrincipal user, string permission);
-
-    /// <summary>All permission names for the user's role (used when building JWT claims at login).</summary>
-    Task<IReadOnlyList<string>> GetPermissionsForRoleAsync(UserRole role);
-
-    /// <summary>Union of permissions across the user's primary role + all additional roles.</summary>
-    Task<IReadOnlyList<string>> GetPermissionsForUserAsync(User user);
-}
-
 public class PermissionService : IPermissionService
 {
     private readonly ApplicationDbContext _context;
@@ -86,39 +69,4 @@ public class PermissionService : IPermissionService
             .Distinct()
             .ToListAsync();
     }
-}
-
-/// <summary>
-/// ASP.NET Core authorization handler. Reads permission claims directly from the
-/// user's JWT (populated at login by JwtService) — no DB hit per request.
-/// Singleton because it has no state.
-/// </summary>
-public class PermissionAuthorizationHandler : AuthorizationHandler<HasPermissionRequirement>
-{
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, HasPermissionRequirement requirement)
-    {
-        var user = context.User;
-        if (user?.Identity?.IsAuthenticated != true) return Task.CompletedTask;
-
-        // Master always has every permission
-        if (user.IsInRole(UserRole.Master.ToString()) || user.HasClaim("permission", "all"))
-        {
-            context.Succeed(requirement);
-            return Task.CompletedTask;
-        }
-
-        // Direct permission match
-        if (user.HasClaim("permission", requirement.Permission))
-        {
-            context.Succeed(requirement);
-        }
-        return Task.CompletedTask;
-    }
-}
-
-/// <summary>Marker requirement class for the policy system.</summary>
-public class HasPermissionRequirement : IAuthorizationRequirement
-{
-    public string Permission { get; }
-    public HasPermissionRequirement(string permission) => Permission = permission;
 }

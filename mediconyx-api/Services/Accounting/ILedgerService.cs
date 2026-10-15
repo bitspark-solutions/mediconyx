@@ -47,16 +47,3 @@ public interface ILedgerService
     /// <summary>Find the fiscal period that contains the given date.</summary>
     Task<FiscalPeriod?> FindFiscalPeriodForDateAsync(int tenantId, DateTime date);
 }
-
-public class FiscalPeriodDto
-{
-    public int Id { get; set; }
-    public int FiscalYearId { get; set; }
-    public int Year { get; set; }
-    public int PeriodNumber { get; set; }
-    public string Label { get; set; } = string.Empty;
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public DateTime? ClosedAt { get; set; }
-}

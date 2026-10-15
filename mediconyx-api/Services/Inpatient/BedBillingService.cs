@@ -4,63 +4,6 @@ using mediconyx_api.Models;
 
 namespace mediconyx_api.Services.Inpatient;
 
-/// <summary>
-/// Generates per-bed-day BedCharge rows for admissions. Idempotent: re-running
-/// for the same admission never double-charges a day. Handles mid-admission
-/// transfers by recording which bed was occupied on the charge date.
-/// </summary>
-public interface IBedBillingService
-{
-    /// <summary>
-    /// Generates BedCharge rows from AdmissionDate to min(now, DischargeDate).
-    /// Returns the number of new rows created (0 = already up to date).
-    /// </summary>
-    Task<BillingResult> GenerateForAdmissionAsync(int admissionId, int tenantId, int userId, CancellationToken ct = default);
-
-    /// <summary>
-    /// Returns the full bill (all charges + total) for an admission.
-    /// </summary>
-    Task<AdmissionBillDto> GetBillAsync(int admissionId, int tenantId, CancellationToken ct = default);
-}
-
-public class BillingResult
-{
-    public int AdmissionId { get; set; }
-    public DateTime From { get; set; }
-    public DateTime To { get; set; }
-    public int NewChargesCreated { get; set; }
-    public int TotalChargeDays { get; set; }
-    public decimal TotalAmount { get; set; }
-}
-
-public class AdmissionBillDto
-{
-    public int AdmissionId { get; set; }
-    public int TenantId { get; set; }
-    public int PatientId { get; set; }
-    public string PatientName { get; set; } = string.Empty;
-    public string PatientNumber { get; set; } = string.Empty;
-    public DateTime AdmissionDate { get; set; }
-    public DateTime? DischargeDate { get; set; }
-    public int TotalDays { get; set; }
-    public decimal TotalAmount { get; set; }
-    public string Currency { get; set; } = "BDT";
-    public List<BedChargeDto> Charges { get; set; } = new();
-}
-
-public class BedChargeDto
-{
-    public int Id { get; set; }
-    public DateTime ChargeDate { get; set; }
-    public int BedId { get; set; }
-    public string BedNumber { get; set; } = string.Empty;
-    public string WardName { get; set; } = string.Empty;
-    public string WardType { get; set; } = string.Empty;
-    public decimal DailyRate { get; set; }
-    public decimal Amount { get; set; }
-    public string? Description { get; set; }
-}
-
 public class BedBillingService : IBedBillingService
 {
     private readonly ApplicationDbContext _context;
