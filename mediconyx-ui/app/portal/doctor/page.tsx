@@ -89,7 +89,7 @@ export default function DoctorPortal() {
     const reason = window.prompt("Reason for cancellation?");
     if (!reason) return;
     try {
-      const res = await apiClient.patch(`/api/appointment/${id}/cancel`, { reason });
+      const res = await apiClient.post(`/api/appointment/${id}/cancel`, { reason });
       if (res.ok) {
         await loadAppointments();
       } else {

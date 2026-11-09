@@ -93,7 +93,7 @@ export default function AppointmentList() {
 
   const handleCheckIn = async (appointment: Appointment) => {
     try {
-      const res = await apiClient.patch(`/api/appointment/${appointment.id}/status`, { status: "CheckedIn" });
+      const res = await apiClient.patch(`/api/appointment/${appointment.id}/status`, "CheckedIn");
       if (res.ok) {
         loadAppointments();
       }
@@ -104,7 +104,7 @@ export default function AppointmentList() {
 
   const handleCheckInBatch = async (ids: number[]) => {
     for (const id of ids) {
-      await apiClient.patch(`/api/appointment/${id}/status`, { status: "CheckedIn" });
+      await apiClient.patch(`/api/appointment/${id}/status`, "CheckedIn");
     }
     loadAppointments();
   };
@@ -114,7 +114,7 @@ export default function AppointmentList() {
     setCancelling(true);
     try {
       const res = await apiClient.post(`/api/appointment/${selectedAppointment.id}/cancel`, {
-        cancelReason,
+        reason: cancelReason,
       });
       if (res.ok) {
         setShowCancelModal(false);
