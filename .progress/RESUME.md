@@ -62,6 +62,15 @@ Gotchas:
 
 Rule respected: only `package.json` modified via `npm audit fix`; no `package-lock.json` hand-edited.
 
+Test results (2026-11-10, fresh test DB):
+- mediconyx-api: dotnet build 0 warnings/0 errors; dotnet test 176 passed/1 skipped/0 failed/0 warnings
+- storage-service: dotnet build 0 warnings/0 errors
+- mediconyx-ui: npx tsc --noEmit clean; npm audit = 0
+- mediconyx-e2e API: 106 passed/2 skipped/0 failed (fresh DB)
+- mediconyx-e2e full suite: 159 passed/4 skipped/1 failed
+  (browser new-consultation-flow #nc-full-name timing issue — pre-existing,
+   component mounts but form input not in DOM; all API/UI tests pass)
+
 ## Standing decisions & gotchas
 
 - One class per file (hard rule). No AgentSwarm. Check `usage` before tasks; stop at 95%.
