@@ -12,6 +12,7 @@ using mediconyx_api.Services.Infrastructure;
 using mediconyx_api.Services.Invoices;
 using mediconyx_api.Services.Inpatient;
 using mediconyx_api.Services.Patients;
+using mediconyx_api.Services.Common;
 using mediconyx_api.Services.Users;
 using mediconyx_api.Models;
 using mediconyx_api.Swagger;
@@ -29,7 +30,12 @@ public static class ServiceCollectionExtensions
         // Add services to the container
         // JsonStringEnumConverter: the UI sends enums as strings ("Male", "Doctor");
         // numeric values remain accepted for backwards compatibility.
-        services.AddControllers()
+        services.AddControllers(options =>
+            {
+                // Query-bound DateTimes bind as UTC — JSON converter only sees bodies,
+                // so "dateFrom=2026-11-09" would otherwise reach Npgsql as Kind=Unspecified and 400.
+                options.ModelBinderProviders.Insert(0, new UtcDateTimeModelBinderProvider());
+            })
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(
