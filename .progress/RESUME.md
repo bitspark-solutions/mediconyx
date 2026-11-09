@@ -3,13 +3,13 @@
 > Stable resume point. **Update this file at the end of every work session.**
 > Session history lives in `.progress/<datetime>_<title>.md`; plans in `.plan/`.
 > New sessions: read this file first (the project `AGENTS.md` instructs this).
-> Last updated: 2026-08-29 — Fully-visible Onboarding UI flow confirmed, fixed, and verified (153/153 E2E green). Slow-mo video demo generated.
+> Last updated: 2026-11-09 — NewConsultationWorkflow fully functional (real appointments) + new E2E suites; 2 backend bugs fixed (patient-number race, query-date UTC); full E2E 161/0/3 green.
  
  ## Where we are
  
  Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅, doctor-as-staff duality ✅ (`attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅, per-bed-day billing ✅, fully-visible browser onboarding story ✅.
  Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
- E2E: **153 passed / 0 failed / 4 skipped** (157 total) — 100% green run 2026-08-29. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding` (API-driven) and `npm run test:onboarding:ui` / `npm run test:onboarding:ui:slow` (fully-visible browser-driven).
+ E2E: **161 passed / 0 failed / 3 skipped** (164 total) — 100% green run 2026-11-09. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding` (API-driven) and `npm run test:onboarding:ui` / `npm run test:onboarding:ui:slow` (fully-visible browser-driven).
  
  ## Stacks
  
@@ -34,6 +34,11 @@
  2. Fixed `uiLogin` to clear previous sessions so `AuthRedirectGuard` does not bounce back to sales portal before logging in as newly provisioned hospital admin.
  3. Added `npm run test:onboarding:ui` and `npm run test:onboarding:ui:slow` in `mediconyx-e2e`. Generated full slow-mo MP4 demo video in `test-videos/2026-08-29_00-41-28_onboarding-story-ui-slow`. All 153 tests passed (0 failed).
 
+## Completed: NewConsultationWorkflow functional + E2E (2026-11-09)
+
+Details: `.progress/2026-11-09_18-24-00_new_consultation_workflow_fixed.md`. Plan: `.plan/2026-11-09_new_consultation_workflow.md`.
+The consultation step now creates a **real appointment** (patient register → department/doctor/slots → `POST /api/appointment`; `doctorId` = User id; slots endpoint with manual-time fallback since demo seeders create no schedules). Two backend bugs fixed: patient-number unique-violation race (retry ≤5× in `PatientService`) and query-string dates binding `Kind=Unspecified` → 400 (`UtcDateTimeModelBinder`, registered first in `ModelBinderProviders`). UI rot fixed: doctor-portal cancel PATCH→POST, receptionist check-in body raw `"CheckedIn"`, cancel payload `reason`. New E2E: `consultation-flow.spec.ts` (API, 6) + `new-consultation-flow.spec.ts` (browser). Tier4 flakiness root-caused to demo-tenant seat limit (50) vs accumulated test users (54) — spec now raises licenses to 1000 via master `PUT /api/TenantSettings/subscription/2`. Videos: `test-videos/2026-11-09_18-24-03_new-consultation`.
+
 ## Tooling: graphify code-graph MCP (2026-09-29)
 
 Installed `graphify-local-server` at `C:\Users\Mohsin\Projects\graphify-local-server`, running as the **`graphify-local-server` Docker container** (`restart: unless-stopped`, port 28848). Registered as MCP in Mavis, Antigravity, Qoder, VS Code — all four use the `docker exec -i graphify-local-server python /app/mcp/graphify_mcp.py` form. Tools take `project_path: "mediconyx"`.
@@ -55,8 +60,8 @@ Gotchas:
 - Docker Desktop restart can leave container host-port bindings dead while the container shows "Up" — `docker restart <container>` rebinds (bit us on test MailHog 8026, 2026-08-05).
 - Tenant isolation is manual `.Where(TenantId == ...)`; BranchId filtering must follow the same convention.
 - `NEXT_PUBLIC_*` is build-time inlined — UI env changes require image rebuild. All pages use `NEXT_PUBLIC_API_BASE_URL` (split fixed 2026-07-21).
-- E2E tests must self-provision data (fresh-volume safe).
-- JSON: `JsonStringEnumConverter` + `UtcDateTimeJsonConverter` are registered globally (2026-07-21) — requests accept string or numeric enums; date-only strings ("2026-07-08") are treated as UTC (Npgsql timestamptz rejects Unspecified).
+- JSON: `JsonStringEnumConverter` + `UtcDateTimeJsonConverter` are registered globally (2026-07-21) — requests accept string or numeric enums; date-only strings ("2026-07-08") are treated as UTC (Npgsql timestamptz rejects Unspecified). Since 2026-11-09 the same UTC rule applies to **query/route**-bound DateTimes via `UtcDateTimeModelBinder` (bodies go through the JSON converter; queries needed their own binder).
+- E2E tests must self-provision data (fresh-volume safe). The test DB volume is never wiped — data accumulates across runs (unique suffixes keep creates safe). Tier4 flakiness lesson (2026-11-09): demo tenant `UserLicenses=50` + accumulated users → `createUser` 400s; specs needing users raise seats via master-only `PUT /api/TenantSettings/subscription/{id}`.
 - Old browser tokens (pre-RBAC, no permission claims) get 403 on all `[HasPermission]` endpoints — log out/in.
 - Uploads: unified policy PDF/JPEG/PNG/GIF/DICOM ≤50MB both sides (2026-07-25); storage requires X-Api-Key (dev: empty = open with warning); soft-deletes purged after 30d by SoftDeletePurgeService; signed download URLs are real HMAC tokens. Storage host ports are 8890/8891 (Windows reserves 7871–7970).
 - Kebab-case routes need explicit `[Route]` — `[controller]` does NOT map dashes (fixed for file-attachment, vital-sign, medical-note, doctor-schedule on 2026-07-25).
@@ -72,3 +77,4 @@ Gotchas:
 6. P3 tenant-custom permission bundles — deferred (Designation covers titles; revisit only on real demand).
 7. Admin dashboard KPI placeholders; dead login-page links; owner dashboard with real metrics + master UI for subscription edits (API exists: `PUT /api/TenantSettings/subscription/{tenantId}`).
 8. ~~Module toggles not enforced~~ done 2026-07-26 (editable + middleware gate). ~~Subscription management~~ done 2026-07-26 (master endpoint, seat limit, expiry login block).
+9. `POST /api/Doctor` bypasses the tenant seat limit (`UserService.CreateUserAsync` enforces it; doctor creation adds the user directly) — decide intended behavior and align (2026-11-09).
