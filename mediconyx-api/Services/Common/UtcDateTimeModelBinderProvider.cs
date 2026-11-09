@@ -16,6 +16,10 @@ public class UtcDateTimeModelBinderProvider : IModelBinderProvider
         if (!isDate)
             return null;
 
+        // Exclude body-bound DateTimes — those are deserialized by the JSON
+        // input formatter, which already applies UtcDateTimeJsonConverter.
+        // Everything else (query, route, and complex-object properties bound
+        // from query/route) goes through this binder to guarantee Kind=Utc.
         var source = context.BindingInfo?.BindingSource;
         if (source == BindingSource.Body || source == BindingSource.Form || source == BindingSource.FormFile)
             return null;

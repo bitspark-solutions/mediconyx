@@ -38,10 +38,16 @@ public class AppointmentService : IAppointmentService
             query = query.Where(a => a.Status == queryParams.Status.Value);
 
         if (queryParams.DateFrom.HasValue)
-            query = query.Where(a => a.AppointmentDate >= queryParams.DateFrom.Value);
+        {
+            var dateFrom = DateTime.SpecifyKind(queryParams.DateFrom.Value, DateTimeKind.Utc);
+            query = query.Where(a => a.AppointmentDate >= dateFrom);
+        }
 
         if (queryParams.DateTo.HasValue)
-            query = query.Where(a => a.AppointmentDate <= queryParams.DateTo.Value);
+        {
+            var dateTo = DateTime.SpecifyKind(queryParams.DateTo.Value, DateTimeKind.Utc);
+            query = query.Where(a => a.AppointmentDate <= dateTo);
+        }
 
         if (!string.IsNullOrWhiteSpace(queryParams.SearchTerm))
         {
@@ -234,7 +240,8 @@ public class AppointmentService : IAppointmentService
 
     public async Task<List<AvailableSlotDto>> GetAvailableSlotsAsync(int tenantId, AvailableSlotsQueryParams queryParams)
     {
-        var dayOfWeek = queryParams.Date.DayOfWeek;
+        var date = DateTime.SpecifyKind(queryParams.Date, DateTimeKind.Utc);
+        var dayOfWeek = date.DayOfWeek;
 
         var schedules = await _context.DoctorSchedules
             .Where(s => s.TenantId == tenantId
@@ -258,7 +265,7 @@ public class AppointmentService : IAppointmentService
                 var isBooked = await _context.Appointments
                     .AnyAsync(a => a.TenantId == tenantId
                         && a.DoctorId == queryParams.DoctorId
-                        && a.AppointmentDate.Date == queryParams.Date.Date
+                        && a.AppointmentDate.Date == date.Date
                         && a.Status != AppointmentStatus.Cancelled
                         && a.StartTime < slotEnd
                         && a.EndTime > start);

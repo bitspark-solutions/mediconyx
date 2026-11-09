@@ -44,7 +44,8 @@ public class FileUploadSchemaBuilderTests
         var body = FileUploadSchemaBuilder.BuildRequestBody(fileParams);
 
         // Assert
-        var schema = (OpenApiSchema)body.Content["multipart/form-data"].Schema!;
+        var mediaType = body.Content!["multipart/form-data"]!;
+        var schema = (OpenApiSchema)mediaType.Schema!;
         schema.Properties.Should().NotBeNull();
         schema.Properties!.Keys.Should().BeEquivalentTo(new[] { "file", "attachment" });
         schema.Required.Should().BeEquivalentTo(new[] { "file", "attachment" });
@@ -62,7 +63,7 @@ public class FileUploadSchemaBuilderTests
 
         // Assert
         body.Content.Should().ContainKey("multipart/form-data");
-        var schema = (OpenApiSchema)body.Content["multipart/form-data"].Schema!;
+        var schema = (OpenApiSchema)body.Content["multipart/form-data"]!.Schema!;
         schema.Properties.Should().NotBeNull().And.BeEmpty();
         schema.Required.Should().BeEmpty();
         schema.Type.Should().Be(JsonSchemaType.Object);
@@ -82,7 +83,8 @@ public class FileUploadSchemaBuilderTests
         var body = FileUploadSchemaBuilder.BuildRequestBody(fileParams);
 
         // Assert
-        var schema = (OpenApiSchema)body.Content["multipart/form-data"].Schema!;
+        var mediaType = body.Content!["multipart/form-data"]!;
+        var schema = (OpenApiSchema)mediaType.Schema!;
         schema.Required.Should().Equal(new[] { "z_first", "a_second" });
     }
 

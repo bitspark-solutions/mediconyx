@@ -82,8 +82,8 @@ services:
       - mediconyx
     restart: unless-stopped
     ports:
-      - "8025:8025"
-      - "1025:1025"
+      - "8125:8025"
+      - "2525:1025"
 
   storage:
     build:

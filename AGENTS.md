@@ -8,6 +8,7 @@ At the start of every session, read **`.progress/RESUME.md`** before doing anyth
 
 - Session logs: `.progress/<YYYY-MM-DD_HH-mm-ss>_<title>.md` — write one after any significant work.
 - Plans: `.plan/<date>_<title>.md` — for anything multi-step or architectural.
+- Wiki: `docs/wiki/` — start at `docs/wiki/Home.md`. Architecture, domain model, conventions, and a graphify community map (`Graph-Index.md`) for `graphify_query` seeding. Regenerate graph per Home.md after big changes.
 
 ## Build / run / test
 

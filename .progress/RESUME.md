@@ -13,7 +13,7 @@
  
  ## Stacks
  
- - **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 8890, MailHog 8025. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
+ - **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 8890, MailHog **8125** (web) / 2525 (SMTP) — moved off 8025 on 2026-11-01, Hyper-V exclusion 7937–8036. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
  - **Test** (docker-compose.test.yml): UI 9674, API 9766, storage 8891, MailHog 8126. Fresh-volume, all changes, E2E green.
  - Run E2E: `cd ../mediconyx-e2e && npm run test:env`.
  - Logins: hospital admin `admin@citygeneral.local`/`Hospital@123`, master `master@mediconyx.local`/`MasterPass123!` (dev) / `Master@123` (test). Full list in `readme.md`.
@@ -50,6 +50,17 @@ Gotchas:
 - Graphs must be built with **container** paths (`/app/workspaces/...`, set via `HOST_WORKSPACE_DIR` in the repo `.env`). A host-path build leaves file references that don't resolve inside the container.
 - After a build, run `docker exec graphify-local-server graphify cluster-only /app/data/mediconyx` to emit `GRAPH_REPORT.md`. Community *names* stay as `Community N` placeholders unless an LLM backend key (e.g. `GOOGLE_API_KEY`) is set — the structural edges are still real.
 - The leftover native `.venv` in that repo is unused; safe to delete.
+- On Git Bash, docker-exec graphify commands need `MSYS_NO_PATHCONV=1` or `/app/...` paths get mangled.
+- Rebuilt 2026-11-01 from commit `6b0a259f`: 5231 nodes / 9827 edges / 316 communities. Project wiki generated at `docs/wiki/` (Home.md index + Graph-Index.md mapping subsystems → community IDs).
+
+## Vulnerability remediation (2026-11-10) — ABSOLUTE 0 VUL across all 4 projects
+
+- **mediconyx-api (.NET 10)**: `System.Security.Cryptography.Pkcs` 9.0.0 had GHSA-2fmv-rv2c-59x7 (moderate). Pinned to `10.0.14` in `mediconyx-api.csproj` → `dotnet list package --vulnerable` clean; `dotnet build` 0 warnings/0 errors.
+- **storage-service (.NET 8)**: already 0 VUL; `dotnet build` 0 warnings/0 errors.
+- **mediconyx-ui (Next.js 16)**: 5 prod (1 critical `next`, 4 high) + 16 dev → `npm audit fix --force` ×2 → `next` 16.4.5, `eslint-config-next` 15.5.29, `postcss`, `sharp`, `source-map-js`, `nanoid`, etc. → `npm audit` = 0; `npx tsc --noEmit` clean.
+- **mediconyx-e2e (Playwright)**: 1 high dev (`@faker-js/faker`) → `npm audit fix` → `npm audit` = 0.
+
+Rule respected: only `package.json` modified via `npm audit fix`; no `package-lock.json` hand-edited.
 
 ## Standing decisions & gotchas
 
