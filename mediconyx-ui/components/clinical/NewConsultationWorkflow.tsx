@@ -189,11 +189,11 @@ export default function NewConsultationWorkflow({ role }: NewConsultationWorkflo
 
   useEffect(() => {
     const loadReferenceData = async () => {
-      const [doctorsRes, departmentsRes] = await Promise.all([
-        apiClient.get("/api/doctor?pageSize=100"),
-        apiClient.get("/api/department?pageSize=100"),
-      ]);
       try {
+        const [doctorsRes, departmentsRes] = await Promise.all([
+          apiClient.get("/api/doctor?pageSize=100"),
+          apiClient.get("/api/department?pageSize=100"),
+        ]);
         if (doctorsRes.ok) {
           const data = await doctorsRes.json();
           const options: DoctorOption[] = (data.doctors || [])
@@ -231,20 +231,18 @@ export default function NewConsultationWorkflow({ role }: NewConsultationWorkflo
             }
           }
         }
-      } catch (err) {
-        console.error("Failed to load doctors:", err);
-      }
-      try {
         if (departmentsRes.ok) {
           const data = await departmentsRes.json();
           setDepartments((data.departments || []).map((d: { id: number; name: string }) => ({ id: d.id, name: d.name })));
         }
       } catch (err) {
-        console.error("Failed to load departments:", err);
+        // Reference-data failures must not leave an unhandled promise rejection that
+        // can disrupt client-side mount/hydration of this workflow.
+        console.error("Failed to load reference data:", err);
       }
     };
 
-    loadReferenceData();
+    void loadReferenceData();
     loadRecentPatients();
     loadTodayAppointments();
   }, [isDoctor, user?.email, loadRecentPatients, loadTodayAppointments]);

@@ -41,6 +41,37 @@ public static class DemoHospitalSeeder
             dbContext.Tenants.Add(hospitalTenant);
             await dbContext.SaveChangesAsync();
 
+            // ── Branch 1: Main Branch (explicit MAIN for demo tenant) ──
+            dbContext.Branches.Add(new Branch
+            {
+                TenantId = hospitalTenant.Id,
+                Name = "Main Branch",
+                Code = "MAIN",
+                Address = hospitalTenant.Address,
+                City = hospitalTenant.ContactEmail != null ? "Dhaka" : null,
+                Phone = hospitalTenant.ContactPhone,
+                Email = hospitalTenant.ContactEmail,
+                IsMain = true,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // ── Branch 2: East Branch (demo 2nd branch for multi-branch isolation) ──
+            dbContext.Branches.Add(new Branch
+            {
+                TenantId = hospitalTenant.Id,
+                Name = "East Branch",
+                Code = "EAST",
+                Address = "456 Medical Center, Uttara, Dhaka",
+                City = "Dhaka",
+                Phone = "+880-1700-000002",
+                Email = "east@citygeneral.local",
+                IsMain = false,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+            await dbContext.SaveChangesAsync();
+
             // ── Hospital Admin ─────────────────────────────────────
             var hospitalAdmin = new User
             {

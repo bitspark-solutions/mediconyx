@@ -9,4 +9,5 @@ public interface IAuthService
     Task<AuthResponse> StaffLoginAsync(LoginRequest request);
     Task<AuthResponse> RefreshTokenAsync(string refreshToken);
     Task LogoutAsync(int userId);
+    Task<AuthResponse> SwitchBranchAsync(int userId, int branchId);
 }

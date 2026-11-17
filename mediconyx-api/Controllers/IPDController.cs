@@ -44,6 +44,10 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<WardDto>>> GetWards([FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
+        var userRole = ClaimsHelper.GetRole(User);
+        var claimBranchId = ClaimsHelper.GetBranchId(User);
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && claimBranchId.HasValue && !branchId.HasValue)
+            branchId = claimBranchId.Value;
         var q = _context.Wards.Where(w => w.TenantId == TenantId);
         if (branchId.HasValue) q = q.Where(w => w.BranchId == branchId.Value);
         var wards = await q
@@ -194,6 +198,10 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<BedDto>>> GetBeds([FromQuery] int? wardId = null, [FromQuery] string? status = null, [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
+        var userRole = ClaimsHelper.GetRole(User);
+        var claimBranchId = ClaimsHelper.GetBranchId(User);
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && claimBranchId.HasValue && !branchId.HasValue)
+            branchId = claimBranchId.Value;
         var q = _context.Beds
             .Include(b => b.Ward)
             .Where(b => b.TenantId == TenantId);
@@ -355,6 +363,10 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<BedDto>>> GetCabins([FromQuery] string? status = null, [FromQuery] string? cabinType = null, [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
+        var userRole = ClaimsHelper.GetRole(User);
+        var claimBranchId = ClaimsHelper.GetBranchId(User);
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && claimBranchId.HasValue && !branchId.HasValue)
+            branchId = claimBranchId.Value;
         var q = _context.Beds
             .Include(b => b.Ward)
             .Where(b => b.TenantId == TenantId && b.Kind == BedKind.Cabin);
@@ -417,6 +429,10 @@ public class IPDController : ControllerBase
         [FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
+        var userRole = ClaimsHelper.GetRole(User);
+        var claimBranchId = ClaimsHelper.GetBranchId(User);
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && claimBranchId.HasValue && !branchId.HasValue)
+            branchId = claimBranchId.Value;
         var q = _context.Admissions
             .Include(a => a.Branch)
             .Include(a => a.Patient)
@@ -633,6 +649,10 @@ public class IPDController : ControllerBase
     public async Task<ActionResult<List<BedBoardWardDto>>> GetBedBoard([FromQuery] int? branchId = null)
     {
         if (TenantId == null) return Unauthorized();
+        var userRole = ClaimsHelper.GetRole(User);
+        var claimBranchId = ClaimsHelper.GetBranchId(User);
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && claimBranchId.HasValue && !branchId.HasValue)
+            branchId = claimBranchId.Value;
         var q = _context.Wards
             .Where(w => w.TenantId == TenantId && w.IsActive);
         if (branchId.HasValue) q = q.Where(w => w.BranchId == branchId.Value);

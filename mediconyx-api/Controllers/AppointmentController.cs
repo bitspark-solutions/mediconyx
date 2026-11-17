@@ -27,6 +27,14 @@ public class AppointmentController : ControllerBase
         var tenantId = ClaimsHelper.GetTenantId(User);
         if (tenantId == null) return Unauthorized();
 
+        var userRole = ClaimsHelper.GetRole(User);
+        var branchId = ClaimsHelper.GetBranchId(User);
+
+        // Role-aware default scoping: non-admin staff with a branch_id claim
+        // default to their own branch unless they explicitly override.
+        if (userRole != UserRole.Admin && userRole != UserRole.Master && branchId.HasValue && !queryParams.BranchId.HasValue)
+            queryParams.BranchId = branchId.Value;
+
         return Ok(await _appointmentService.GetAppointmentsAsync(tenantId.Value, queryParams));
     }
 

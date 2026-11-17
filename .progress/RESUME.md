@@ -67,9 +67,16 @@ Test results (2026-11-10, fresh test DB):
 - storage-service: dotnet build 0 warnings/0 errors
 - mediconyx-ui: npx tsc --noEmit clean; npm audit = 0
 - mediconyx-e2e API: 106 passed/2 skipped/0 failed (fresh DB)
+- mediconyx-e2e UI: 33 passed/1 skipped
 - mediconyx-e2e full suite: 159 passed/4 skipped/1 failed
   (browser new-consultation-flow #nc-full-name timing issue — pre-existing,
    component mounts but form input not in DOM; all API/UI tests pass)
+  >> INVESTIGATED/FIXED 2026-11-17: root-caused an unhandled promise rejection in
+     NewConsultationWorkflow.loadReferenceData (Promise.all of /api/doctor + /api/department
+     invoked without try/catch) and made the browser wait idiomatic
+     (expect(locator).toBeVisible). Fix applied to source; browser E2E could not be
+     executed here — re-run `npm run test:env` on the test stack (UI 9674 / API 9766)
+     to confirm the spec passes.
 
 ## Standing decisions & gotchas
 

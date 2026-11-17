@@ -125,4 +125,29 @@ public class AuthController : ControllerBase
         await _authService.LogoutAsync(userId.Value);
         return Ok(new { message = "Logged out." });
     }
+
+    /// <summary>
+    /// Switch the user's active branch. Re-issues the JWT with the new `branch_id` claim.
+    /// Staff can only switch to branches within their own tenant.
+    /// </summary>
+    [HttpPost("switch-branch")]
+    [Authorize]
+    public async Task<ActionResult<AuthResponse>> SwitchBranch(SwitchBranchRequest request)
+    {
+        var userId = ClaimsHelper.GetUserId(User);
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            return Ok(await _authService.SwitchBranchAsync(userId.Value, request.BranchId));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 }

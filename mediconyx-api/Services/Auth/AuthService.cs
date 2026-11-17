@@ -136,6 +136,36 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<AuthResponse> SwitchBranchAsync(int userId, int branchId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Tenant)
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new KeyNotFoundException($"User {userId} not found.");
+
+        // Verify the branch exists, is active, and belongs to the user's tenant.
+        var branch = await _context.Branches
+            .FirstOrDefaultAsync(b => b.Id == branchId && b.TenantId == user.TenantId && b.IsActive);
+        if (branch == null)
+            throw new InvalidOperationException("Invalid branch for this tenant.");
+
+        // Update the user's primary branch and re-issue tokens with the new branch_id claim.
+        user.PrimaryBranchId = branch.Id;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        var permissions = await _permissionService.GetPermissionsForUserAsync(user);
+        var (accessToken, refreshToken) = GenerateTokenPairWithPermissions(user, permissions);
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("User {UserId} switched to branch {BranchId} in Tenant {TenantId}",
+            userId, branch.Id, user.TenantId);
+
+        return BuildAuthResponse(user, accessToken, refreshToken);
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     private static void EnsureUserAndTenantActive(User user)
