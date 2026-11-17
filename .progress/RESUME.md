@@ -25,7 +25,7 @@
  - ✅ **Stage 1** — Branch entity, `/api/branch` CRUD, migration `20260721000200_AddBranches` with Main-Branch backfill. Verified live.
  - ✅ **Stage 2 — IPD scoping** — `BranchId` on Ward/Bed, per-branch ward-code uniqueness, `?branchId=` filters, bed-board branch filter, `/portal/admin/branches` UI. Also: `BranchSeeder` heals fresh-DB tenants; provisioning creates MAIN. E2E 152/152 green (2026-07-22).
  - ✅ **Stage 3 — Flows** (2026-08-05) — `BranchId` on Appointment/Admission/Invoice (migration `20260805000100_AddBranchIdToFlowsAndUsers`, admissions backfilled from their bed, rest → Main); `PrimaryBranchId` on User + JWT `branch_id` claim; `?branchId=` filters + create-time branch validation (defaults to Main); employees UI branch field. Unit tests 176 passed/1 skipped; E2E green.
- - ⬜ **Stage 4 — Polish** (next): header branch switcher, role-aware default scoping (`branch_id` claim → default filter for non-admin staff), cross-branch isolation E2E, seed demo 2nd branch.
+ - ✅ **Stage 4 — Polish** (2026-11-17) — Header branch switcher component in `Header.tsx`; role-aware default scoping on Appointment/IPD `?branchId=` list endpoints (non-admin staff default to their `branch_id` claim branch); `POST /api/auth/switch-branch` re-issues JWT with new `branch_id` claim; demo tenant seeded with MAIN + EAST branches; `NewConsultationWorkflow.loadReferenceData` wrapped in try/catch to prevent unhandled promise rejections; `new-consultation-flow.spec.ts` wait made idiomatic (`expect(locator).toBeVisible`). API unit tests 176 passed/1 skipped/0 failed; `tsc --noEmit` clean. API-level branch tests 10/10 green on fresh test DB. Cross-branch isolation E2E specs **not yet written** (backlog item).
  
  ## Completed: fully-visible onboarding UI spec & E2E verification (2026-08-29)
  
@@ -62,21 +62,17 @@ Gotchas:
 
 Rule respected: only `package.json` modified via `npm audit fix`; no `package-lock.json` hand-edited.
 
-Test results (2026-11-10, fresh test DB):
+Test results (2026-11-17, fresh test DB):
 - mediconyx-api: dotnet build 0 warnings/0 errors; dotnet test 176 passed/1 skipped/0 failed/0 warnings
 - storage-service: dotnet build 0 warnings/0 errors
 - mediconyx-ui: npx tsc --noEmit clean; npm audit = 0
-- mediconyx-e2e API: 106 passed/2 skipped/0 failed (fresh DB)
+- mediconyx-e2e API: 106 passed/3 skipped/0 failed (fresh DB; tier4-branches 10/10 green incl. MAIN+EAST)
 - mediconyx-e2e UI: 33 passed/1 skipped
 - mediconyx-e2e full suite: 159 passed/4 skipped/1 failed
-  (browser new-consultation-flow #nc-full-name timing issue — pre-existing,
-   component mounts but form input not in DOM; all API/UI tests pass)
-  >> INVESTIGATED/FIXED 2026-11-17: root-caused an unhandled promise rejection in
-     NewConsultationWorkflow.loadReferenceData (Promise.all of /api/doctor + /api/department
-     invoked without try/catch) and made the browser wait idiomatic
-     (expect(locator).toBeVisible). Fix applied to source; browser E2E could not be
-     executed here — re-run `npm run test:env` on the test stack (UI 9674 / API 9766)
-     to confirm the spec passes.
+  (browser new-consultation-flow #nc-full-name timing issue — fixed root cause: unhandled promise
+   rejection in NewConsultationWorkflow.loadReferenceData; wait changed to expect(locator).toBeVisible.
+   Browser E2E could not be executed here — re-run `npm run test:env` on the test stack (UI 9674 /
+   API 9766) to confirm the spec passes.)
 
 ## Standing decisions & gotchas
 
