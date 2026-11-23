@@ -1,111 +1,142 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Mediconyx — single Compose file for dev, test and prod.
+#
+# Environments are selected by COMPOSE_PROFILES in the matching env file:
+#
+#   Dev   (default)  docker compose up -d                        # uses .env
+#   Test  (E2E)      docker compose --env-file .env.test up -d
+#   Prod             docker compose --env-file .env.prod up -d
+#
+# With the containerized E2E runner (test stack):
+#   docker compose --env-file .env.test --profile test --profile e2e up --build \
+#     --abort-on-container-exit --exit-code-from e2e-tests
+#
+# Each environment runs as its own Compose project (COMPOSE_PROJECT_NAME), so
+# dev, test and prod stacks can coexist on one machine: separate containers,
+# networks and volumes. All ports below are overridable from the env file.
+# ═══════════════════════════════════════════════════════════════════════════
+
 services:
+  # ── Database ──────────────────────────────────────────────────────────────
   db:
     image: postgres:18-alpine3.22
-    container_name: mediconyx-db
-    networks:
-      - mediconyx
+    profiles: ["dev", "test", "prod"]
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: mediconyx
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-mediconyx}
     ports:
-      - "9543:5432"
+      # Prod env sets DB_BIND_IP=127.0.0.1 so the port is not reachable remotely.
+      - "${DB_BIND_IP:-0.0.0.0}:${DB_PORT:-9543}:5432"
     volumes:
       - db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-mediconyx}"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  api:
-    build:
-      context: .
-      dockerfile: mediconyx-api/Dockerfile
-    container_name: mediconyx-api
-    networks:
-      - mediconyx
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=mediconyx;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      JwtSettings__Secret: ${JWT_SECRET}
-      JwtSettings__Issuer: Mediconyx
-      JwtSettings__Audience: MediconyxAPI
-      JwtSettings__ExpiryMinutes: "60"
-      FrontendUrl: http://localhost:9673
-      MasterUser__Email: ${MASTER_EMAIL}
-      MasterUser__Password: ${MASTER_PASSWORD}
-      MasterUser__FirstName: ${MASTER_FIRST_NAME}
-      MasterUser__LastName: ${MASTER_LAST_NAME}
-      Smtp__Host: mailhog
-      Smtp__Port: "1025"
-      Smtp__EnableSsl: "false"
-      StorageService__BaseUrl: http://storage:8080
-      StorageService__ApiKey: ${STORAGE_API_KEY}
-    ports:
-      - "9765:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-      mailhog:
-        condition: service_started
-      storage:
-        condition: service_started
-
-  ui:
-    build:
-      context: ./mediconyx-ui
-      dockerfile: Dockerfile
-    container_name: mediconyx-ui
-    networks:
-      - mediconyx
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:9765
-    ports:
-      - "9673:3000"
-    depends_on:
-      api:
-        condition: service_started
-
+  # ── Mail (dev/test only — prod uses a real SMTP server via SMTP_* vars) ───
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: mediconyx-mailhog
-    networks:
-      - mediconyx
+    profiles: ["dev", "test"]
     restart: unless-stopped
     ports:
-      - "8125:8025"
-      - "2525:1025"
+      - "${MAILHOG_BIND_IP:-0.0.0.0}:${MAILHOG_PORT:-9125}:8025"
+      - "${MAILHOG_BIND_IP:-0.0.0.0}:${MAILHOG_SMTP_PORT:-2525}:1025"
 
+  # ── Object storage ────────────────────────────────────────────────────────
   storage:
     build:
       context: ./storage-service
       dockerfile: Dockerfile
-    container_name: mediconyx-storage
-    networks:
-      - mediconyx
+    profiles: ["dev", "test", "prod"]
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       Storage__BasePath: /app/storage
       Storage__MaxFileSizeBytes: "52428800"
-      Storage__ApiKey: ${STORAGE_API_KEY}
+      Storage__ApiKey: ${STORAGE_API_KEY:?STORAGE_API_KEY is required}
     ports:
-      - "8890:8080"
+      - "${STORAGE_BIND_IP:-0.0.0.0}:${STORAGE_PORT:-8890}:8080"
     volumes:
       - storage_data:/app/storage
 
-networks:
-  mediconyx:
-    driver: bridge
+  # ── API ───────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: mediconyx-api/Dockerfile
+    profiles: ["dev", "test", "prod"]
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-mediconyx};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      JwtSettings__Secret: ${JWT_SECRET:?JWT_SECRET is required}
+      JwtSettings__Issuer: ${JWT_ISSUER:-Mediconyx}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-MediconyxAPI}
+      JwtSettings__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+      FrontendUrl: ${FRONTEND_URL:-http://localhost:9673}
+      MasterUser__Email: ${MASTER_EMAIL}
+      MasterUser__Password: ${MASTER_PASSWORD}
+      MasterUser__FirstName: ${MASTER_FIRST_NAME:-Master}
+      MasterUser__LastName: ${MASTER_LAST_NAME:-User}
+      Smtp__Host: ${SMTP_HOST:-mailhog}
+      Smtp__Port: ${SMTP_PORT:-1025}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-false}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-noreply@mediconyx.com}
+      Smtp__FromName: ${SMTP_FROM_NAME:-Mediconyx System}
+      StorageService__BaseUrl: http://storage:8080
+      StorageService__ApiKey: ${STORAGE_API_KEY:?STORAGE_API_KEY is required}
+    ports:
+      - "${API_BIND_IP:-0.0.0.0}:${API_PORT:-9765}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      storage:
+        condition: service_started
+
+  # ── Web UI ────────────────────────────────────────────────────────────────
+  ui:
+    build:
+      context: ./mediconyx-ui
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* is baked into the bundle at build time — must be an arg.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:9765}
+    profiles: ["dev", "test", "prod"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:9765}
+    ports:
+      - "${UI_BIND_IP:-0.0.0.0}:${UI_PORT:-9673}:3000"
+    depends_on:
+      api:
+        condition: service_started
+
+  # ── Containerized E2E runner (optional: --profile e2e with .env.test) ────
+  e2e-tests:
+    build:
+      context: ../mediconyx-e2e
+      dockerfile: Dockerfile.e2e
+    profiles: ["e2e"]
+    environment:
+      BASE_URL: http://ui:3000
+      API_BASE_URL: http://api:8080
+      MAILHOG_URL: http://mailhog:8025
+      TEST_ENV: test
+    depends_on:
+      ui:
+        condition: service_started
+      api:
+        condition: service_started
+    volumes:
+      - ../mediconyx-e2e/test-results:/app/test-results
+      - ../mediconyx-e2e/playwright-report:/app/playwright-report
 
 volumes:
   db_data:

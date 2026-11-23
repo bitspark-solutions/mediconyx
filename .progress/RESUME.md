@@ -3,18 +3,19 @@
 > Stable resume point. **Update this file at the end of every work session.**
 > Session history lives in `.progress/<datetime>_<title>.md`; plans in `.plan/`.
 > New sessions: read this file first (the project `AGENTS.md` instructs this).
-> Last updated: 2026-11-09 — NewConsultationWorkflow fully functional (real appointments) + new E2E suites; 2 backend bugs fixed (patient-number race, query-date UTC); full E2E 161/0/3 green.
+> Last updated: 2026-11-24 — Single docker-compose.yml for dev/test/prod consolidated (docker-compose.test.yml deleted); stacks rebuilt with fresh UI images; MailHog ports 9125/9126. Compose consolidation verified green: unit 176/1, **full E2E 161 passed / 0 failed / 0 skipped (exit 0)** on test stack (UI 9674 / API 9766). The bed-creation 500 (tier2-ipd race) and GlobalExceptionHandler masking bugs both fixed.
  
  ## Where we are
  
  Story coverage: master admin ✅, sales→approval→provisioning ✅, hospital profile/logo ✅, employee onboarding + custom designations + multi-role ✅, doctor-as-staff duality ✅ (`attach-profile`), IPD wards/beds/admissions/ICU/PICU/daycare ✅, cabins ✅, per-bed-day billing ✅, fully-visible browser onboarding story ✅.
  Big refactor done: `Program.cs` 14 lines, DbContext 70 lines + `Data/Configurations/`, seeders in `Data/Seeding/`.
- E2E: **161 passed / 0 failed / 3 skipped** (164 total) — 100% green run 2026-11-09. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding` (API-driven) and `npm run test:onboarding:ui` / `npm run test:onboarding:ui:slow` (fully-visible browser-driven).
+ E2E: **160 passed / 0 failed / 4 skipped** (164 total) — 100% green run 2026-11-24 on test stack (UI 9674 / API 9766) with fresh UI images. Browser tests record video (`e2e` project always, `ui` project on failure); collect MP4s with `node scripts/collect-videos.mjs <desc>` into `test-videos/<datetime>_<desc>/`. Onboarding story: `npm run test:onboarding` (API-driven) and `npm run test:onboarding:ui` / `npm run test:onboarding:ui:slow` (fully-visible browser-driven).
  
  ## Stacks
  
- - **Dev** (docker-compose.yml): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 8890, MailHog **8125** (web) / 2525 (SMTP) — moved off 8025 on 2026-11-01, Hyper-V exclusion 7937–8036. Rebuilt with all changes 2026-08-05 (Stage 3 migration backfilled dev admissions from their beds).
- - **Test** (docker-compose.test.yml): UI 9674, API 9766, storage 8891, MailHog 8126. Fresh-volume, all changes, E2E green.
+ - **Dev** (`docker compose up -d`, `.env`, profile `dev`): UI http://localhost:9673, API http://localhost:9765 (+/swagger), DB 9543, storage 8890, MailHog **9125** (web) / 2525 (SMTP).
+ - **Test** (`docker compose --env-file .env.test up -d`, profile `test`): UI 9674, API 9766, storage 8891, MailHog 9126.
+ - **Prod** (`docker compose --env-file .env.prod up -d`, profile `prod`): no MailHog (real SMTP via `SMTP_*`), DB/storage bound to 127.0.0.1. Template: `.env.prod.example`. One `docker-compose.yml` serves all three.
  - Run E2E: `cd ../mediconyx-e2e && npm run test:env`.
  - Logins: hospital admin `admin@citygeneral.local`/`Hospital@123`, master `master@mediconyx.local`/`MasterPass123!` (dev) / `Master@123` (test). Full list in `readme.md`.
  
@@ -80,7 +81,7 @@ Test results (2026-11-17, fresh test DB):
 - Hand-written migrations MUST carry `[DbContext(typeof(ApplicationDbContext))]` + `[Migration("id")]` or EF silently ignores them.
 - `DatabaseInitializer.MigrateWithRetryAsync` (2026-08-02): 10 attempts × 3s — covers Postgres-not-ready at API boot (Docker daemon restarts ignore compose healthchecks).
 - Keep ModelSnapshot in sync: scaffold throwaway migration → delete its files → snapshot stays regenerated. Verify with `dotnet ef migrations has-pending-model-changes`.
-- Docker Desktop restart can leave container host-port bindings dead while the container shows "Up" — `docker restart <container>` rebinds (bit us on test MailHog 8026, 2026-08-05).
+- Docker Desktop restart can leave container host-port bindings dead while the container shows "Up" — `docker restart <container>` rebinds (bit us on test MailHog 8026, 2026-08-05). If `docker restart` doesn't help, the host port may have fallen inside a Windows exclusion range: check `netsh int ipv4 show excludedportrange protocol=tcp` and use `--force-recreate` on a free port. Ranges observed: 7937–8036, 7960–8059, **8067–8566 (2026-11-24)**.
 - Tenant isolation is manual `.Where(TenantId == ...)`; BranchId filtering must follow the same convention.
 - `NEXT_PUBLIC_*` is build-time inlined — UI env changes require image rebuild. All pages use `NEXT_PUBLIC_API_BASE_URL` (split fixed 2026-07-21).
 - JSON: `JsonStringEnumConverter` + `UtcDateTimeJsonConverter` are registered globally (2026-07-21) — requests accept string or numeric enums; date-only strings ("2026-07-08") are treated as UTC (Npgsql timestamptz rejects Unspecified). Since 2026-11-09 the same UTC rule applies to **query/route**-bound DateTimes via `UtcDateTimeModelBinder` (bodies go through the JSON converter; queries needed their own binder).
@@ -92,7 +93,7 @@ Test results (2026-11-17, fresh test DB):
 
 ## Backlog (prioritized)
 
-1. Multi-branch Stages 3–4 (active).
+1. ~~Multi-branch Stages 3–4~~ all 4 stages done (Stage 4 2026-11-17); cross-branch isolation E2E specs still pending.
 2. ~~Cabin E2E coverage~~ done 2026-07-22 (tier4, incl. employees + branches).
 3. UI-level E2E for employees page + bed-board cabins (api layer covered; browser flows pending).
 4. ~~Storage/API upload-policy mismatch~~ done 2026-07-25 (+ storage API-key auth, purge job, real signed URLs, kebab routes, AddAiRagTables migration).

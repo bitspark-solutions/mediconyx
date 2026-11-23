@@ -430,3 +430,6 @@ test_log*.txt
 
 # Never commit test build artifacts
 mediconyx-api/Tests/bin-clean/
+
+# Compose production env (secrets)
+.env.prod

@@ -1,8 +1,9 @@
 # Architecture
 
-Three deployable services + PostgreSQL + MailHog, orchestrated by `docker-compose.yml`
-(dev) and `docker-compose.test.yml` (test). Both stacks run side-by-side on separate
-ports and Docker networks (`mediconyx` / `mediconyx-test`).
+Three deployable services + PostgreSQL + MailHog, orchestrated by a single
+`docker-compose.yml`. Environments are profiles selected by the env file (`.env` dev,
+`.env.test` test, `.env.prod` prod); each runs as its own Compose project
+(`mediconyx` / `mediconyx-test` / `mediconyx-prod`) so dev and test can run side-by-side.
 
 ```
 Browser ──► UI (Next.js 16, :9673/:9674)
@@ -11,7 +12,7 @@ Browser ──► UI (Next.js 16, :9673/:9674)
           API (ASP.NET Core 10, :9765/:9766, /swagger dev-only)
               ├──► PostgreSQL (:9543/:9544)  EF Core migrations at boot
               ├──► storage-service (.NET 8, :8890/:8891)  X-Api-Key
-              └──► MailHog (web :8125/:8126)  Smtp__Host=mailhog:1025
+              └──► MailHog (web :9125/:9126)  Smtp__Host=mailhog:1025
 ```
 
 ## Key architectural facts

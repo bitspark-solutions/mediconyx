@@ -1,8 +1,10 @@
 COMPOSE = docker compose
-SERVICES = api ui db mailhog
+ENV_TEST = --env-file .env.test
+ENV_PROD = --env-file .env.prod
+SERVICES = api ui db mailhog storage
 DOTNET = "C:/Program Files/dotnet/dotnet.exe"
 
-.PHONY: up down purge build rebuild ps logs api-logs ui-logs restart api ui test test-watch test-coverage
+.PHONY: up down purge build rebuild ps logs api-logs ui-logs restart api ui test test-watch test-coverage up-test down-test up-prod down-prod
 
 up:
 	$(COMPOSE) up --build -d
@@ -12,6 +14,21 @@ down:
 
 purge:
 	$(COMPOSE) down -v
+
+up-test:
+	$(COMPOSE) $(ENV_TEST) up --build -d
+
+down-test:
+	$(COMPOSE) $(ENV_TEST) down
+
+purge-test:
+	$(COMPOSE) $(ENV_TEST) down -v
+
+up-prod:
+	$(COMPOSE) $(ENV_PROD) up --build -d
+
+down-prod:
+	$(COMPOSE) $(ENV_PROD) down
 
 build:
 	$(COMPOSE) build

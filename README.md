@@ -26,8 +26,16 @@ Built with **.NET 10** (ASP.NET Core, EF Core), **Next.js 16 / React 19**, Postg
 Prerequisites: Docker, .NET 10 SDK, Node 22+.
 
 ```bash
+cp .env.example .env                                                      # dev secrets
 cp mediconyx-api/appsettings.json.example mediconyx-api/appsettings.json   # fill dev values
-docker compose up -d          # or: make up
+docker compose up -d          # dev (or: make up)
+```
+
+Other environments (same compose file, different env file):
+
+```bash
+docker compose --env-file .env.test up -d                     # test/E2E stack (ports 9674/9766/9544)
+cp .env.prod.example .env.prod && docker compose --env-file .env.prod up -d   # production
 ```
 
 | Service | URL |

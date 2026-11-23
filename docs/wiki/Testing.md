@@ -16,7 +16,7 @@ most-tested surface), `UserServiceTests`, `AuthServiceTests`, `InvoiceServiceTes
 
 ## E2E (`../mediconyx-e2e`, Playwright)
 
-Test stack must be up: `docker compose -f docker-compose.test.yml up -d`.
+Test stack must be up: `docker compose --env-file .env.test up -d`.
 
 ```bash
 cd ../mediconyx-e2e

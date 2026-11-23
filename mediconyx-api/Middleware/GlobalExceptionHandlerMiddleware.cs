@@ -30,6 +30,14 @@ public class GlobalExceptionHandlerMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        // The response may already be streaming (e.g. serialization failed mid-write),
+        // in which case headers/status can no longer be changed. Don't mask the
+        // original exception with an InvalidOperationException from setting StatusCode.
+        if (context.Response.HasStarted)
+        {
+            return;
+        }
+
         var correlationId = context.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
         
         var problemDetails = new ProblemDetails

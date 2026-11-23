@@ -31,8 +31,8 @@ Full report: `graphify-local-server/data/mediconyx/graphify-out/GRAPH_REPORT.md`
 
 | Stack | UI | API | DB | Storage | MailHog |
 |---|---|---|---|---|---|
-| Dev | :9673 | :9765 (+/swagger) | :9543 | :8890 | :8125 |
-| Test | :9674 | :9766 | :9544 | :8891 | :8126 |
+| Dev | :9673 | :9765 (+/swagger) | :9543 | :8890 | :9125 |
+| Test | :9674 | :9766 | :9544 | :8891 | :9126 |
 
 Logins: dev `master@mediconyx.local`/`MasterPass123!`, test `Master@123` — full matrix in `readme.md`.
 
